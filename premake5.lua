@@ -1,7 +1,7 @@
 ﻿-- premake5.lua
 ----------------------------
+-- Environment variables
 VULKAN_SDK = os.getenv("VULKAN_SDK")
-GLFW = os.getenv("GLFW")
 
 ----------------------------
 workspace "vulkan-tutorial"
@@ -17,9 +17,26 @@ project "vulkan-tutorial"
 
    files { "./src/*.h", "./src/*.cpp", "./src/*.hpp", "./src/*.cxx" }
    
-   includedirs { "external/glfw-3.4.bin.WIN64/include", "%{VULKAN_SDK}/Include", "external/glm" }
-   libdirs { "external/glfw-3.4.bin.WIN64/lib-vc2022", "%{VULKAN_SDK}/Lib" }
-   links { "glfw3", "vulkan-1" }
+   -- Requires to install the VulkanSDK package.
+   if os.host() == "windows" then
+        system "windows"
+        includedirs { "external/glfw-3.4.bin.WIN64/include", "%{VULKAN_SDK}/Include", "external/glm" }
+        libdirs { "external/glfw-3.4.bin.WIN64/lib-vc2022", "%{VULKAN_SDK}/Lib" }
+        links { "glfw3", "vulkan-1" }
+        printf("windows setup")
+   end
+  
+   -- Requires to install the GLFW library as 'sudo apt install libglfw3-dev'. 
+   -- Refer to your distro GLFW and VulkanSDK packages for more info.
+    if os.host() == "linux" then
+        system "linux"
+        GLFW = os.getenv("GLFW")
+        includedirs { "%{GLFW}/include", "%{VULKAN_SDK}/Include", "external/glm" }
+        libdirs { "%{GLFW}/lib", "%{VULKAN_SDK}/Lib" }
+        links { "GL", "glfw", "vulkan" , "dl", "X11", "pthread", "Xxf86vm",  "Xrandr", "Xi" }
+        os.rmdir("external/glfw-3.4.bin.WIN64")
+        printf("linux setup")
+    end
 
    filter "configurations:Debug"
       defines { "DEBUG" }
