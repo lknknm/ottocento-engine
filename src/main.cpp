@@ -1,8 +1,14 @@
-﻿#define GLFW_EXPOSE_NATIVE_WIN32
-#define GLFW_EXPOSE_NATIVE_WGL
-#define GLFW_INCLUDE_VULKAN
+﻿#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+
+// Win32 Specific API.
+#ifdef _WIN32
+#define GLFW_EXPOSE_NATIVE_WIN32
+#define GLFW_EXPOSE_NATIVE_WGL
 #include <GLFW/glfw3native.h>
+#include <windows.h>
+#include <dwmapi.h>
+#endif
 
 #include <iostream>
 #include <stdexcept>
@@ -12,16 +18,10 @@
 #include <optional>
 #include <vector>
 
-#include <windows.h>
-#include <dwmapi.h>
+const uint32_t WIN_WIDTH = 800;
+const uint32_t WIN_HEIGHT = 600;
 
-
-const uint32_t WIDTH = 800;
-const uint32_t HEIGHT = 600;
-
-const std::vector<const char*> validationLayers = {
-    "VK_LAYER_KHRONOS_validation"
-};
+const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 
 #ifdef NDEBUG
 const bool enableValidationLayers = false;
@@ -48,7 +48,10 @@ VkResult CreateDebugUtilsMessengerEXT(VkInstance instance,
 }
 
 //----------------------------------------------------------------------------
-void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
+void DestroyDebugUtilsMessengerEXT(VkInstance instance,
+                                    VkDebugUtilsMessengerEXT debugMessenger,
+                                    const VkAllocationCallbacks* pAllocator)
+{
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
     if (func != nullptr) {
         func(instance, debugMessenger, pAllocator);
@@ -90,7 +93,7 @@ private:
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         
-        window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+        window = glfwCreateWindow(WIN_WIDTH, WIN_HEIGHT, "Vulkan", nullptr, nullptr);
         #ifdef WIN32
         ThemeRefreshDarkMode(window);
         #endif
