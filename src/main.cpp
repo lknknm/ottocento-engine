@@ -1,5 +1,8 @@
-﻿#define GLFW_INCLUDE_VULKAN
+﻿#define GLFW_EXPOSE_NATIVE_WIN32
+#define GLFW_EXPOSE_NATIVE_WGL
+#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
 
 #include <iostream>
 #include <stdexcept>
@@ -8,6 +11,10 @@
 #include <map>
 #include <optional>
 #include <vector>
+
+#include <windows.h>
+#include <dwmapi.h>
+
 
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
@@ -22,8 +29,16 @@ const bool enableValidationLayers = false;
 const bool enableValidationLayers = true;
 #endif
 
+#ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
+#define DWMWA_USE_IMMERSIVE_DARK_MODE 20
+#endif
+
 //----------------------------------------------------------------------------
-VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
+VkResult CreateDebugUtilsMessengerEXT(VkInstance instance,
+                                        const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+                                        const VkAllocationCallbacks* pAllocator,
+                                        VkDebugUtilsMessengerEXT* pDebugMessenger)
+{
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
     if (func != nullptr) {
         return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
@@ -60,19 +75,49 @@ public:
 
 private:
     GLFWwindow* window;
-
+    
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
+
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkDevice device;
     
+
     //----------------------------------------------------------------------------
     void initWindow()
     {
         glfwInit();
-
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+        
         window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+        #ifdef WIN32
+        ThemeRefreshDarkMode(window);
+        #endif
+    }
+
+    //----------------------------------------------------------------------------
+    void ThemeRefreshDarkMode(GLFWwindow* WIN32_window)
+    {
+        DWORD lightMode;
+        DWORD pcbData = sizeof(lightMode);
+        HWND hwnd = glfwGetWin32Window(WIN32_window);
+        if (RegGetValueW(HKEY_CURRENT_USER,
+                 L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize\\",
+                 L"AppsUseLightTheme",
+                 RRF_RT_REG_DWORD,
+                 NULL,
+                 &lightMode,
+                 &pcbData) == ERROR_SUCCESS)
+        {
+            BOOL DarkMode = !lightMode;
+            /* 20 == DWMWA_USE_IMMERSIVE_DARK_MODE in Windows 11 SDK.  This value was undocumented for
+            * Windows 10 versions 2004 and later, supported for Windows 11 Build 22000 and later. */
+            DwmSetWindowAttribute(hwnd, 20, &DarkMode, sizeof(DarkMode));
+        }
+        glfwIconifyWindow(window);
+        if (glfwGetWindowAttrib(window, GLFW_ICONIFIED))
+            glfwRestoreWindow(window);
     }
     
     //----------------------------------------------------------------------------
@@ -81,15 +126,14 @@ private:
         createInstance();
         setupDebugMessenger();
         pickPhysicalDevice();
+        //createLogicalDevice();
     }
-
     
     //----------------------------------------------------------------------------
     void mainLoop()
     {
         while (!glfwWindowShouldClose(window))
             glfwPollEvents();
-        
     }
     
     //----------------------------------------------------------------------------
@@ -125,6 +169,21 @@ private:
         createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
         createInfo.ppEnabledExtensionNames = extensions.data();
 
+#ifdef __APPLE__
+        std::vector<const char*> requiredExtensions;
+
+        for(uint32_t i = 0; i < glfwExtensionCount; i++) {
+            requiredExtensions.emplace_back(glfwExtensions[i]);
+        }
+
+        requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+
+        createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+
+        createInfo.enabledExtensionCount = (uint32_t) requiredExtensions.size();
+        createInfo.ppEnabledExtensionNames = requiredExtensions.data();
+#endif
+
         VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
         if (enableValidationLayers) {
             createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
@@ -134,7 +193,6 @@ private:
             createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo;
         } else {
             createInfo.enabledLayerCount = 0;
-
             createInfo.pNext = nullptr;
         }
 
@@ -183,12 +241,31 @@ private:
             candidates.insert(std::make_pair(score, device));
         }
         
-        if (candidates.rbegin()->first > 0)
-            physicalDevice = candidates.rbegin()->second;
-        else
+        if (candidates.rbegin()->first > 0 && isDeviceSuitable(candidates.rbegin()->second))
+        {
+            if (physicalDevice = candidates.rbegin()->second)
+                std::cout << "GPU is properly scored and suitable for usage." <<  std::endl;
+        }
+        if (physicalDevice == VK_NULL_HANDLE)
             throw std::runtime_error("failed to find a suitable GPU!");
     }
+    
+    //----------------------------------------------------------------------------
+    // Responsible for allocating a logical device to interface
+    // with the selected Physical Device
+    void createLogicalDevice()
+    {
+        QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
+        VkDeviceQueueCreateInfo queueCreateInfo{};
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+        queueCreateInfo.queueCount = 1;
+
+        float queuePriority = 1.0f;
+        queueCreateInfo.pQueuePriorities = &queuePriority;
+    }
+    
     //----------------------------------------------------------------------------
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
     {
@@ -205,6 +282,8 @@ private:
         {
             if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
                 indices.graphicsFamily = i;
+            if (indices.isComplete())
+                break;
             i++;
         }
         
@@ -307,9 +386,8 @@ int main()
 {
     HelloTriangleApplication app;
 
-    try {
-        app.run();
-    } catch (const std::exception& e) {
+    try { app.run(); }
+    catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
     }
