@@ -18,6 +18,9 @@
 #include <optional>
 #include <vector>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "../stb/stb_image.h"
+
 const uint32_t WIN_WIDTH = 800;
 const uint32_t WIN_HEIGHT = 600;
 
@@ -29,9 +32,6 @@ const bool enableValidationLayers = false;
 const bool enableValidationLayers = true;
 #endif
 
-#ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
-#define DWMWA_USE_IMMERSIVE_DARK_MODE 20
-#endif
 
 //----------------------------------------------------------------------------
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance,
@@ -78,6 +78,7 @@ public:
 
 private:
     GLFWwindow* window;
+    GLFWimage icon{};
     
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
@@ -85,6 +86,10 @@ private:
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDevice device;
     
+    VkQueue graphicsQueue;
+    
+    int windowMidPos_X, windowMidPos_Y;
+
 
     //----------------------------------------------------------------------------
     void initWindow()
@@ -92,14 +97,26 @@ private:
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+
+        windowMidPos_X = (glfwGetVideoMode(glfwGetPrimaryMonitor())->width - WIN_WIDTH) * 0.5;
+        windowMidPos_Y = (glfwGetVideoMode(glfwGetPrimaryMonitor())->height - WIN_HEIGHT) * 0.5;
+        glfwWindowHint(GLFW_POSITION_X, windowMidPos_X);
+        glfwWindowHint(GLFW_POSITION_Y, windowMidPos_Y);
         
         window = glfwCreateWindow(WIN_WIDTH, WIN_HEIGHT, "Vulkan", nullptr, nullptr);
+        glfwSetWindowSizeLimits(window, 400, 300, GLFW_DONT_CARE, GLFW_DONT_CARE);
+
+        icon.pixels = stbi_load("src/icon.png", &icon.width, &icon.height, 0, 4);
+        if (icon.pixels) { glfwSetWindowIcon(window, 1, &icon); }
+        
         #ifdef WIN32
         ThemeRefreshDarkMode(window);
         #endif
     }
 
     //----------------------------------------------------------------------------
+    // This code is from a problem already solved by the Blender devs. It is extracted
+    // from the 'ddbac88c08' commit "Win32: Dark Mode Title Bar Color" by Harley Acheson
     void ThemeRefreshDarkMode(GLFWwindow* WIN32_window)
     {
         DWORD lightMode;
@@ -118,6 +135,9 @@ private:
             * Windows 10 versions 2004 and later, supported for Windows 11 Build 22000 and later. */
             DwmSetWindowAttribute(hwnd, 20, &DarkMode, sizeof(DarkMode));
         }
+
+        // This is a workaround I added for the window to minimize and restore so it can display
+        // the darkmode right when the GLFW window is initiated.
         glfwIconifyWindow(window);
         if (glfwGetWindowAttrib(window, GLFW_ICONIFIED))
             glfwRestoreWindow(window);
@@ -129,23 +149,29 @@ private:
         createInstance();
         setupDebugMessenger();
         pickPhysicalDevice();
-        //createLogicalDevice();
+        createLogicalDevice();
     }
     
     //----------------------------------------------------------------------------
     void mainLoop()
     {
         while (!glfwWindowShouldClose(window))
+        {
+            glfwSwapBuffers(window);
             glfwPollEvents();
+        }
     }
     
     //----------------------------------------------------------------------------
     void cleanup()
     {
+        vkDestroyDevice(device, nullptr);
+        
         if (enableValidationLayers)
             DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
 
         vkDestroyInstance(instance, nullptr);
+        stbi_image_free(icon.pixels);
         glfwDestroyWindow(window);
         glfwTerminate();
     }
@@ -172,7 +198,7 @@ private:
         createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
         createInfo.ppEnabledExtensionNames = extensions.data();
 
-#ifdef __APPLE__
+        #ifdef __APPLE__
         std::vector<const char*> requiredExtensions;
 
         for(uint32_t i = 0; i < glfwExtensionCount; i++) {
@@ -185,7 +211,7 @@ private:
 
         createInfo.enabledExtensionCount = (uint32_t) requiredExtensions.size();
         createInfo.ppEnabledExtensionNames = requiredExtensions.data();
-#endif
+        #endif
 
         VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
         if (enableValidationLayers) {
@@ -204,7 +230,8 @@ private:
     }
     
     //----------------------------------------------------------------------------
-    void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
+    void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+    {
         createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
         createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
@@ -227,12 +254,12 @@ private:
     //----------------------------------------------------------------------------
     void pickPhysicalDevice()
     {
-        VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
         uint32_t deviceCount = 0;
         vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
         
         if (deviceCount == 0) 
             throw std::runtime_error("failed to find GPUs with Vulkan support!");
+        
         std::vector<VkPhysicalDevice> devices(deviceCount);
         vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
         
@@ -249,6 +276,7 @@ private:
             if (physicalDevice = candidates.rbegin()->second)
                 std::cout << "GPU is properly scored and suitable for usage." <<  std::endl;
         }
+        
         if (physicalDevice == VK_NULL_HANDLE)
             throw std::runtime_error("failed to find a suitable GPU!");
     }
@@ -267,6 +295,33 @@ private:
 
         float queuePriority = 1.0f;
         queueCreateInfo.pQueuePriorities = &queuePriority;
+
+        VkPhysicalDeviceFeatures deviceFeatures{};
+
+        VkDeviceCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        createInfo.pQueueCreateInfos = &queueCreateInfo;
+        createInfo.queueCreateInfoCount = 1;
+        createInfo.pEnabledFeatures = &deviceFeatures;
+        createInfo.enabledExtensionCount = 0;
+
+        // "Previous implementations of Vulkan made a distinction between instance and device specific
+        // validation layers, but this is no longer the case.
+        // However, it is still a good idea to set them anyway to be compatible with older implementations:
+        if (enableValidationLayers)
+        {
+            createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+            createInfo.ppEnabledLayerNames = validationLayers.data();
+        }
+        else 
+            createInfo.enabledLayerCount = 0;
+
+        if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
+            throw std::runtime_error("failed to create logical device!");
+        else
+            std::cout << "Logical Device Successfully created" << std::endl;
+        
+        vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
     }
     
     //----------------------------------------------------------------------------
