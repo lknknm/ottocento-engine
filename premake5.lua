@@ -20,7 +20,7 @@ project "vulkan-tutorial"
    -- Requires to install the VulkanSDK package.
    if os.host() == "windows" then
         system "windows"
-        includedirs { "external/glfw-3.4.bin.WIN64/include", "%{VULKAN_SDK}/Include", "external/glm" }
+        includedirs { "external/glfw-3.4.bin.WIN64/include", "%{VULKAN_SDK}/Include", "external/glm", "external/stb" }
         libdirs { "external/glfw-3.4.bin.WIN64/lib-vc2022", "%{VULKAN_SDK}/Lib" }
         links { "glfw3", "vulkan-1" }
         printf("windows setup")
