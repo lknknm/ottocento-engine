@@ -31,7 +31,7 @@ project "vulkan-tutorial"
     if os.host() == "linux" then
         system "linux"
         GLFW = os.getenv("GLFW")
-        includedirs { "%{GLFW}/include", "%{VULKAN_SDK}/Include", "external/glm" }
+        includedirs { "%{GLFW}/include", "%{VULKAN_SDK}/Include", "external/glm", "external/stb" }
         libdirs { "%{GLFW}/lib", "%{VULKAN_SDK}/Lib" }
         links { "GL", "glfw", "vulkan" , "dl", "X11", "pthread", "Xxf86vm",  "Xrandr", "Xi" }
         os.rmdir("external/glfw-3.4.bin.WIN64")
