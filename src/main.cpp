@@ -11,9 +11,12 @@
 #include <dwmapi.h>
 #endif
 
+#include <algorithm>
 #include <cstring>
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <set>
 #include <stdexcept>
@@ -21,8 +24,6 @@
 #include <vector>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include <pplcancellation_token.h>
-
 #include "../stb/stb_image.h"
 
 const uint32_t WIN_WIDTH = 800;
@@ -169,6 +170,7 @@ private:
         createSurface();
         pickPhysicalDevice();
         createLogicalDevice();
+        createSwapChain();
     }
     
     //----------------------------------------------------------------------------
@@ -363,6 +365,30 @@ private:
         vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
         vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
     }
+
+    //----------------------------------------------------------------------------
+    void createSwapChain()
+    {
+        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
+
+        VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+        VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
+        VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
+
+        uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+
+        if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount)
+            imageCount = swapChainSupport.capabilities.maxImageCount;
+
+        VkSwapchainCreateInfoKHR createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        createInfo.surface = surface;
+        createInfo.minImageCount = imageCount;
+        createInfo.imageColorSpace = surfaceFormat.colorSpace;
+        createInfo.imageExtent = extent;
+        createInfo.imageArrayLayers = 1;
+        createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    }
     
     //----------------------------------------------------------------------------
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
@@ -393,6 +419,60 @@ private:
         return indices;
     }
 
+    //----------------------------------------------------------------------------
+    // Surface Format will be the specification of the window surface colour depth.
+    VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+    {
+        for (const auto& availableFormat : availableFormats)
+        {
+            if (availableFormat.format == VK_FORMAT_B8G8R8_SRGB
+                && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+                return availableFormat;
+        }
+        return availableFormats[0];
+    }
+
+    //----------------------------------------------------------------------------
+    // "VK_PRESENT_MODE_MAILBOX_KHR is a very nice trade-off if energy usage is not a concern.
+    // On mobile devices, where energy usage is more important,
+    // you will probably want to use VK_PRESENT_MODE_FIFO_KHR instead"
+    VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+    {
+        for (const auto& availablePresentMode : availablePresentModes)
+        {
+            if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+                return availablePresentMode;
+        }
+        return VK_PRESENT_MODE_FIFO_KHR;
+    }
+
+    //----------------------------------------------------------------------------
+    // "The swap extent is the resolution of the swap chain images and
+    // it's almost always exactly equal to the resolution of the window that we're drawing to in pixels"
+    const VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+    {
+        if (capabilities.currentExtent.width != (std::numeric_limits<uint32_t>::max)())
+        {
+            return capabilities.currentExtent;
+        }
+        else
+        {
+            int width, height;
+            glfwGetFramebufferSize(window, &width, &height);
+
+            VkExtent2D actualExtent = {
+                static_cast<uint32_t>(width),
+                static_cast<uint32_t>(height)
+            };
+
+            actualExtent.width = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+            actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+
+            return actualExtent;
+        }
+    }
+    
+    //----------------------------------------------------------------------------
     SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device)
     {
         SwapChainSupportDetails details;
