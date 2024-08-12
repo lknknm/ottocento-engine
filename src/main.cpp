@@ -1,4 +1,7 @@
-﻿#define VK_USE_PLATFORM_WIN32_KHR
+﻿#ifdef _WIN32
+#define VK_USE_PLATFORM_WIN32_KHR
+#endif
+
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -118,10 +121,9 @@ struct Vertex
 
 const std::vector<Vertex> vertices =
 {
-    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
 };
 
 class HelloTriangleApplication
@@ -200,8 +202,10 @@ private:
         ThemeRefreshDarkMode(window);
         #endif
     }
-
+    
+#if _WIN32
     //----------------------------------------------------------------------------
+    // Windows Specific: refresh the titlebar to DarkMode.
     // This code is from a problem already solved by the Blender devs. It is extracted
     // from the 'ddbac88c08' commit "Win32: Dark Mode Title Bar Color" by Harley Acheson
     void ThemeRefreshDarkMode(GLFWwindow* WIN32_window)
@@ -232,6 +236,7 @@ private:
         if (glfwGetWindowAttrib(window, GLFW_ICONIFIED))
             glfwRestoreWindow(window);
     }
+#endif
     
     //----------------------------------------------------------------------------
     void initVulkan()
@@ -825,8 +830,7 @@ private:
         vkUnmapMemory(device, stagingBufferMemory);
 
         createBuffer(bufferSize,
-                   VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-                   VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                   VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                    vertexBuffer, vertexBufferMemory
                    );
         copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
