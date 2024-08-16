@@ -21,6 +21,15 @@
 #include <dwmapi.h>
 #endif
 
+#include <imgui.h>
+#include <imconfig.h>
+#include <imgui_internal.h>
+#include <imgui_impl_vulkan.h>
+#include <imgui_impl_glfw.h>
+#include <imstb_rectpack.h>
+#include <imstb_textedit.h>
+#include <imstb_truetype.h>
+
 #include <algorithm>
 #include <array>
 #include <chrono>
