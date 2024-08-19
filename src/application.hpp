@@ -177,7 +177,6 @@ class HelloTriangleApplication
 public:
     void run()
     {
-        appInstance = this;
         initWindow();
         initVulkan();
         mainLoop();
@@ -247,7 +246,7 @@ private:
     uint32_t currentFrame = 0;
     bool framebufferResized = false;
 
-    Camera* sceneCamera;
+    Camera sceneCamera;
     
     int windowMidPos_X, windowMidPos_Y;
     
@@ -273,6 +272,7 @@ private:
         glfwSetWindowSizeLimits(window, 400, 300, GLFW_DONT_CARE, GLFW_DONT_CARE);
         glfwSetWindowUserPointer(window, this);
         glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+        sceneCamera.windowHandle = window;
 
         icon.pixels = stbi_load("src/icon.png", &icon.width, &icon.height, 0, 4);
         if (icon.pixels) { glfwSetWindowIcon(window, 1, &icon); }
@@ -2004,20 +2004,5 @@ private:
     //----------------------------------------------------------------------------
     // End of Helper Functions 
     //----------------------------------------------------------------------------
-};
-
-
-//----------------------------------------------------------------------------
-// Input handling implementation class. Must move to other file. Architecture yet to be decided.
-class Input
-{
-public:
-    bool IsKeyDown(int keyCode)
-    {
-        HelloTriangleApplication& applicationInstance = HelloTriangleApplication::getInstance();
-        GLFWwindow* windowHandle = applicationInstance.getWindowhandle();
-        int state = glfwGetKey(windowHandle, keyCode);
-        return state == GLFW_PRESS || state == GLFW_REPEAT;
-    }
 };
 

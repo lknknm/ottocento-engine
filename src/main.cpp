@@ -1,9 +1,9 @@
 ﻿#include "application.hpp"
+#include "camera.hpp"
 
 int main()
 {
     HelloTriangleApplication app;
-    static HelloTriangleApplication* currentAppInstance = nullptr;
 
     try { app.run(); }
     catch (const std::exception& e) {
