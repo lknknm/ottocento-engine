@@ -55,12 +55,12 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "../external/tinyobjloader/tiny_obj_loader.h"
 
-const uint32_t WIN_WIDTH = 800;
-const uint32_t WIN_HEIGHT = 600;
+const uint32_t WIN_WIDTH = 1280;
+const uint32_t WIN_HEIGHT = 720;
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
-const std::string MODEL_PATH = "src/models/viking_room.obj";
-const std::string TEXTURE_PATH = "src/textures/viking_room.png";
+const std::string MODEL_PATH = "./src/models/viking_room.obj";
+const std::string TEXTURE_PATH = "./src/textures/viking_room.png";
 
 const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
@@ -268,7 +268,7 @@ private:
         glfwWindowHint(GLFW_POSITION_X, windowMidPos_X);
         glfwWindowHint(GLFW_POSITION_Y, windowMidPos_Y);
         
-        window = glfwCreateWindow(WIN_WIDTH, WIN_HEIGHT, "Vulkan", nullptr, nullptr);
+        window = glfwCreateWindow(WIN_WIDTH, WIN_HEIGHT, "Ottocento Engine", nullptr, nullptr);
         glfwSetWindowSizeLimits(window, 400, 300, GLFW_DONT_CARE, GLFW_DONT_CARE);
         glfwSetWindowUserPointer(window, this);
         glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);

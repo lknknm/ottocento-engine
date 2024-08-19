@@ -6,7 +6,6 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-
 class Camera
 {
 //----------------------------------------------------------------------------
@@ -117,7 +116,7 @@ private:
     float VerticalFOV = 45.0f;
     float NearClip = 0.1f;
     float FarClip = 100.0f;
-    float speed = 0.001f;
+    float speed = 0.0001f;
     float rotationSpeed = 0.3f;
 
     glm::vec2 lastMousePosition{ 0.0f, 0.0f };
