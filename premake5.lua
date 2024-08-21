@@ -38,6 +38,15 @@ project "vulkan-tutorial"
         printf("linux setup")
     end
 
+   if os.host() == "macosx" then
+      -- Assume glfw and vulkan are already in available in the environment
+      includedirs { "external/glm", "external/stb", "external/imgui" }
+      -- libdirs { "/usr/local/lib" }
+      links { "glfw", "vulkan" , "dl",  "pthread" }
+      printf("MacOS setup")
+   end
+
+
    filter "configurations:Debug"
       defines { "DEBUG" }
       symbols "On"
