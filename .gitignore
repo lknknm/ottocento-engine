@@ -8,3 +8,5 @@ riderModule.iml
 *.sln
 *.vcxproj
 *.vcxproj.filters
+Makefile
+vulkan-tutorial.make
