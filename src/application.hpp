@@ -72,7 +72,7 @@ const bool enableValidationLayers = true;
 #endif
 
 //----------------------------------------------------------------------------
-VkResult CreateDebugUtilsMessengerEXT(VkInstance instance,
+inline VkResult CreateDebugUtilsMessengerEXT(VkInstance instance,
                                         const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
                                         const VkAllocationCallbacks* pAllocator,
                                         VkDebugUtilsMessengerEXT* pDebugMessenger)
@@ -86,7 +86,7 @@ VkResult CreateDebugUtilsMessengerEXT(VkInstance instance,
 }
 
 //----------------------------------------------------------------------------
-void DestroyDebugUtilsMessengerEXT(VkInstance instance,
+inline void DestroyDebugUtilsMessengerEXT(VkInstance instance,
                                     VkDebugUtilsMessengerEXT debugMessenger,
                                     const VkAllocationCallbacks* pAllocator)
 {
@@ -2162,4 +2162,3 @@ private:
     // End of Helper Functions 
     //----------------------------------------------------------------------------
 };
-
