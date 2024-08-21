@@ -358,16 +358,14 @@ private:
     {
         while (!glfwWindowShouldClose(window))
         {
-            static auto startTime = std::chrono::high_resolution_clock::now();
+            auto startTime = std::chrono::high_resolution_clock::now();
             glfwPollEvents();
             drawFrame();
-            auto currentTime = std::chrono::high_resolution_clock::now();
-            float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-            // sceneCamera.updateCamera();
+            float deltaTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - startTime).count() * 0.001f * 0.001f * 0.001f;
+            updateUniformBufferCamera(currentFrame, deltaTime);
         }
         vkDeviceWaitIdle(device);
     }
-
     
     //-----------------------------------------------------------------------------
     // Cleanup function related only to elements related to our swapChain
@@ -1414,14 +1412,21 @@ private:
     // This function will hold some camera projection properties for now.
     void updateUniformBuffer(uint32_t currentImage)
     {
-        static auto startTime = std::chrono::high_resolution_clock::now();
-
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
         UniformBufferObject ubo{};
         ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = sceneCamera.recalculateView();
+        //ubo.view = sceneCamera.recalculateView();
+        ubo.proj = sceneCamera.perspectiveProjection(swapChainExtent.width, swapChainExtent.height);
+        ubo.proj[1][1] *= -1;
+
+        memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+    }
+
+    //----------------------------------------------------------------------------
+    void updateUniformBufferCamera(uint32_t currentImage, float deltaTime)
+    {
+        UniformBufferObject ubo{};
+        ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.view = sceneCamera.recalculateView(deltaTime);
         ubo.proj = sceneCamera.perspectiveProjection(swapChainExtent.width, swapChainExtent.height);
         ubo.proj[1][1] *= -1;
 
@@ -1446,7 +1451,7 @@ private:
             throw std::runtime_error("failed to acquire swap chain image!");
         }
 
-        updateUniformBuffer(currentFrame);
+        // updateUniformBuffer(currentFrame);
 
         // Only reset the fence if we are submitting work
         vkResetFences(device, 1, &inFlightFences[currentFrame]);

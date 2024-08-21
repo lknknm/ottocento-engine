@@ -15,7 +15,7 @@ public:
 
     //----------------------------------------------------------------------------
     // Recalculate view with input handling functions
-    glm::mat4 recalculateView()
+    glm::mat4 recalculateView(float deltaTime)
     {
         glm::vec2 mousePos = Input::getMousePosition(windowHandle);
         glm::vec2 delta = (mousePos - lastMousePosition) * 0.002f;
@@ -32,17 +32,17 @@ public:
         glfwSetInputMode(windowHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL + 2);
         
         if (windowHandle != nullptr && Input::isKeyDown(windowHandle, GLFW_KEY_E))
-            moveUpDirection();
+            moveUpDirection(deltaTime);
         if (windowHandle != nullptr && Input::isKeyDown(windowHandle, GLFW_KEY_Q))
-            moveDownDirection();
+            moveDownDirection(deltaTime);
         if (windowHandle != nullptr && Input::isKeyDown(windowHandle, GLFW_KEY_W))
-            moveForward();
+            moveForward(deltaTime);
         if (windowHandle != nullptr && Input::isKeyDown(windowHandle, GLFW_KEY_S))
-            moveBack();
+            moveBack(deltaTime);
         if (windowHandle != nullptr && Input::isKeyDown(windowHandle, GLFW_KEY_D))
-            moveRightDirection();
+            moveRightDirection(deltaTime);
         if (windowHandle != nullptr && Input::isKeyDown(windowHandle, GLFW_KEY_A))
-            moveLeftDirection();
+            moveLeftDirection(deltaTime);
 
         if (delta.x != 0.0f || delta.y != 0.0f)
         {
@@ -68,47 +68,6 @@ public:
         return glm::perspective(glm::radians(VerticalFOV), width / (float) height, NearClip, FarClip);
     }
 
-    //----------------------------------------------------------------------------
-    void moveUpDirection()
-    {
-        CenterPosition += upVector * speed;
-        EyePosition += upVector * speed;
-    }
-
-    //----------------------------------------------------------------------------
-    void moveDownDirection()
-    {
-        CenterPosition -= upVector * speed;
-        EyePosition -= upVector * speed;
-    }
-    
-    //----------------------------------------------------------------------------
-    void moveForward()
-    {
-        CenterPosition += forwardDirection * speed;
-        EyePosition += forwardDirection * speed;
-    }
-
-    //----------------------------------------------------------------------------
-    void moveBack()
-    {
-        CenterPosition -= forwardDirection * speed;
-        EyePosition -= forwardDirection * speed;
-    }
-
-    //----------------------------------------------------------------------------
-    void moveRightDirection()
-    {
-        CenterPosition += rightVector * speed;
-        EyePosition += rightVector * speed;
-    }
-    
-    //----------------------------------------------------------------------------
-    void moveLeftDirection()
-    {
-        CenterPosition -= rightVector * speed;
-        EyePosition -= rightVector * speed;
-    }
     
 //----------------------------------------------------------------------------
 private:
@@ -116,7 +75,7 @@ private:
     float VerticalFOV = 45.0f;
     float NearClip = 0.1f;
     float FarClip = 100.0f;
-    float speed = 0.0001f;
+    float speed = 5.0f;
     float rotationSpeed = 0.3f;
 
     glm::vec2 lastMousePosition{ 0.0f, 0.0f };
@@ -131,4 +90,47 @@ private:
     glm::mat4 View{ 1.0f };
     glm::mat4 InverseProjection{ 1.0f };
     glm::mat4 InverseView{ 1.0f };
+
+    
+    //----------------------------------------------------------------------------
+    void moveUpDirection(float deltaTime)
+    {
+        CenterPosition += upVector * speed * deltaTime;
+        EyePosition += upVector * speed * deltaTime;
+    }
+
+    //----------------------------------------------------------------------------
+    void moveDownDirection(float deltaTime)
+    {
+        CenterPosition -= upVector * speed * deltaTime;
+        EyePosition -= upVector * speed * deltaTime;
+    }
+    
+    //----------------------------------------------------------------------------
+    void moveForward(float deltaTime)
+    {
+        CenterPosition += forwardDirection * speed * deltaTime;
+        EyePosition += forwardDirection * speed * deltaTime;
+    }
+
+    //----------------------------------------------------------------------------
+    void moveBack(float deltaTime)
+    {
+        CenterPosition -= forwardDirection * speed * deltaTime;
+        EyePosition -= forwardDirection * speed * deltaTime;
+    }
+
+    //----------------------------------------------------------------------------
+    void moveRightDirection(float deltaTime)
+    {
+        CenterPosition += rightVector * speed * deltaTime;
+        EyePosition += rightVector * speed * deltaTime;
+    }
+    
+    //----------------------------------------------------------------------------
+    void moveLeftDirection(float deltaTime)
+    {
+        CenterPosition -= rightVector * speed * deltaTime;
+        EyePosition -= rightVector * speed * deltaTime;
+    }
 };
