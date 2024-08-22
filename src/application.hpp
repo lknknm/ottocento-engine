@@ -345,7 +345,7 @@ private:
         createTextureImage();
         createTextureImageView();
         createTextureSampler();
-        //loadGrid();
+        loadGrid();
         loadModel();
         createVertexBuffer();
         createIndexBuffer();
@@ -1132,10 +1132,10 @@ private:
         std::unordered_map<Vertex, uint32_t> uniqueVertices{};
         std::vector<Vertex> gridVertices =
             {
-            {{-100.0f, -100.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
-            {{100.0f, -100.0f, 0.0}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
-            {{100.0f, 100.0f, 0.0}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
-            {{-100.0f, 100.0f, 0.0}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+            {{-5.0f, -5.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+            {{5.0f, -5.0f, 0.0}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+            {{5.0f, 5.0f, 0.0}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+            {{-5.0f, 5.0f, 0.0}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
             };
         const std::vector<uint16_t> gridIndices =
         {
@@ -1143,11 +1143,15 @@ private:
         };
         for (const auto& vertex : gridVertices)
         {
-            vertices.push_back(vertex);
+            if (uniqueVertices.count(vertex) == 0)
+            {
+                uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
+                vertices.push_back(vertex);
+            }
         }
         for (const auto& index : gridIndices)
         {
-            indices.push_back(gridIndices[index]);
+            indices.push_back(index);
         }
     }
     
