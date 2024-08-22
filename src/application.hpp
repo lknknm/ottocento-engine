@@ -169,9 +169,10 @@ struct UniformBufferObject {
     alignas(16) glm::mat4 model;
     alignas(16) glm::mat4 view;
     alignas(16) glm::mat4 proj;
+    alignas(16) glm::vec4 lightDirs[2];
+    alignas(16) glm::vec4 lightColors[2];
 };
 
-class Camera;
 class HelloTriangleApplication
 {
 public:
@@ -278,6 +279,7 @@ private:
         glfwSetWindowSizeLimits(window, 400, 300, GLFW_DONT_CARE, GLFW_DONT_CARE);
         glfwSetWindowUserPointer(window, this);
         glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
+        glfwSetWindowRefreshCallback(window, windowResizeCallback);
         sceneCamera.windowHandle = window;
 
         icon.pixels = stbi_load("src/icon.png", &icon.width, &icon.height, 0, 4);
@@ -343,6 +345,7 @@ private:
         createTextureImage();
         createTextureImageView();
         createTextureSampler();
+        //loadGrid();
         loadModel();
         createVertexBuffer();
         createIndexBuffer();
@@ -362,7 +365,7 @@ private:
             glfwPollEvents();
             drawFrame();
             float deltaTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - startTime).count() * 0.001f * 0.001f * 0.001f;
-            updateUniformBufferCamera(currentFrame, deltaTime);
+            updateUniformBufferCamera(currentFrame, deltaTime, swapChainExtent.width, swapChainExtent.height);
         }
         vkDeviceWaitIdle(device);
     }
@@ -979,9 +982,6 @@ private:
 
             if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapChainFramebuffers[i]) != VK_SUCCESS)
                 throw std::runtime_error("failed to create framebuffer!");
-            else
-                std::cout <<  "FrameBuffer Created" << std::endl;
-            
         }
     }
 
@@ -990,6 +990,20 @@ private:
     {
         auto app = reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
         app->framebufferResized = true;
+        app->swapChainExtent.width = width;
+        app->swapChainExtent.height = height;
+    }
+    
+    //----------------------------------------------------------------------------
+    static void windowResizeCallback(GLFWwindow* window)
+    {
+        auto app = reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
+        vkDeviceWaitIdle(app->device);
+
+        // Recreate the swap chain with the new extent
+        app->recreateSwapChain();
+        app->updateUniformBufferCamera(app->currentFrame, 1, app->swapChainExtent.width, app->swapChainExtent.height);
+        app->drawFrame();
     }
 
     //----------------------------------------------------------------------------
@@ -1004,6 +1018,7 @@ private:
         if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS)
             throw std::runtime_error("failed to create command pool!");
     }
+    
     //----------------------------------------------------------------------------
     void createColorResources()
     {
@@ -1110,7 +1125,32 @@ private:
         if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS)
             throw std::runtime_error("Failed to create texture sampler!");
     }
-
+    
+    //----------------------------------------------------------------------------
+    void loadGrid()
+    {
+        std::unordered_map<Vertex, uint32_t> uniqueVertices{};
+        std::vector<Vertex> gridVertices =
+            {
+            {{-100.0f, -100.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+            {{100.0f, -100.0f, 0.0}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+            {{100.0f, 100.0f, 0.0}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+            {{-100.0f, 100.0f, 0.0}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
+            };
+        const std::vector<uint16_t> gridIndices =
+        {
+            0, 1, 2, 2, 3, 0
+        };
+        for (const auto& vertex : gridVertices)
+        {
+            vertices.push_back(vertex);
+        }
+        for (const auto& index : gridIndices)
+        {
+            indices.push_back(gridIndices[index]);
+        }
+    }
+    
     //----------------------------------------------------------------------------
     void loadModel()
     {
@@ -1153,7 +1193,6 @@ private:
                 indices.push_back(uniqueVertices[vertex]);
             }
         }
-        
     }
 
     //----------------------------------------------------------------------------
@@ -1335,7 +1374,7 @@ private:
 
         // The order of clearValues should be identical to the order of attachments.
         std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+        clearValues[0].color = {{0.12f, 0.12f, 0.12f, 1.0f}};
         clearValues[1].depthStencil = {1.0f, 0};
 
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
@@ -1413,12 +1452,12 @@ private:
     }
 
     //----------------------------------------------------------------------------
-    void updateUniformBufferCamera(uint32_t currentImage, float deltaTime)
+    void updateUniformBufferCamera(uint32_t currentImage, float deltaTime, int width, int height)
     {
         UniformBufferObject ubo{};
         ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.view = sceneCamera.recalculateView(deltaTime);
-        ubo.proj = sceneCamera.perspectiveProjection(swapChainExtent.width, swapChainExtent.height);
+        ubo.proj = sceneCamera.perspectiveProjection(width, height);
         ubo.proj[1][1] *= -1;
 
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
