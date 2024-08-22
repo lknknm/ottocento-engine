@@ -212,8 +212,15 @@ private:
     
     VkRenderPass renderPass;
     VkDescriptorSetLayout descriptorSetLayout;
+    std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
     VkPipelineLayout pipelineLayout;
-    VkPipeline graphicsPipeline;
+    
+    struct
+    {
+        VkPipeline grid;
+        VkPipeline object;
+    } graphicsPipelines;
+    
     std::vector<VkFramebuffer> swapChainFramebuffers;
     VkCommandPool commandPool;
     std::vector<VkCommandBuffer> commandBuffers;
@@ -336,7 +343,8 @@ private:
         createSwapChain();
         createImageViews();
         createRenderPass();
-        createDescriptorSetLayout();
+        createObjectDescriptorSetLayout();
+        createGridDescriptorSetLayout();
         createGraphicsPipeline();
         createCommandPool();
         createColorResources();
@@ -345,7 +353,7 @@ private:
         createTextureImage();
         createTextureImageView();
         createTextureSampler();
-        loadGrid();
+        // loadGrid();
         loadModel();
         createVertexBuffer();
         createIndexBuffer();
@@ -407,7 +415,10 @@ private:
         }
         
         vkDestroyDescriptorPool(device, descriptorPool, nullptr);
-        vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+        for (const auto& descSet : descriptorSetLayouts)
+        {
+            vkDestroyDescriptorSetLayout(device, descSet, nullptr);
+        }
         
         vkDestroyBuffer(device, indexBuffer, nullptr);
         vkFreeMemory(device, indexBufferMemory, nullptr);
@@ -424,7 +435,7 @@ private:
         
         vkDestroyCommandPool(device, commandPool, nullptr);
         
-        vkDestroyPipeline(device, graphicsPipeline, nullptr);
+        vkDestroyPipeline(device, graphicsPipelines.object, nullptr);
         vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
         vkDestroyRenderPass(device, renderPass, nullptr);
         
@@ -772,7 +783,7 @@ private:
     //----------------------------------------------------------------------------
     // A descriptor set specifies the actual buffer or image resources that will be bound to the descriptors,
     // just like a framebuffer specifies the actual image views to bind to render pass attachments.
-    void createDescriptorSetLayout()
+    void createObjectDescriptorSetLayout()
     {
         VkDescriptorSetLayoutBinding uboLayoutBinding{};
         uboLayoutBinding.binding = 0;
@@ -789,14 +800,40 @@ private:
         samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
         
         std::array<VkDescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
-        VkDescriptorSetLayoutCreateInfo layoutInfo{};
-        layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-        layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-        layoutInfo.pBindings = bindings.data();
-
-        if(vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
-            throw std::runtime_error("Failed to create descriptor set layout!");
+        VkDescriptorSetLayoutCreateInfo objectLayoutInfo{};
+        objectLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        objectLayoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+        objectLayoutInfo.pBindings = bindings.data();
         
+        VkDescriptorSetLayout objectDescriptorSetLayout;
+        if(vkCreateDescriptorSetLayout(device, &objectLayoutInfo, nullptr, &objectDescriptorSetLayout) != VK_SUCCESS)
+            throw std::runtime_error("Failed to create descriptor set layout!");
+        descriptorSetLayouts.push_back(objectDescriptorSetLayout);
+        std::cout << "descriptorSetLayouts Size: " << descriptorSetLayouts.size() << std::endl;
+    }
+
+    //----------------------------------------------------------------------------
+    // Separate Grid DescriptorSetLayout to render the grid with a procedural shader.
+    void createGridDescriptorSetLayout()
+    {
+        VkDescriptorSetLayoutBinding gridBinding{};
+        gridBinding.binding = 0;
+        gridBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        gridBinding.descriptorCount = 1;
+        gridBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        
+        const std::array<VkDescriptorSetLayoutBinding, 1> bindings = {gridBinding};
+        
+        VkDescriptorSetLayoutCreateInfo gridLayoutInfo{};
+        gridLayoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        gridLayoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+        gridLayoutInfo.pBindings = bindings.data();
+
+        VkDescriptorSetLayout gridDescriptorSetLayout;
+        if(vkCreateDescriptorSetLayout(device, &gridLayoutInfo, nullptr, &gridDescriptorSetLayout) != VK_SUCCESS)
+            throw std::runtime_error("Failed to create descriptor set layout!");
+        descriptorSetLayouts.push_back(gridDescriptorSetLayout);
+        std::cout << "descriptorSetLayouts Size: " << descriptorSetLayouts.size() << std::endl;
     }
     
     //----------------------------------------------------------------------------
@@ -805,25 +842,31 @@ private:
     // Rasterization (f) > Fragment Shader (p) > Colour Blending (f) > Framebuffer
     void createGraphicsPipeline()
     {
-        auto vertShaderCode = readFile("src/shaders/vert.spv");
-        auto fragShaderCode = readFile("src/shaders/frag.spv");
+        auto vertShaderCode     = readFile("src/shaders/vert.spv");
+        auto fragShaderCode     = readFile("src/shaders/frag.spv");
+        auto gridVertShaderCode = readFile("src/shaders/gridVert.spv");
+        auto gridFragShaderCode = readFile("src/shaders/gridFrag.spv");
 
-        VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
-        VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
+        VkShaderModule vertShaderModule     = createShaderModule(vertShaderCode);
+        VkShaderModule fragShaderModule     = createShaderModule(fragShaderCode);
+        VkShaderModule gridVertShaderModule = createShaderModule(gridVertShaderCode);
+        VkShaderModule gridFragShaderModule = createShaderModule(gridFragShaderCode);
 
         VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
-        vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-        vertShaderStageInfo.module = vertShaderModule;
-        vertShaderStageInfo.pName = "main";
+        vertShaderStageInfo.sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        vertShaderStageInfo.stage   = VK_SHADER_STAGE_VERTEX_BIT;
+        vertShaderStageInfo.module  = vertShaderModule;
+        vertShaderStageInfo.pName   = "main";
 
         VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
-        fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-        fragShaderStageInfo.module = fragShaderModule;
-        fragShaderStageInfo.pName = "main";
-
-        VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+        fragShaderStageInfo.sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        fragShaderStageInfo.stage   = VK_SHADER_STAGE_FRAGMENT_BIT;
+        fragShaderStageInfo.module  = fragShaderModule;
+        fragShaderStageInfo.pName   = "main";
+        
+        std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages{};
+        shaderStages[0] = vertShaderStageInfo;
+        shaderStages[1] = fragShaderStageInfo;
 
         // Bindings: spacing between data and whether the data is per-vertex or per-instance.
         // Attribute descriptions: type of the attributes passed to the vertex shader, which binding to load
@@ -858,9 +901,6 @@ private:
         rasterizer.cullMode = VK_CULL_MODE_NONE;
         rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
         rasterizer.depthBiasEnable = VK_FALSE;
-        // rasterizer.depthBiasConstantFactor = 0.0f; // Optional
-        // rasterizer.depthBiasClamp = 0.0f; // Optional
-        // rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
 
         VkPipelineMultisampleStateCreateInfo multisampling{};
         multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -872,16 +912,11 @@ private:
         multisampling.alphaToOneEnable = VK_FALSE; // Optional
 
         VkPipelineDepthStencilStateCreateInfo depthStencil{};
-        depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-        depthStencil.depthTestEnable = VK_TRUE;
-        depthStencil.depthWriteEnable = VK_TRUE;
-        depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-        depthStencil.depthBoundsTestEnable = VK_FALSE;
-        // depthStencil.minDepthBounds = 0.0f; // Optional
-        // depthStencil.maxDepthBounds = 1.0f; // Optional
-        // depthStencil.stencilTestEnable = VK_FALSE;
-        // depthStencil.front = {}; // Optional
-        // depthStencil.back = {}; // Optional
+        depthStencil.sType                  = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+        depthStencil.depthTestEnable        = VK_TRUE;
+        depthStencil.depthWriteEnable       = VK_TRUE;
+        depthStencil.depthCompareOp         = VK_COMPARE_OP_LESS;
+        depthStencil.depthBoundsTestEnable  = VK_FALSE;
         
         VkPipelineColorBlendAttachmentState colorBlendAttachment{};
         colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -906,29 +941,22 @@ private:
 
         std::vector<VkDynamicState> dynamicStates = {
             VK_DYNAMIC_STATE_VIEWPORT,
-            VK_DYNAMIC_STATE_SCISSOR
+            VK_DYNAMIC_STATE_SCISSOR,
         };
 
         VkPipelineDynamicStateCreateInfo dynamicState{};
         dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
         dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
         dynamicState.pDynamicStates = dynamicStates.data();
-
-        VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-        pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipelineLayoutInfo.setLayoutCount = 1;
-        pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
-        if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
-            throw std::runtime_error("failed to create pipeline layout!");
-        else
-            std::cout << "Pipeline Layout successfully created." << std::endl;
-
+        
+        otCreatePipelineLayout();
+        
         // Populate the Graphics Pipeline Info struct.
         // First referencing the array of VkPipelineShaderStageCreateInfo structs.
         VkGraphicsPipelineCreateInfo pipelineInfo{};
         pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
         pipelineInfo.stageCount = 2;
-        pipelineInfo.pStages = shaderStages;
+        pipelineInfo.pStages = shaderStages.data();
         pipelineInfo.pVertexInputState = &vertexInputInfo;
         pipelineInfo.pInputAssemblyState = &inputAssembly;
         pipelineInfo.pViewportState = &viewportState;
@@ -948,8 +976,34 @@ private:
                                     1,
                                     &pipelineInfo,
                                     nullptr,
-                                    &graphicsPipeline) != VK_SUCCESS)
+                                    &graphicsPipelines.object) != VK_SUCCESS)
             throw std::runtime_error("failed to create graphics pipeline!");
+        else { std::cout << "Object Pipeline Created" << std::endl; }
+        
+        VkPipelineShaderStageCreateInfo gridVertShaderStageInfo{};
+        vertShaderStageInfo.sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        vertShaderStageInfo.stage   = VK_SHADER_STAGE_VERTEX_BIT;
+        vertShaderStageInfo.module  = gridVertShaderModule;
+        vertShaderStageInfo.pName   = "main";
+        
+        VkPipelineShaderStageCreateInfo gridFragShaderStageInfo{};
+        fragShaderStageInfo.sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        fragShaderStageInfo.stage   = VK_SHADER_STAGE_FRAGMENT_BIT;
+        fragShaderStageInfo.module  = gridFragShaderModule;
+        fragShaderStageInfo.pName   = "main";
+
+        shaderStages[0] = gridVertShaderStageInfo;
+        shaderStages[1] = gridFragShaderStageInfo;
+        
+        if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE,
+                                   1,
+                                   &pipelineInfo,
+                                   nullptr,
+                                   &graphicsPipelines.grid) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create graphics pipeline!");
+        }
+        else { std::cout << "Grid Pipeline Created" << std::endl; }
         
         // Shader modules are just a thin wrapper around the shader
         // bytecode that we've previously loaded from a file and the functions defined in it.
@@ -957,8 +1011,24 @@ private:
         // as soon as pipeline creation is finished
         vkDestroyShaderModule(device, fragShaderModule, nullptr);
         vkDestroyShaderModule(device, vertShaderModule, nullptr);
+        vkDestroyShaderModule(device, gridVertShaderModule, nullptr);
+        vkDestroyShaderModule(device, gridFragShaderModule, nullptr);
     }
-
+    
+    //----------------------------------------------------------------------------
+    void otCreatePipelineLayout()
+    {
+        VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+        pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
+        pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
+        
+        if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
+            throw std::runtime_error("failed to create pipeline layout!");
+        else
+            std::cout << "Pipeline Layout successfully created." << std::endl;
+    }
+    
     //----------------------------------------------------------------------------
     void createFramebuffers()
     {
@@ -1279,26 +1349,31 @@ private:
     //----------------------------------------------------------------------------
     void createDescriptorPool()
     {
-        std::array<VkDescriptorPoolSize, 2> poolSizes{};
+        std::array<VkDescriptorPoolSize, 4> poolSizes{};
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
         poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSizes[2].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        poolSizes[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        poolSizes[3].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
-        VkDescriptorPoolCreateInfo poolInfo{};
-        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-        poolInfo.pPoolSizes = poolSizes.data();
-        poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        VkDescriptorPoolCreateInfo scenePoolInfo{};
+        scenePoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        scenePoolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+        scenePoolInfo.pPoolSizes = poolSizes.data();
+        scenePoolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
-        if(vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
+        if(vkCreateDescriptorPool(device, &scenePoolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
             throw std::runtime_error("Failed to Create Descriptor Pool!");
     }
 
     //----------------------------------------------------------------------------
     void createDescriptorSets()
     {
-        std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
+        std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayouts[0]);
+        layouts.push_back(descriptorSetLayouts[1]);
         VkDescriptorSetAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         allocInfo.descriptorPool = descriptorPool;
@@ -1385,7 +1460,8 @@ private:
         renderPassInfo.pClearValues = clearValues.data();
 
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelines.object);
+        
             VkViewport viewport{};
             viewport.x = 0.0f;
             viewport.y = 0.0f;
