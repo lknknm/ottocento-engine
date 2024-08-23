@@ -68,6 +68,12 @@ public:
         return glm::perspective(glm::radians(VerticalFOV), width / (float) height, NearClip, FarClip);
     }
 
+    //----------------------------------------------------------------------------
+    glm::mat4 inverseProjection(glm::mat4 perspectiveProjection, glm::mat4 view)
+    {
+        return glm::inverse(perspectiveProjection * view);
+    }
+
     
 //----------------------------------------------------------------------------
 private:

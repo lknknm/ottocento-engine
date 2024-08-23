@@ -169,8 +169,7 @@ struct UniformBufferObject {
     alignas(16) glm::mat4 model;
     alignas(16) glm::mat4 view;
     alignas(16) glm::mat4 proj;
-    alignas(16) glm::vec4 lightDirs[2];
-    alignas(16) glm::vec4 lightColors[2];
+    alignas(16) glm::mat4 viewProjectionInverse;
 };
 
 class HelloTriangleApplication
@@ -873,10 +872,8 @@ private:
         // and which offset.
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-
         auto bindingDescription = Vertex::getBindingDescription();
         auto attributeDescriptions = Vertex::getAttributeDescriptions();
-        
         vertexInputInfo.vertexBindingDescriptionCount = 1;
         vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
         vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
@@ -981,19 +978,21 @@ private:
         else { std::cout << "Object Pipeline Created" << std::endl; }
         
         VkPipelineShaderStageCreateInfo gridVertShaderStageInfo{};
-        vertShaderStageInfo.sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        vertShaderStageInfo.stage   = VK_SHADER_STAGE_VERTEX_BIT;
-        vertShaderStageInfo.module  = gridVertShaderModule;
-        vertShaderStageInfo.pName   = "main";
+        gridVertShaderStageInfo.sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        gridVertShaderStageInfo.stage   = VK_SHADER_STAGE_VERTEX_BIT;
+        gridVertShaderStageInfo.module  = gridVertShaderModule;
+        gridVertShaderStageInfo.pName   = "main";
         
         VkPipelineShaderStageCreateInfo gridFragShaderStageInfo{};
-        fragShaderStageInfo.sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-        fragShaderStageInfo.stage   = VK_SHADER_STAGE_FRAGMENT_BIT;
-        fragShaderStageInfo.module  = gridFragShaderModule;
-        fragShaderStageInfo.pName   = "main";
+        gridFragShaderStageInfo.sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        gridFragShaderStageInfo.stage   = VK_SHADER_STAGE_FRAGMENT_BIT;
+        gridFragShaderStageInfo.module  = gridFragShaderModule;
+        gridFragShaderStageInfo.pName   = "main";
 
         shaderStages[0] = gridVertShaderStageInfo;
         shaderStages[1] = gridFragShaderStageInfo;
+
+        pipelineInfo.pStages = shaderStages.data();
         
         if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE,
                                    1,
@@ -1025,8 +1024,6 @@ private:
         
         if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
             throw std::runtime_error("failed to create pipeline layout!");
-        else
-            std::cout << "Pipeline Layout successfully created." << std::endl;
     }
     
     //----------------------------------------------------------------------------
@@ -1460,31 +1457,33 @@ private:
         renderPassInfo.pClearValues = clearValues.data();
 
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelines.object);
         
             VkViewport viewport{};
-            viewport.x = 0.0f;
-            viewport.y = 0.0f;
-            viewport.width = static_cast<float>(swapChainExtent.width);
-            viewport.height = static_cast<float>(swapChainExtent.height);
-            viewport.minDepth = 0.0f;
-            viewport.maxDepth = 1.0f;
+            viewport.x          = 0.0f;
+            viewport.y          = 0.0f;
+            viewport.width      = static_cast<float>(swapChainExtent.width);
+            viewport.height     = static_cast<float>(swapChainExtent.height);
+            viewport.minDepth   = 0.0f;
+            viewport.maxDepth   = 1.0f;
             vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-
+        
             VkRect2D scissor{};
-            scissor.offset = {0, 0};
-            scissor.extent = swapChainExtent;
+            scissor.offset      = {0, 0};
+            scissor.extent      = swapChainExtent;
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
+            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+                                    0, 1, &descriptorSets[currentFrame], 0, nullptr);
+        
+            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelines.object);
             VkBuffer vertexBuffers[] = {vertexBuffer};
             VkDeviceSize offsets[] = {0};
             vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
             vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-                                    0, 1, &descriptorSets[currentFrame], 0, nullptr);
-
             vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+        
+            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelines.grid);
+            vkCmdDraw(commandBuffer, 6, 1, 0, 0);
         vkCmdEndRenderPass(commandBuffer);
 
         if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
@@ -1538,6 +1537,7 @@ private:
         ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.view = sceneCamera.recalculateView(deltaTime);
         ubo.proj = sceneCamera.perspectiveProjection(width, height);
+        ubo.viewProjectionInverse = sceneCamera.inverseProjection(ubo.proj, ubo.view);
         ubo.proj[1][1] *= -1;
 
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
