@@ -1544,7 +1544,7 @@ private:
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
         
         UniformBufferObject ubo{};
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.f), glm::vec3(0.0f, 0.0f, 1.0f));
         //ubo.view = sceneCamera.recalculateView();
         ubo.proj = sceneCamera.perspectiveProjection(swapChainExtent.width, swapChainExtent.height);
         ubo.proj[1][1] *= -1;
@@ -1560,7 +1560,7 @@ private:
         float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
         
         UniformBufferObject ubo{};
-        ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(270.f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.view = sceneCamera.recalculateView(deltaTime);
         ubo.proj = sceneCamera.perspectiveProjection(width, height);
         ubo.viewProjectionInverse = sceneCamera.inverseProjection(ubo.proj, ubo.view);

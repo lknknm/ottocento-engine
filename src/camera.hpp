@@ -27,6 +27,8 @@ public:
         if (!Input::isMouseButtonDown(windowHandle, GLFW_MOUSE_BUTTON_RIGHT))
         {
             glfwSetInputMode(windowHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            if (windowHandle != nullptr && Input::isKeyDown(windowHandle, GLFW_KEY_ENTER))
+                resetCamera(deltaTime);
             return glm::lookAt(EyePosition, CenterPosition, upVector);
         }
         glfwSetInputMode(windowHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL + 2);
@@ -97,6 +99,12 @@ private:
     glm::mat4 InverseProjection{ 1.0f };
     glm::mat4 InverseView{ 1.0f };
 
+    //----------------------------------------------------------------------------
+    void resetCamera(float deltaTime)
+    {
+        CenterPosition = glm::vec3(0.f);
+        EyePosition    = glm::vec3(2.0f, -2.0f, 2.0f);
+    }
     
     //----------------------------------------------------------------------------
     void moveUpDirection(float deltaTime)
