@@ -87,7 +87,7 @@ private:
     glm::vec2 lastMousePosition{ 0.0f, 0.0f };
     
     glm::vec3 CenterPosition{0.0f, 0.0f, 0.0f};
-    glm::vec3 EyePosition{2.0f, 2.0f, 2.0f};
+    glm::vec3 EyePosition{2.0f, -2.0f, 2.0f};
     glm::vec3 rightVector{0.0f, 0.0f, 0.0f};
     glm::vec3 upVector{0.0f, 0.0f, 1.0f};
     glm::vec3 forwardDirection{};
