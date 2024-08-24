@@ -11,7 +11,7 @@ const float subcellSize             = 0.1f;
 const float halfsubcellSize         = subcellSize * 0.5f;
 
 const float minFadeDistance = gridSize * 0.05f;
-const float maxFadeDistance = 25.0f;
+const float maxFadeDistance = 15.0f;
 float opacityFalloff;
 
 const vec3 cameraPosition           = vec3(1.0f); // Leaving this as is for now. Still have to bind it to host.
@@ -27,14 +27,11 @@ vec2  distanceToCell    = abs(cellCoords);
 vec2  distanceToSubcell = abs(subcellCoords);
 
 void main() {
-    float dx = fwidth(cellCoords.x);
-    float dy = fwidth(cellCoords.y);
+    vec2 dd = fwidth(cellCoords);
+    vec2 lineAA = dd * 1.5;
     
-    vec2 adjustedCellLineThickness    = vec2(0.5f * (cellLineThickness.x + dx), 0.5f * (cellLineThickness.y + dy));
-    vec2 adjustedSubcellLineThickness = vec2(0.5f * (subcellLineThickness.x + dx), 0.5f * (subcellLineThickness.y + dy));
-    
-    float distanceToCamera = length(cellCoords - cameraPosition.xz);
-    opacityFalloff = smoothstep(1.0f, 0.0f, distanceToCamera / maxFadeDistance);
+    vec2 adjustedCellLineThickness    = vec2(0.5f * (cellLineThickness.x + dd.x), 0.5f * (cellLineThickness.y + dd.y));
+    vec2 adjustedSubcellLineThickness = vec2(0.5f * (subcellLineThickness.x + dd.x), 0.5f * (subcellLineThickness.y + dd.y));
     
     outColor = vec4(1.0f, 0.0f, 0.0f, 0.0f);
     if (distanceToSubcell.x < adjustedSubcellLineThickness.x * 0.5 || distanceToSubcell.y < adjustedSubcellLineThickness.y * 0.5 )
@@ -45,4 +42,9 @@ void main() {
         outColor = vec4(0.0f, 1.0f, 0.0f, 0.25f);
     if (fragCoords.x > -adjustedCellLineThickness.x * 0.5 && fragCoords.x < adjustedCellLineThickness.x * 0.5 )
         outColor = vec4(1.0f, 0.0f, 0.0f, 0.25f);
+    
+    float distanceToCamera = length(fragCoords - cameraPosition.xz);
+    opacityFalloff = smoothstep(1.5f, 0.0f, distanceToCamera / maxFadeDistance);
+    
+    outColor *= opacityFalloff;
 }
