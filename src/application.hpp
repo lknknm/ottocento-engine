@@ -59,8 +59,8 @@ const uint32_t WIN_WIDTH = 1280;
 const uint32_t WIN_HEIGHT = 720;
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
-const std::string MODEL_PATH = "./src/models/viking_room.obj";
-const std::string TEXTURE_PATH = "./src/textures/viking_room.png";
+const std::string MODEL_PATH = "C:/Users/Lucas/Desktop/SantAntiniDelAbad_Model.obj";
+const std::string TEXTURE_PATH = "C:/Users/Lucas/Desktop/SantAntiniDelAbad_Texture.png";
 
 const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
@@ -327,7 +327,7 @@ private:
         // the darkmode right when the GLFW window is initiated.
         glfwIconifyWindow(window);
         if (glfwGetWindowAttrib(window, GLFW_ICONIFIED))
-            glfwRestoreWindow(window);
+            glfwRestoreWindow(window); glfwMaximizeWindow(window);
     }
 #endif
     
@@ -352,7 +352,6 @@ private:
         createTextureImage();
         createTextureImageView();
         createTextureSampler();
-        // loadGrid();
         loadModel();
         createVertexBuffer();
         createIndexBuffer();
