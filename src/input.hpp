@@ -5,10 +5,17 @@
 namespace Input
 {
     //----------------------------------------------------------------------------
-    bool isKeyDown(GLFWwindow* windowHandle, int keyCode)
+    bool isKeyDownRepeat(GLFWwindow* windowHandle, int keyCode)
     {
         int state = glfwGetKey(windowHandle, keyCode);
         return state == GLFW_PRESS || state == GLFW_REPEAT;
+    }
+
+    //----------------------------------------------------------------------------
+    bool isKeyDown(GLFWwindow* windowHandle, int keyCode)
+    {
+        int state = glfwGetKey(windowHandle, keyCode);
+        return state == GLFW_PRESS;
     }
 
     //----------------------------------------------------------------------------
