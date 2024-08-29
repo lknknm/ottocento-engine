@@ -12,7 +12,6 @@ layout(binding = 0) uniform UniformBufferObject {
 } ubo;
 
 const float maxFadeDistance = 50.0f;
-
 float opacityFalloff;
 
 float rand(vec2 co) {
@@ -22,7 +21,6 @@ float rand(vec2 co) {
 void main() {
     vec2 coord = fragCoords.xy;
     
-
     // Compute anti-aliased world-space grid lines
     vec2 grid = abs(fract(coord - 0.5) - 0.5) / fwidth(coord);
     float line = min(grid.x, grid.y);
