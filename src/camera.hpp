@@ -39,6 +39,13 @@ public:
                 if (Input::isKeyDown(windowHandle, GLFW_KEY_KP_3))
                     orbitStartAnimation(ViewType::VT_RIGHT);
                 animateResetUpdate();
+
+                if (Input::yoffsetCallback > 0)
+                    zoomForward(Input::yoffsetCallback); 
+                if (Input::yoffsetCallback < 0)
+                    zoomBack(Input::yoffsetCallback); 
+                Input::yoffsetCallback = 0;
+                
                 return glm::lookAt(EyePosition, CenterPosition, upVector);
             }
             glfwSetInputMode(windowHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL + 2);
@@ -69,7 +76,7 @@ public:
         }
         return glm::lookAt(EyePosition, CenterPosition, upVector);
     }
-    
+        
 //----------------------------------------------------------------------------
 // Projection and Direction functions
 //----------------------------------------------------------------------------
@@ -102,6 +109,11 @@ public:
     glm::vec3 getEnvironmentUpVector()
     {
         return upVector;
+    }
+
+    Camera getCurrentCameraObject()
+    {
+        return *this;
     }
     
     
@@ -260,5 +272,17 @@ private:
     {
         CenterPosition -= rightVector * speed * deltaTime;
         EyePosition -= rightVector * speed * deltaTime;
+    }
+
+    //----------------------------------------------------------------------------
+    void zoomForward(double yoffset)
+    {
+        EyePosition += forwardDirection * 0.2f;
+    }
+
+    //----------------------------------------------------------------------------
+    void zoomBack(double yoffset)
+    {
+        EyePosition -= forwardDirection * 0.2f;
     }
 };

@@ -7,6 +7,7 @@
 #define GLFW_INCLUDE_VULKAN
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#include "input.hpp"
 #include <GLFW/glfw3.h>
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
@@ -289,6 +290,7 @@ private:
         glfwSetWindowUserPointer(window, this);
         glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
         glfwSetWindowRefreshCallback(window, windowResizeCallback);
+        glfwSetScrollCallback(window, Input::scrollCallback);
         viewportCamera.windowHandle = window;
 
         icon.pixels = stbi_load("src/icon.png", &icon.width, &icon.height, 0, 4);
@@ -1094,7 +1096,7 @@ private:
         app->updateUniformBufferCamera(app->currentFrame, 1, app->swapChainExtent.width, app->swapChainExtent.height);
         app->drawFrame();
     }
-
+    
     //----------------------------------------------------------------------------
     void createCommandPool()
     {
