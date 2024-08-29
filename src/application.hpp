@@ -59,8 +59,8 @@ const uint32_t WIN_WIDTH = 1280;
 const uint32_t WIN_HEIGHT = 720;
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
-const std::string MODEL_PATH = "C:/Users/Lucas/Desktop/SantAntiniDelAbad_Model.obj";
-const std::string TEXTURE_PATH = "C:/Users/Lucas/Desktop/SantAntiniDelAbad_Texture.png";
+const std::string MODEL_PATH = "./src/models/sandoy_model.obj";
+const std::string TEXTURE_PATH = "./src/textures/sandoy_model.png";
 
 const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
@@ -96,6 +96,8 @@ inline void DestroyDebugUtilsMessengerEXT(VkInstance instance,
     }
 }
 
+//----------------------------------------------------------------------------
+// structs declarations
 struct QueueFamilyIndices
 {
     std::optional<uint32_t> graphicsFamily;
@@ -1214,35 +1216,6 @@ private:
     }
     
     //----------------------------------------------------------------------------
-    void loadGrid()
-    {
-        std::unordered_map<Vertex, uint32_t> uniqueVertices{};
-        std::vector<Vertex> gridVertices =
-            {
-            {{-5.0f, -5.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
-            {{5.0f, -5.0f, 0.0}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
-            {{5.0f, 5.0f, 0.0}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
-            {{-5.0f, 5.0f, 0.0}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}},
-            };
-        const std::vector<uint16_t> gridIndices =
-        {
-            0, 1, 2, 2, 3, 0
-        };
-        for (const auto& vertex : gridVertices)
-        {
-            if (uniqueVertices.count(vertex) == 0)
-            {
-                uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
-                vertices.push_back(vertex);
-            }
-        }
-        for (const auto& index : gridIndices)
-        {
-            indices.push_back(index);
-        }
-    }
-    
-    //----------------------------------------------------------------------------
     void loadModel()
     {
         tinyobj::attrib_t attrib;
@@ -1470,7 +1443,7 @@ private:
 
         // The order of clearValues should be identical to the order of attachments.
         std::array<VkClearValue, 2> clearValues{};
-        clearValues[0].color = {{0.12f, 0.12f, 0.12f, 1.0f}};
+        clearValues[0].color = {{0.015f, 0.015f, 0.015f, 1.0f}};
         clearValues[1].depthStencil = {1.0f, 0};
 
         renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
@@ -1813,7 +1786,7 @@ private:
     {
         for (const auto& availableFormat : availableFormats)
         {
-            if (availableFormat.format == VK_FORMAT_B8G8R8_SRGB
+            if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB
                 && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
                 return availableFormat;
         }

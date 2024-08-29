@@ -1,11 +1,11 @@
 #version 450
 
-vec2 gridPlane[6] = vec2[]( vec2(-150.0f, -150.0f),
-                            vec2(150.0f, -150.0f),
-                            vec2(150.0f, 150.0f),
-                            vec2(-150.0f, -150.0f),
-                            vec2(-150.0f, 150.0f),
-                            vec2(150.0f, 150.0f)
+vec2 gridPlane[6] = vec2[]( vec2(-500.0f, -500.0f),
+                            vec2(500.0f, -500.0f),
+                            vec2(500.0f, 500.0f),
+                            vec2(-500.0f, -500.0f),
+                            vec2(-500.0f, 500.0f),
+                            vec2(500.0f, 500.0f)
                             );
 
 layout(binding = 0) uniform UniformBufferObject {

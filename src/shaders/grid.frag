@@ -11,7 +11,7 @@ layout(binding = 0) uniform UniformBufferObject {
     vec3 cameraPos;
 } ubo;
 
-const float maxFadeDistance = 50.0f;
+const float maxFadeDistance = 100.0f;
 float opacityFalloff;
 
 float rand(vec2 co) {
@@ -26,20 +26,21 @@ void main() {
     float line = min(grid.x, grid.y);
 
     // Just visualize the grid lines directly
-    float color = 1.0 - min(line, 1.0);
-    outColor = vec4(vec3(color), 0.25);
+    float color = (1.0 - min(line, 1.0)) * 0.2f;
+    outColor = vec4(vec3(color), 0.2f);
     
+
     // Draw the X and Y axis on specific colors.
-    if (coord.y > -line * 0.1 && coord.y < line * 0.1 )
-    {
-        outColor.x = color;
-        outColor.y = 0.0f;
-        outColor.z = 0.0f;
-    }
-    if (coord.x > -line * 0.1f && coord.x < line * 0.1f )
+    if (coord.y > -line * 0.2f && coord.y < line * 0.2f )
     {
         outColor.x = 0.0f;
-        outColor.y = color;
+        outColor.y = color * 2.f;
+        outColor.z = 0.0f;
+    }
+    if (coord.x > -line * 0.2f && coord.x < line * 0.2f )
+    {
+        outColor.x = color * 2.f;
+        outColor.y = 0.0f;
         outColor.z = 0.0f;
     }
 
@@ -47,7 +48,6 @@ void main() {
     // I've added the rand factor to the falloff smoothstep to add some noise and minimize color banding.
     float distanceToCamera = length(fragCoords - ubo.cameraPos.xy);
     float sqDist = 2.0 * 2.0 * dot(coord * 0.5f, coord * 0.5f);
-    opacityFalloff = smoothstep(1.5f, 0.0f, distanceToCamera / maxFadeDistance) * clamp(rand(fragCoords.xy), 0.7f, 1.0f);
-
+    opacityFalloff = smoothstep(1.5f, 0.0f, distanceToCamera / maxFadeDistance) * clamp(rand(fragCoords.xy), 0.5f, 1.0f);
     outColor.w *= opacityFalloff;
 }

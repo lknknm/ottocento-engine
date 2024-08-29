@@ -113,7 +113,7 @@ private:
     
     float VerticalFOV = 38.0f;
     float NearClip = 0.1f;
-    float FarClip = 100.0f;
+    float FarClip = 1000.0f;
     float speed = 2.0f;
     float rotationSpeed = 0.3f;
     
