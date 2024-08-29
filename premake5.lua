@@ -30,6 +30,7 @@ project "vulkan-tutorial"
    -- Refer to your distro GLFW and VulkanSDK packages for more info.
     if os.host() == "linux" then
         system "linux"
+		  enablewarnings { "all", "extra", "shadow", "cast-align", "null-dereference" }
         GLFW = os.getenv("GLFW")
         includedirs { "%{GLFW}/include", "%{VULKAN_SDK}/Include", "external/glm", "external/stb", "external/imgui" }
         libdirs { "%{GLFW}/lib", "%{VULKAN_SDK}/Lib" }
@@ -39,6 +40,7 @@ project "vulkan-tutorial"
     end
 
    if os.host() == "macosx" then
+      enablewarnings { "all", "extra", "shadow", "cast-align", "null-dereference" }
       -- Assume glfw and vulkan are already in available in the environment
       includedirs { "external/glm", "external/stb", "external/imgui" }
       -- libdirs { "/usr/local/lib" }
