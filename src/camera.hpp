@@ -35,29 +35,12 @@ public:
                 if (Input::isKeyDown(windowHandle, GLFW_KEY_KP_0))
                     resetToInitialPos();
                 if (Input::isKeyDown(windowHandle, GLFW_KEY_KP_1))
-                {
-                   SetViewOrbit(ViewType::VT_FRONT);
-                   orbitStartAnimation();
-                }
+                   orbitStartAnimation(ViewType::VT_FRONT);
                 if (Input::isKeyDown(windowHandle, GLFW_KEY_KP_3))
-                {
-                    SetViewOrbit(ViewType::VT_RIGHT);
-                    orbitStartAnimation();
-                }
-                if (Input::isKeyDown(windowHandle, GLFW_KEY_KP_7))
-                {
-                    SetViewOrbit(ViewType::VT_TOP);
-                    orbitStartAnimation();
-                }
-                if (Input::isKeyDown(windowHandle, GLFW_KEY_KP_9))
-                {
-                    SetViewOrbit(ViewType::VT_ISOMETRIC);
-                    orbitStartAnimation();
-                }
+                    orbitStartAnimation(ViewType::VT_RIGHT);
                 animateResetUpdate();
                 return glm::lookAt(EyePosition, CenterPosition, upVector);
             }
-            
             glfwSetInputMode(windowHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL + 2);
             
             if (Input::isKeyDownRepeat(windowHandle, GLFW_KEY_E))
@@ -92,9 +75,9 @@ public:
 //----------------------------------------------------------------------------
     
     //----------------------------------------------------------------------------
-    glm::mat4 perspectiveProjection(uint32_t width, uint32_t height)
+    glm::mat4 perspectiveProjection(float aspectRatio)
     {
-        return glm::perspective(glm::radians(VerticalFOV), width / (float) height, NearClip, FarClip);
+        return glm::perspective(glm::radians(VerticalFOV), aspectRatio, NearClip, FarClip);
     }
 
     //----------------------------------------------------------------------------
@@ -114,26 +97,31 @@ public:
     {
         return CenterPosition;
     }
+
+    //----------------------------------------------------------------------------
+    glm::vec3 getEnvironmentUpVector()
+    {
+        return upVector;
+    }
+    
     
 //----------------------------------------------------------------------------
 private:
 //----------------------------------------------------------------------------
+    double resetAnimationStart = 0;
+    double orbitAnimationStart = 0;
+    
     float VerticalFOV = 38.0f;
     float NearClip = 0.1f;
     float FarClip = 100.0f;
     float speed = 2.0f;
     float rotationSpeed = 0.3f;
-    float resetSpeed = rotationSpeed * 0.2;
-    double resetAnimationStart = 0;
-    double orbitAnimationStart = 0;
-
+    
     glm::vec2 lastMousePosition{ 0.0f, 0.0f };
     
     glm::vec3 CenterPosition{0.0f, 0.0f, 0.0f};
-    glm::vec3 initialCenterPosition = CenterPosition;
     
     glm::vec3 EyePosition{5.0f, -5.0f, 5.0f};
-    glm::vec3 initialEyePosition = EyePosition;
     glm::vec3 startEye, startCenter, targetEyePosition, targetCenterPosition;
     
     glm::vec3 rightVector{0.0f, 0.0f, 0.0f};
@@ -144,7 +132,7 @@ private:
     glm::mat4 View{ 1.0f };
     glm::mat4 InverseProjection{ 1.0f };
     glm::mat4 InverseView{ 1.0f };
-
+    
     //----------------------------------------------------------------------------
     enum class ViewType
     {
@@ -154,13 +142,13 @@ private:
         VT_TOP,
         VT_ISOMETRIC
     };
-    void SetViewOrbit(ViewType view)
-    {        
+    glm::vec3 SetViewOrbit(ViewType view)
+    {
         glm::vec3 foc = getCenterPosition();
         glm::vec3 pos = getEyePosition();
-        glm::vec3 up = upVector;
-        float radius = distance(foc, pos);
+        glm::vec3 up  = glm::vec3(0.0f, 0.0f, 1.0f);
         glm::vec3 axis, newPos;
+        float radius = distance(foc, pos);
 
         switch (view)
         {
@@ -175,37 +163,46 @@ private:
             break;
         case ViewType::VT_TOP:
             axis = { 0, 0, +1 };
-            up = { 0, +1, 0 };
+            up   = { 0, -1, 0 };
             break;
         case ViewType::VT_ISOMETRIC:
             axis = { -1, +1, +1 };
+            up = { 0, 0, 1 };
             break;
         }
 
-        newPos[0] = foc[0] + radius * axis[0];
-        newPos[1] = foc[1] + radius * axis[1];
-        newPos[2] = foc[2] + radius * axis[2];
+        newPos[0] = foc[0] + glm::clamp(radius, 0.0f, 100.0f) * axis[0];
+        newPos[1] = foc[1] + glm::clamp(radius, 0.0f, 100.0f) * axis[1];
+        newPos[2] = foc[2] + glm::clamp(radius, 0.0f, 100.0f) * axis[2];
 
-        targetEyePosition = newPos;
+        upVector = up;
+        return newPos;
     }
 
     //----------------------------------------------------------------------------
     void resetToInitialPos()
     {
-        startCenter = getCenterPosition();
-        startEye = getEyePosition();
-        targetCenterPosition = initialCenterPosition;
-        targetEyePosition = initialEyePosition;
-        resetAnimationStart = glfwGetTime();
+        if((float)resetAnimationStart == 0.0f)
+        {
+            startCenter = getCenterPosition();
+            startEye = getEyePosition();
+            targetCenterPosition = glm::vec3(0.0f,  0.0f, 0.0f);
+            targetEyePosition    = glm::vec3(5.0f, -5.0f, 5.0f);
+            resetAnimationStart  = glfwGetTime();
+        }
     }
     
     //----------------------------------------------------------------------------
-    void orbitStartAnimation()
+    void orbitStartAnimation(ViewType view)
     {
-        startCenter = getCenterPosition();
-        targetCenterPosition = startCenter;
-        startEye = getEyePosition();
-        resetAnimationStart = glfwGetTime();
+        if((float)resetAnimationStart == 0.0f)
+        {
+            startCenter = getCenterPosition();
+            targetCenterPosition = startCenter;
+            startEye = getEyePosition();
+            targetEyePosition = SetViewOrbit(view);
+            resetAnimationStart  = glfwGetTime();
+        }
     }
 
     //----------------------------------------------------------------------------
@@ -214,12 +211,12 @@ private:
         if (resetAnimationStart > 0)
         {
             const double timeSinceStart = glfwGetTime() - resetAnimationStart;
-            const double t = glm::min((float)(timeSinceStart / resetSpeed), 1.0f);
+            const double t = glm::min((float)(timeSinceStart / (rotationSpeed * 0.2)), 1.0f);
                 
             CenterPosition = glm::mix(startCenter, targetCenterPosition, t);
             EyePosition = glm::mix(startEye, targetEyePosition, t);
 
-            if (timeSinceStart >= resetSpeed) { resetAnimationStart = 0; }
+            if (timeSinceStart >= (rotationSpeed * 0.2)) { resetAnimationStart = 0; }
         }
     }
     

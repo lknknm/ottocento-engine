@@ -170,6 +170,7 @@ struct UniformBufferObject {
     alignas(16) glm::mat4 view;
     alignas(16) glm::mat4 proj;
     alignas(16) glm::mat4 viewProjectionInverse;
+    alignas(16) glm::vec3 cameraPos;
 };
 
 class HelloTriangleApplication
@@ -259,7 +260,7 @@ private:
     uint32_t currentFrame = 0;
     bool framebufferResized = false;
 
-    Camera sceneCamera;
+    Camera viewportCamera;
     
     int windowMidPos_X, windowMidPos_Y;
     
@@ -286,7 +287,7 @@ private:
         glfwSetWindowUserPointer(window, this);
         glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
         glfwSetWindowRefreshCallback(window, windowResizeCallback);
-        sceneCamera.windowHandle = window;
+        viewportCamera.windowHandle = window;
 
         icon.pixels = stbi_load("src/icon.png", &icon.width, &icon.height, 0, 4);
         if (icon.pixels) { glfwSetWindowIcon(window, 1, &icon); }
@@ -788,6 +789,7 @@ private:
         uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         uboLayoutBinding.descriptorCount = 1;
         uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        uboLayoutBinding.stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
         // uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
         VkDescriptorSetLayoutBinding samplerLayoutBinding{};
@@ -1544,8 +1546,8 @@ private:
         
         UniformBufferObject ubo{};
         ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.f), glm::vec3(0.0f, 0.0f, 1.0f));
-        //ubo.view = sceneCamera.recalculateView();
-        ubo.proj = sceneCamera.perspectiveProjection(swapChainExtent.width, swapChainExtent.height);
+        //ubo.view = viewportCamera.recalculateView();
+        ubo.proj = viewportCamera.perspectiveProjection(swapChainExtent.width / swapChainExtent.height);
         ubo.proj[1][1] *= -1;
 
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
@@ -1560,10 +1562,11 @@ private:
         
         UniformBufferObject ubo{};
         ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(270.f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = sceneCamera.recalculateView(deltaTime);
-        ubo.proj = sceneCamera.perspectiveProjection(width, height);
-        ubo.viewProjectionInverse = sceneCamera.inverseProjection(ubo.proj, ubo.view);
+        ubo.view = viewportCamera.recalculateView(deltaTime);
+        ubo.proj = viewportCamera.perspectiveProjection(width / (float)height);
+        ubo.viewProjectionInverse = viewportCamera.inverseProjection(ubo.proj, ubo.view);
         ubo.proj[1][1] *= -1;
+        ubo.cameraPos = viewportCamera.getEyePosition();
 
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
     }

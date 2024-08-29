@@ -3,53 +3,53 @@
 layout(location = 0) in vec2 fragCoords;
 layout(location = 0) out vec4 outColor;
 
-const float gridSize                = 100.0f;
+layout(binding = 0) uniform UniformBufferObject {
+    mat4 model;
+    mat4 view;
+    mat4 proj;
+    mat4 inverseproj;
+    vec3 cameraPos;
+} ubo;
 
-const float cellSize                = 10.0f;
-const float halfcellSize            = cellSize * 0.5f;
-const float subcellSize             = 1.0f;
-const float halfsubcellSize         = subcellSize * 0.5f;
-
-const float minFadeDistance = gridSize * 0.05f;
 const float maxFadeDistance = 50.0f;
+
 float opacityFalloff;
 
-const vec3 cameraPosition           = vec3(1.0f); // Leaving this as is for now. Still have to bind it to host.
-const vec2 cellLineThickness        = vec2(0.01f);
-const vec2 subcellLineThickness     = vec2(0.005f);
-const vec4 cellColor                = vec4( 0.75f, 0.75f, 0.75f, 0.25f );
-const vec4 subcellColor             = vec4( 0.5f, 0.5f, 0.5f, 0.25f );
-
-vec2 cellCoords         = (mod(fragCoords, cellSize));
-vec2 subcellCoords      = (mod(fragCoords, subcellSize));
-
-vec2  distanceToCell    = abs(cellCoords);
-vec2  distanceToSubcell = abs(subcellCoords);
-
-//float ddMax(float a)
-//{
-//    return max(abs(dFdx(a), abs(dFdy(a))));
-//}
+float rand(vec2 co) {
+    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+}
 
 void main() {
-    vec2 dd = vec2(fwidth(cellCoords.x), fwidth(cellCoords.y));
-    vec2 lineAA = dd * 1.5;
+    vec2 coord = fragCoords.xy;
     
-    vec2 adjustedCellLineThickness    = vec2(0.5f * (cellLineThickness.x + dd.x), 0.5f * (cellLineThickness.y + dd.y));
-    vec2 adjustedSubcellLineThickness = vec2(0.5f * (subcellLineThickness.x + dd.x), 0.5f * (subcellLineThickness.y + dd.y));
+
+    // Compute anti-aliased world-space grid lines
+    vec2 grid = abs(fract(coord - 0.5) - 0.5) / fwidth(coord);
+    float line = min(grid.x, grid.y);
+
+    // Just visualize the grid lines directly
+    float color = 1.0 - min(line, 1.0);
+    outColor = vec4(vec3(color), 0.25);
     
-    outColor = vec4(1.0f, 0.0f, 0.0f, 0.0f);
-    if (distanceToSubcell.x < adjustedSubcellLineThickness.x * 0.5 || distanceToSubcell.y < adjustedSubcellLineThickness.y * 0.5 )
-        outColor = subcellColor;
-    if (distanceToCell.x < adjustedCellLineThickness.x * 0.5 || distanceToCell.y < adjustedCellLineThickness.y * 0.5 )
-        outColor = cellColor;
-    if (fragCoords.y > -adjustedCellLineThickness.y * 0.5 && fragCoords.y < adjustedCellLineThickness.y * 0.5 )
-        outColor = vec4(0.0f, 1.0f, 0.0f, 0.50f);
-    if (fragCoords.x > -adjustedCellLineThickness.x * 0.5 && fragCoords.x < adjustedCellLineThickness.x * 0.5 )
-        outColor = vec4(1.0f, 0.0f, 0.0f, 0.50f);
-    
-    float distanceToCamera = length(fragCoords - cameraPosition.xz);
-    opacityFalloff = smoothstep(1.5f, 0.0f, distanceToCamera / maxFadeDistance);
-    
-    outColor *= opacityFalloff;
+    // Draw the X and Y axis on specific colors.
+    if (coord.y > -line * 0.1 && coord.y < line * 0.1 )
+    {
+        outColor.x = color;
+        outColor.y = 0.0f;
+        outColor.z = 0.0f;
+    }
+    if (coord.x > -line * 0.1f && coord.x < line * 0.1f )
+    {
+        outColor.x = 0.0f;
+        outColor.y = color;
+        outColor.z = 0.0f;
+    }
+
+    // Faloff to make the grid fade when it's away from the camera. 
+    // I've added the rand factor to the falloff smoothstep to add some noise and minimize color banding.
+    float distanceToCamera = length(fragCoords - ubo.cameraPos.xy);
+    float sqDist = 2.0 * 2.0 * dot(coord * 0.5f, coord * 0.5f);
+    opacityFalloff = smoothstep(1.5f, 0.0f, distanceToCamera / maxFadeDistance) * clamp(rand(fragCoords.xy), 0.7f, 1.0f);
+
+    outColor.w *= opacityFalloff;
 }
