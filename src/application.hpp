@@ -439,6 +439,7 @@ private:
         vkDestroyCommandPool(device, commandPool, nullptr);
         
         vkDestroyPipeline(device, graphicsPipelines.object, nullptr);
+        vkDestroyPipeline(device, graphicsPipelines.grid, nullptr);
         vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
         vkDestroyRenderPass(device, renderPass, nullptr);
         
