@@ -6,6 +6,14 @@
 class Camera;
 //----------------------------------------------------------------------------
 // Input handling implementation class.
+// State timeline cheatsheet, extracted from StackOverflow https://stackoverflow.com/a/37195173:
+//----------------------------------------------------------------------------
+// state                  released               pressed                released
+// timeline             -------------|------------------------------|---------------
+//                                   ^                              ^
+// key callback calls           GLFW_PRESS                    GLFW_RELEASE
+//----------------------------------------------------------------------------
+
 namespace Input
 {
     //----------------------------------------------------------------------------
@@ -19,7 +27,7 @@ namespace Input
     inline bool isKeyDown(GLFWwindow* windowHandle, int keyCode)
     {
         int state = glfwGetKey(windowHandle, keyCode);
-        return state == GLFW_PRESS;
+        return state == GLFW_PRESS ;
     }
 
     //----------------------------------------------------------------------------
@@ -49,6 +57,16 @@ namespace Input
     static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
     {
         yoffsetCallback += yoffset;
+    }
+
+    //----------------------------------------------------------------------------
+    void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+    {
+        if (action == GLFW_RELEASE)
+        {
+            std::cout << "Key released: " << key << std::endl;
+            // Take action here
+        }
     }
     
 }; // namespace Input

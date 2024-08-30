@@ -19,6 +19,107 @@ public:
     // Recalculate view with input handling functions
     glm::mat4 recalculateView(float deltaTime)
     {
+        if (Input::isKeyDown(windowHandle, GLFW_KEY_F3))
+        {
+            // walkNavigation = !walkNavigation;
+            glfwWaitEventsTimeout(1.0f);
+            std::cout << "walkNavigation: " << walkNavigation << std::endl;
+            std::cout << "----------------" << std::endl;
+        }
+        if (!walkNavigation)
+            viewportInputHandle(deltaTime);
+        else
+            walkNavigationInputHandle(deltaTime);
+        return glm::lookAt(EyePosition, CenterPosition, upVector);
+    }
+        
+//----------------------------------------------------------------------------
+// Projection and Direction functions
+//----------------------------------------------------------------------------
+    
+    //----------------------------------------------------------------------------
+    glm::mat4 perspectiveProjection(float aspectRatio)
+    {
+        return glm::perspective(glm::radians(VerticalFOV), aspectRatio, NearClip, FarClip);
+    }
+
+    //----------------------------------------------------------------------------
+    glm::mat4 inverseProjection(glm::mat4 perspectiveProjection, glm::mat4 view)
+    {
+        return glm::inverse(perspectiveProjection * view);
+    }
+
+//----------------------------------------------------------------------------
+// Getters
+//----------------------------------------------------------------------------
+    //----------------------------------------------------------------------------
+    glm::vec3 getEyePosition()
+    {
+        return EyePosition;
+    }
+    
+    //----------------------------------------------------------------------------
+    glm::vec3 getCenterPosition()
+    {
+        return CenterPosition;
+    }
+
+    //----------------------------------------------------------------------------
+    glm::vec3 getEnvironmentUpVector()
+    {
+        return upVector;
+    }
+    
+    //----------------------------------------------------------------------------
+    // "Redundant" name for it not to be mistaken with the world upVector.
+    glm::vec3 getCameraUpVector()
+    {
+        return glm::cross(forwardDirection, -rightVector);
+    }
+
+    //----------------------------------------------------------------------------
+    // "Redundant" name for it not to be mistaken with the world rightVector.
+    glm::vec3 getCameraRightVector()
+    {
+        return glm::cross(forwardDirection, upVector);
+    }
+    
+    
+//----------------------------------------------------------------------------
+private:
+//----------------------------------------------------------------------------
+    double resetAnimationStart = 0;
+    double orbitAnimationStart = 0;
+    
+    float VerticalFOV = 38.0f;
+    float NearClip = 0.1f;
+    float FarClip = 1000.0f;
+    float speed = 2.0f;
+    float rotationSpeed = 0.3f;
+    bool  walkNavigation = false;
+    
+    glm::vec2 lastMousePosition{ 0.0f, 0.0f };
+    
+    glm::vec3 CenterPosition{0.0f, 0.0f, 0.0f};
+    
+    glm::vec3 EyePosition{5.0f, -5.0f, 5.0f};
+    glm::vec3 startEye, startCenter, targetEyePosition, targetCenterPosition;
+    
+    glm::vec3 rightVector{0.0f, 0.0f, 0.0f};
+    glm::vec3 upVector{0.0f, 0.0f, 1.0f};
+    glm::vec3 forwardDirection{};
+    
+    glm::mat4 Projection{ 1.0f };
+    glm::mat4 View{ 1.0f };
+    glm::mat4 InverseProjection{ 1.0f };
+    glm::mat4 InverseView{ 1.0f };
+
+    
+    //----------------------------------------------------------------------------
+    // This function handles all the hotkeys for the camera implementation.
+    // It uses the Input namespace abstraction to handle GLFW interaction.
+    void viewportInputHandle(float deltaTime)
+    {
         glm::vec2 mousePos = Input::getMousePosition(windowHandle);
         glm::vec2 delta = (mousePos - lastMousePosition) * 0.002f;
         lastMousePosition = mousePos;
@@ -28,7 +129,7 @@ public:
 
         if(windowHandle != nullptr )
         {
-            if (!Input::isMouseButtonDown(windowHandle, GLFW_MOUSE_BUTTON_RIGHT))
+            if (!Input::isMouseButtonDown(windowHandle, GLFW_MOUSE_BUTTON_MIDDLE))
             {
                 glfwSetInputMode(windowHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
                 
@@ -41,12 +142,55 @@ public:
                 animateResetUpdate();
 
                 if (Input::yoffsetCallback > 0)
-                    zoomForward(Input::yoffsetCallback); 
+                    zoomIn(Input::yoffsetCallback); 
                 if (Input::yoffsetCallback < 0)
-                    zoomBack(Input::yoffsetCallback); 
+                    zoomOut(Input::yoffsetCallback); 
                 Input::yoffsetCallback = 0;
-                
-                return glm::lookAt(EyePosition, CenterPosition, upVector);
+                return;
+            }
+            
+            if (Input::isKeyDownRepeat(windowHandle, GLFW_KEY_LEFT_SHIFT))
+            {
+                if (delta.x != 0.0f || delta.y != 0.0f)
+                {
+                    EyePosition      -= rightVector * delta.x * 0.3f; 
+                    CenterPosition   -= rightVector * delta.x * 0.3f;
+                    EyePosition      += getCameraUpVector() * delta.y * 0.3f / (glm::distance(EyePosition,CenterPosition));
+                    CenterPosition   += getCameraUpVector() * delta.y * 0.3f / (glm::distance(EyePosition,CenterPosition));
+                    return;
+                }
+            }
+            
+            if (delta.x != 0.0f || delta.y != 0.0f && !Input::isKeyDown(windowHandle, GLFW_KEY_LEFT_SHIFT))
+            {
+                float pitchDelta = delta.y * rotationSpeed;
+                float yawDelta = delta.x * speed;
+            
+                glm::quat q = glm::normalize(glm::cross(glm::angleAxis(-pitchDelta, rightVector), glm::angleAxis(-yawDelta, upVector)));
+                forwardDirection = glm::rotate(q, forwardDirection);
+                EyePosition = CenterPosition - forwardDirection;
+            }
+        }
+    }
+
+    //----------------------------------------------------------------------------
+    // This function handles all the hotkeys for the camera implementation.
+    // It uses the Input namespace abstraction to handle GLFW interaction.
+    void walkNavigationInputHandle(float deltaTime)
+    {
+        glm::vec2 mousePos = Input::getMousePosition(windowHandle);
+        glm::vec2 delta = (mousePos - lastMousePosition) * 0.002f;
+        lastMousePosition = mousePos;
+        
+        forwardDirection = CenterPosition - EyePosition;
+        rightVector = glm::cross(forwardDirection, upVector);
+
+        if(windowHandle != nullptr )
+        {
+            if (!Input::isMouseButtonDown(windowHandle, GLFW_MOUSE_BUTTON_RIGHT))
+            {
+                glfwSetInputMode(windowHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                return;
             }
             glfwSetInputMode(windowHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL + 2);
             
@@ -74,76 +218,7 @@ public:
                 EyePosition = CenterPosition - forwardDirection;
             }
         }
-        return glm::lookAt(EyePosition, CenterPosition, upVector);
     }
-        
-//----------------------------------------------------------------------------
-// Projection and Direction functions
-//----------------------------------------------------------------------------
-    
-    //----------------------------------------------------------------------------
-    glm::mat4 perspectiveProjection(float aspectRatio)
-    {
-        return glm::perspective(glm::radians(VerticalFOV), aspectRatio, NearClip, FarClip);
-    }
-
-    //----------------------------------------------------------------------------
-    glm::mat4 inverseProjection(glm::mat4 perspectiveProjection, glm::mat4 view)
-    {
-        return glm::inverse(perspectiveProjection * view);
-    }
-
-    //----------------------------------------------------------------------------
-    glm::vec3 getEyePosition()
-    {
-        return EyePosition;
-    }
-    
-    //----------------------------------------------------------------------------
-    glm::vec3 getCenterPosition()
-    {
-        return CenterPosition;
-    }
-
-    //----------------------------------------------------------------------------
-    glm::vec3 getEnvironmentUpVector()
-    {
-        return upVector;
-    }
-
-    Camera getCurrentCameraObject()
-    {
-        return *this;
-    }
-    
-    
-//----------------------------------------------------------------------------
-private:
-//----------------------------------------------------------------------------
-    double resetAnimationStart = 0;
-    double orbitAnimationStart = 0;
-    
-    float VerticalFOV = 38.0f;
-    float NearClip = 0.1f;
-    float FarClip = 1000.0f;
-    float speed = 2.0f;
-    float rotationSpeed = 0.3f;
-    
-    glm::vec2 lastMousePosition{ 0.0f, 0.0f };
-    
-    glm::vec3 CenterPosition{0.0f, 0.0f, 0.0f};
-    
-    glm::vec3 EyePosition{5.0f, -5.0f, 5.0f};
-    glm::vec3 startEye, startCenter, targetEyePosition, targetCenterPosition;
-    
-    glm::vec3 rightVector{0.0f, 0.0f, 0.0f};
-    glm::vec3 upVector{0.0f, 0.0f, 1.0f};
-    glm::vec3 forwardDirection{};
-    
-    glm::mat4 Projection{ 1.0f };
-    glm::mat4 View{ 1.0f };
-    glm::mat4 InverseProjection{ 1.0f };
-    glm::mat4 InverseView{ 1.0f };
     
     //----------------------------------------------------------------------------
     enum class ViewType
@@ -275,13 +350,13 @@ private:
     }
 
     //----------------------------------------------------------------------------
-    void zoomForward(double yoffset)
+    void zoomIn(double yoffset)
     {
         EyePosition += forwardDirection * 0.2f;
     }
 
     //----------------------------------------------------------------------------
-    void zoomBack(double yoffset)
+    void zoomOut(double yoffset)
     {
         EyePosition -= forwardDirection * 0.2f;
     }

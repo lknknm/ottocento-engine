@@ -33,14 +33,14 @@ void main() {
     // Draw the X and Y axis on specific colors.
     if (coord.y > -line * 0.2f && coord.y < line * 0.2f )
     {
-        outColor.x = 0.0f;
-        outColor.y = color * 2.f;
+        outColor.x = color * 2.f;
+        outColor.y = 0.0f;
         outColor.z = 0.0f;
     }
     if (coord.x > -line * 0.2f && coord.x < line * 0.2f )
     {
-        outColor.x = color * 2.f;
-        outColor.y = 0.0f;
+        outColor.x = 0.0f;
+        outColor.y = color * 2.f;
         outColor.z = 0.0f;
     }
 

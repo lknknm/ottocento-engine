@@ -291,6 +291,7 @@ private:
         glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
         glfwSetWindowRefreshCallback(window, windowResizeCallback);
         glfwSetScrollCallback(window, Input::scrollCallback);
+        glfwSetKeyCallback(window, Input::keyCallback);
         viewportCamera.windowHandle = window;
 
         icon.pixels = stbi_load("src/icon.png", &icon.width, &icon.height, 0, 4);
@@ -443,7 +444,6 @@ private:
         vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
         vkDestroyRenderPass(device, renderPass, nullptr);
         
-
         vkDestroyDevice(device, nullptr);
         if (enableValidationLayers)
             DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
