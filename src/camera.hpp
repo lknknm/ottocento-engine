@@ -136,9 +136,22 @@ private:
                 if (Input::isKeyDown(windowHandle, GLFW_KEY_KP_0))
                     resetToInitialPos();
                 if (Input::isKeyDown(windowHandle, GLFW_KEY_KP_1))
-                   orbitStartAnimation(ViewType::VT_FRONT);
+                    Input::isKeyDownRepeat(windowHandle, GLFW_KEY_LEFT_CONTROL) ?
+                         orbitStartAnimation(ViewType::VT_BACK) :
+                         orbitStartAnimation(ViewType::VT_FRONT);
                 if (Input::isKeyDown(windowHandle, GLFW_KEY_KP_3))
-                    orbitStartAnimation(ViewType::VT_RIGHT);
+                    Input::isKeyDownRepeat(windowHandle, GLFW_KEY_LEFT_CONTROL) ?
+                        orbitStartAnimation(ViewType::VT_LEFT) :
+                        orbitStartAnimation(ViewType::VT_RIGHT);
+                if (Input::isKeyDown(windowHandle, GLFW_KEY_KP_7))
+                    Input::isKeyDownRepeat(windowHandle, GLFW_KEY_LEFT_CONTROL) ?
+                        orbitStartAnimation(ViewType::VT_BOTTOM) :
+                        orbitStartAnimation(ViewType::VT_TOP);
+                if (Input::isKeyDown(windowHandle, GLFW_KEY_KP_9))
+                    Input::isKeyDownRepeat(windowHandle, GLFW_KEY_LEFT_CONTROL) ?
+                        orbitStartAnimation(ViewType::VT_INVERT_ISOMETRIC) :
+                        orbitStartAnimation(ViewType::VT_ISOMETRIC);
+                
                 animateResetUpdate();
 
                 if (Input::yoffsetCallback > 0)
@@ -148,7 +161,7 @@ private:
                 Input::yoffsetCallback = 0;
                 return;
             }
-            
+
             if (Input::isKeyDownRepeat(windowHandle, GLFW_KEY_LEFT_SHIFT))
             {
                 if (delta.x != 0.0f || delta.y != 0.0f)
@@ -224,10 +237,13 @@ private:
     enum class ViewType
     {
         VT_FRONT,
+        VT_BACK,
         VT_RIGHT,
-        VT_INVERT_RIGHT,
+        VT_LEFT,
         VT_TOP,
-        VT_ISOMETRIC
+        VT_BOTTOM,
+        VT_ISOMETRIC,
+        VT_INVERT_ISOMETRIC
     };
     glm::vec3 SetViewOrbit(ViewType view)
     {
@@ -242,21 +258,33 @@ private:
         case ViewType::VT_FRONT:
             axis = { 0, +1, 0 };
             break;
+        case ViewType::VT_BACK:
+            axis = { 0, -1, 0 };
+            break;
         case ViewType::VT_RIGHT:
             axis = { +1, 0, 0 };
             break;
-        case ViewType::VT_INVERT_RIGHT:
+        case ViewType::VT_LEFT:
             axis = { -1, 0, 0 };
             break;
         case ViewType::VT_TOP:
             axis = { 0, 0, +1 };
             up   = { 0, -1, 0 };
             break;
+        case ViewType::VT_BOTTOM:
+            axis = { 0, 0, -1 };
+            up   = { 0, -1, 0 };
+            break;
         case ViewType::VT_ISOMETRIC:
             axis = { -1, +1, +1 };
             up = { 0, 0, 1 };
             break;
+        case ViewType::VT_INVERT_ISOMETRIC:
+            axis = { -1, -1, -1 };
+            up = { 0, 0, 1 };
+            break;
         }
+        
 
         newPos[0] = foc[0] + glm::clamp(radius, 0.0f, 100.0f) * axis[0];
         newPos[1] = foc[1] + glm::clamp(radius, 0.0f, 100.0f) * axis[1];
@@ -271,6 +299,7 @@ private:
     {
         if((float)resetAnimationStart == 0.0f)
         {
+            upVector = {0.0f, 0.0f, 1.0f};
             startCenter = getCenterPosition();
             startEye = getEyePosition();
             targetCenterPosition = glm::vec3(0.0f,  0.0f, 0.0f);
