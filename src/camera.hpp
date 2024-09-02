@@ -8,7 +8,7 @@
 #include <gtc/quaternion.hpp>
 #include <gtx/quaternion.hpp>
 
-class Camera
+class OtrCamera
 {
 //----------------------------------------------------------------------------
 public:
@@ -30,6 +30,7 @@ public:
             viewportInputHandle(deltaTime);
         else
             walkNavigationInputHandle(deltaTime);
+        
         return glm::lookAt(EyePosition, CenterPosition, upVector);
     }
         
@@ -83,6 +84,11 @@ public:
     {
         return glm::cross(forwardDirection, upVector);
     }
+
+    glm::mat4 getViewMatrix()
+    {
+        return ViewMatrix;
+    }
     
     
 //----------------------------------------------------------------------------
@@ -110,13 +116,33 @@ private:
     glm::vec3 forwardDirection{};
     
     glm::mat4 Projection{ 1.0f };
-    glm::mat4 View{ 1.0f };
+    glm::mat4 ViewMatrix{ 1.0f };
     glm::mat4 InverseProjection{ 1.0f };
     glm::mat4 InverseView{ 1.0f };
 
+    enum struct ViewType
+    {
+        VT_FRONT,
+        VT_BACK,
+        VT_RIGHT,
+        VT_LEFT,
+        VT_TOP,
+        VT_BOTTOM,
+        VT_ISOMETRIC,
+        VT_INVERT_ISOMETRIC
+    };
+    
+    enum struct rotateDirection
+    {
+        RD_RIGHT,
+        RD_LEFT,
+        RD_UP,
+        RD_DOWN
+    };
+
     
     //----------------------------------------------------------------------------
-    // This function handles all the hotkeys for the camera implementation.
+    // This function handles all the hotkeys for the viewport camera implementation.
     // It uses the Input namespace abstraction to handle GLFW interaction.
     void viewportInputHandle(float deltaTime)
     {
@@ -132,13 +158,23 @@ private:
             if (!Input::isMouseButtonDown(windowHandle, GLFW_MOUSE_BUTTON_MIDDLE))
             {
                 glfwSetInputMode(windowHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+                if (Input::isKeyDown(windowHandle, GLFW_KEY_KP_4))
+                    rotateFixedAmount(rotateDirection::RD_LEFT);
+                if (Input::isKeyDown(windowHandle, GLFW_KEY_KP_6))
+                    rotateFixedAmount(rotateDirection::RD_RIGHT);
+                if (Input::isKeyDown(windowHandle, GLFW_KEY_KP_8))
+                    rotateFixedAmount(rotateDirection::RD_UP);
+                if (Input::isKeyDown(windowHandle, GLFW_KEY_KP_2))
+                    rotateFixedAmount(rotateDirection::RD_DOWN);
                 
                 if (Input::isKeyDown(windowHandle, GLFW_KEY_KP_0))
                     resetToInitialPos();
+                
                 if (Input::isKeyDown(windowHandle, GLFW_KEY_KP_1))
                     Input::isKeyDownRepeat(windowHandle, GLFW_KEY_LEFT_CONTROL) ?
-                         orbitStartAnimation(ViewType::VT_BACK) :
-                         orbitStartAnimation(ViewType::VT_FRONT);
+                        orbitStartAnimation(ViewType::VT_BACK) :
+                        orbitStartAnimation(ViewType::VT_FRONT);
                 if (Input::isKeyDown(windowHandle, GLFW_KEY_KP_3))
                     Input::isKeyDownRepeat(windowHandle, GLFW_KEY_LEFT_CONTROL) ?
                         orbitStartAnimation(ViewType::VT_LEFT) :
@@ -159,6 +195,7 @@ private:
                 if (Input::yoffsetCallback < 0)
                     zoomOut(Input::yoffsetCallback); 
                 Input::yoffsetCallback = 0;
+                
                 return;
             }
 
@@ -178,23 +215,27 @@ private:
             {
                 float pitchDelta = delta.y * rotationSpeed;
                 float yawDelta = delta.x * speed;
-            
-                glm::quat q = glm::normalize(glm::cross(glm::angleAxis(-pitchDelta, rightVector), glm::angleAxis(-yawDelta, upVector)));
-                forwardDirection = glm::rotate(q, forwardDirection);
+                
+                glm::quat qPitch = glm::angleAxis(-pitchDelta, rightVector);
+                glm::quat qYaw = glm::angleAxis(-yawDelta, glm::vec3(0.0f, 0.0f, upVector.z));
+                glm::mat4 rotationMatrix = glm::toMat4(glm::normalize(glm::cross(qYaw, qPitch)));
+                
+                forwardDirection = rotationMatrix * glm::vec4(forwardDirection, 0.0f);
+                upVector = glm::normalize(rotationMatrix * glm::vec4(upVector, 0.0f));
                 EyePosition = CenterPosition - forwardDirection;
             }
         }
     }
 
     //----------------------------------------------------------------------------
-    // This function handles all the hotkeys for the camera implementation.
+    // This function handles all the hotkeys for the walk navigation camera implementation.
     // It uses the Input namespace abstraction to handle GLFW interaction.
     void walkNavigationInputHandle(float deltaTime)
     {
         glm::vec2 mousePos = Input::getMousePosition(windowHandle);
         glm::vec2 delta = (mousePos - lastMousePosition) * 0.002f;
         lastMousePosition = mousePos;
-        
+
         forwardDirection = CenterPosition - EyePosition;
         rightVector = glm::cross(forwardDirection, upVector);
 
@@ -233,18 +274,47 @@ private:
         }
     }
     
-    //----------------------------------------------------------------------------
-    enum class ViewType
+    // ----------------------------------------------------------------------------
+    // This function uses the same formula principles as the viewportInputHandle function
+    // for the mouse movement. The degrees for movement are calculated by multiplying:
+    // SIDEWAYS: angle * rotationSpeed * smoothness scalar.
+    // UP/DOWN:  angle * rotationSpeed * smoothness scalar / distance to the center of the camera.
+    // Scalars are defined arbitrarily and not assigned in order to save up some memory reads.
+    void rotateFixedAmount(rotateDirection direction)
     {
-        VT_FRONT,
-        VT_BACK,
-        VT_RIGHT,
-        VT_LEFT,
-        VT_TOP,
-        VT_BOTTOM,
-        VT_ISOMETRIC,
-        VT_INVERT_ISOMETRIC
-    };
+        float degreesRight = 0.0f;
+        float degreesUp = 0.0f;
+        switch (direction)
+        {
+        case rotateDirection::RD_LEFT:
+            degreesRight = -5.0f * rotationSpeed * 0.2f;
+            break;
+        case rotateDirection::RD_RIGHT:
+            degreesRight = 5.0f * rotationSpeed * 0.2f;
+            break;
+        case rotateDirection::RD_UP:
+            degreesUp = 1.0f * rotationSpeed * 0.5f / (glm::distance(EyePosition,CenterPosition));
+            break;
+        case rotateDirection::RD_DOWN:
+            degreesUp = -1.0f * rotationSpeed * 0.5f / (glm::distance(EyePosition,CenterPosition));
+            break;
+        }
+
+        glm::quat qPitch = glm::angleAxis(-glm::radians(degreesUp), rightVector);
+        glm::quat qYaw = glm::angleAxis(glm::radians(degreesRight), glm::vec3(0.0f, 0.0f, upVector.z));
+        glm::mat4 rotationMatrix = glm::toMat4(glm::normalize(glm::cross(qYaw, qPitch)));
+                
+        forwardDirection = rotationMatrix * glm::vec4(forwardDirection, 0.0f);
+        upVector = glm::normalize(rotationMatrix * glm::vec4(upVector, 0.0f));
+        EyePosition = CenterPosition - forwardDirection;
+    }
+    
+    //----------------------------------------------------------------------------
+    // Originally implemented on F3D with the help of
+    // Michael Migliore, Mathieu Westphal and Snoyer.
+    // This function takes the current position of the camera and reorient it facing
+    // a given axis, as per the formula:
+    // P' = P + radius * viewAxis.
     glm::vec3 SetViewOrbit(ViewType view)
     {
         glm::vec3 foc = getCenterPosition();
@@ -277,24 +347,24 @@ private:
             break;
         case ViewType::VT_ISOMETRIC:
             axis = { -1, +1, +1 };
-            up = { 0, 0, 1 };
             break;
         case ViewType::VT_INVERT_ISOMETRIC:
             axis = { -1, -1, -1 };
-            up = { 0, 0, 1 };
             break;
         }
         
-
         newPos[0] = foc[0] + glm::clamp(radius, 0.0f, 100.0f) * axis[0];
         newPos[1] = foc[1] + glm::clamp(radius, 0.0f, 100.0f) * axis[1];
         newPos[2] = foc[2] + glm::clamp(radius, 0.0f, 100.0f) * axis[2];
-
+        
         upVector = up;
         return newPos;
     }
 
+
     //----------------------------------------------------------------------------
+    // Resets the timer and consequently starts the animation to reposition the camera
+    // to its initial state of the 0, 0, 0 center position.
     void resetToInitialPos()
     {
         if((float)resetAnimationStart == 0.0f)
@@ -309,6 +379,8 @@ private:
     }
     
     //----------------------------------------------------------------------------
+    // Resets the timer and consequently starts the animation for the implementation of
+    // FRONT, RIGHT, TOP (etc...) views, defined in SetViewOrbit(view).
     void orbitStartAnimation(ViewType view)
     {
         if((float)resetAnimationStart == 0.0f)
@@ -322,6 +394,10 @@ private:
     }
 
     //----------------------------------------------------------------------------
+    // Updates each frame with a new position based on time per each frame.
+    // The animation will stop to its final position and then reset the timer.
+    // Smoothness scalars represented with an arbitrary value, not assigned to a variable
+    // to save up some memory reads.
     void animateResetUpdate()
     {
         if (resetAnimationStart > 0)

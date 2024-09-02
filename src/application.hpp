@@ -176,7 +176,7 @@ struct UniformBufferObject {
     alignas(16) glm::vec3 cameraPos;
 };
 
-class HelloTriangleApplication
+class otrApplication
 {
 public:
     void run()
@@ -188,10 +188,10 @@ public:
     }
 
     GLFWwindow* getWindowhandle() const { return this->window; }  
-    static HelloTriangleApplication& getInstance() { return *appInstance; }
+    static otrApplication& getInstance() { return *appInstance; }
 
 private:
-    static HelloTriangleApplication* appInstance;
+    static otrApplication* appInstance;
     
     GLFWwindow* window = nullptr;
     GLFWimage icon{};
@@ -262,8 +262,9 @@ private:
     
     uint32_t currentFrame = 0;
     bool framebufferResized = false;
-
-    Camera viewportCamera;
+    
+    OtrCamera  objectCamera;
+    OtrCamera* viewportCamera = &objectCamera;
     
     int windowMidPos_X, windowMidPos_Y;
     
@@ -292,7 +293,7 @@ private:
         glfwSetWindowRefreshCallback(window, windowResizeCallback);
         glfwSetScrollCallback(window, Input::scrollCallback);
         glfwSetKeyCallback(window, Input::keyCallback);
-        viewportCamera.windowHandle = window;
+        viewportCamera->windowHandle = window;
 
         icon.pixels = stbi_load("src/icon.png", &icon.width, &icon.height, 0, 4);
         if (icon.pixels) { glfwSetWindowIcon(window, 1, &icon); }
@@ -1080,7 +1081,7 @@ private:
     //----------------------------------------------------------------------------
     static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
     {
-        auto app = reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
+        auto app = reinterpret_cast<otrApplication*>(glfwGetWindowUserPointer(window));
         app->framebufferResized = true;
         app->swapChainExtent.width = width;
         app->swapChainExtent.height = height;
@@ -1089,7 +1090,7 @@ private:
     //----------------------------------------------------------------------------
     static void windowResizeCallback(GLFWwindow* window)
     {
-        auto app = reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
+        auto app = reinterpret_cast<otrApplication*>(glfwGetWindowUserPointer(window));
         vkDeviceWaitIdle(app->device);
 
         // Recreate the swap chain with the new extent
@@ -1523,7 +1524,7 @@ private:
         UniformBufferObject ubo{};
         ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.f), glm::vec3(0.0f, 0.0f, 1.0f));
         //ubo.view = viewportCamera.recalculateView();
-        ubo.proj = viewportCamera.perspectiveProjection(swapChainExtent.width / swapChainExtent.height);
+        ubo.proj = viewportCamera->perspectiveProjection(swapChainExtent.width / swapChainExtent.height);
         ubo.proj[1][1] *= -1;
 
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
@@ -1538,11 +1539,11 @@ private:
         
         UniformBufferObject ubo{};
         ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(270.f), glm::vec3(0.0f, 0.0f, 1.0f));
-        ubo.view = viewportCamera.recalculateView(deltaTime);
-        ubo.proj = viewportCamera.perspectiveProjection(width / (float)height);
-        ubo.viewProjectionInverse = viewportCamera.inverseProjection(ubo.proj, ubo.view);
+        ubo.view = viewportCamera->recalculateView(deltaTime);
+        ubo.proj = viewportCamera->perspectiveProjection(width / (float)height);
+        ubo.viewProjectionInverse = viewportCamera->inverseProjection(ubo.proj, ubo.view);
         ubo.proj[1][1] *= -1;
-        ubo.cameraPos = viewportCamera.getEyePosition();
+        ubo.cameraPos = viewportCamera->getEyePosition();
 
         memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
     }

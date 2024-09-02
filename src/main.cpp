@@ -3,7 +3,7 @@
 
 int main()
 {
-    HelloTriangleApplication app;
+    otrApplication app;
 
     try { app.run(); }
     catch (const std::exception& e) {
