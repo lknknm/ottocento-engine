@@ -6,7 +6,7 @@
 class Camera;
 //----------------------------------------------------------------------------
 // Input handling implementation class.
-// State timeline cheatsheet, extracted from StackOverflow https://stackoverflow.com/a/37195173:
+// State timeline cheatsheet below, extracted from StackOverflow https://stackoverflow.com/a/37195173:
 //----------------------------------------------------------------------------
 // state                  released               pressed                released
 // timeline             -------------|------------------------------|---------------
