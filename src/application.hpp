@@ -193,7 +193,7 @@ struct UniformBufferObject {
 };
 //----------------------------------------------------------------------------
 
-class otrApplication
+class OttApplication
 {
 public:
     void run()
@@ -205,10 +205,10 @@ public:
     }
 
     GLFWwindow* getWindowhandle() const { return this->window; }  
-    static otrApplication& getInstance() { return *appInstance; }
+    static OttApplication& getInstance() { return *appInstance; }
 
 private:
-    static otrApplication* appInstance;
+    static OttApplication* appInstance;
     
     GLFWwindow* window = nullptr;
     GLFWimage icon{};
@@ -280,8 +280,8 @@ private:
     uint32_t currentFrame = 0;
     bool framebufferResized = false;
     
-    otrCamera  objectCamera;
-    otrCamera* viewportCamera = &objectCamera;
+    OttCamera  objectCamera;
+    OttCamera* viewportCamera = &objectCamera;
     
     int windowMidPos_X, windowMidPos_Y;
     
@@ -1098,7 +1098,7 @@ private:
     //----------------------------------------------------------------------------
     static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
     {
-        auto app = reinterpret_cast<otrApplication*>(glfwGetWindowUserPointer(window));
+        auto app = reinterpret_cast<OttApplication*>(glfwGetWindowUserPointer(window));
         app->framebufferResized = true;
         app->swapChainExtent.width = width;
         app->swapChainExtent.height = height;
@@ -1107,7 +1107,7 @@ private:
     //----------------------------------------------------------------------------
     static void windowResizeCallback(GLFWwindow* window)
     {
-        auto app = reinterpret_cast<otrApplication*>(glfwGetWindowUserPointer(window));
+        auto app = reinterpret_cast<OttApplication*>(glfwGetWindowUserPointer(window));
         vkDeviceWaitIdle(app->device);
 
         // Recreate the swap chain with the new extent

@@ -24,7 +24,7 @@
 #include <gtc/quaternion.hpp>
 #include <gtx/quaternion.hpp>
 
-class otrCamera
+class OttCamera
 {
 //----------------------------------------------------------------------------
 public:

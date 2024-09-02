@@ -18,7 +18,7 @@
 
 int main()
 {
-    otrApplication app;
+    OttApplication app;
 
     try { app.run(); }
     catch (const std::exception& e) {
