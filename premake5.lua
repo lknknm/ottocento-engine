@@ -4,12 +4,12 @@
 VULKAN_SDK = os.getenv("VULKAN_SDK")
 
 ----------------------------
-workspace "vulkan-tutorial"
+workspace "ottocento-engine"
    configurations { "Debug", "Release" }
    architecture "x64"
    
 ----------------------------
-project "vulkan-tutorial"
+project "ottocento-engine"
    kind "ConsoleApp"
    language "C++"
    targetdir "bin/%{cfg.buildcfg}"
