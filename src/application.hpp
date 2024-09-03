@@ -51,7 +51,7 @@
 
 #include <algorithm>
 #include <array>
-#include "camera.hpp"
+#include "camera.h"
 #include <chrono>
 #include <cstring>
 #include <cstdint>
@@ -309,7 +309,7 @@ private:
         glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
         glfwSetWindowRefreshCallback(window, windowResizeCallback);
         glfwSetScrollCallback(window, Input::scrollCallback);
-        glfwSetKeyCallback(window, Input::keyCallback);
+        //glfwSetKeyCallback(window, Input::keyCallback);
         viewportCamera->windowHandle = window;
 
         icon.pixels = stbi_load("src/icon.png", &icon.width, &icon.height, 0, 4);
@@ -970,7 +970,7 @@ private:
         dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
         dynamicState.pDynamicStates = dynamicStates.data();
         
-        otCreatePipelineLayout();
+        OttCreatePipelineLayout();
         
         // Populate the Graphics Pipeline Info struct.
         // First referencing the array of VkPipelineShaderStageCreateInfo structs.
@@ -1058,7 +1058,7 @@ private:
     }
     
     //----------------------------------------------------------------------------
-    void otCreatePipelineLayout()
+    void OttCreatePipelineLayout()
     {
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -1549,11 +1549,7 @@ private:
 
     //----------------------------------------------------------------------------
     void updateUniformBufferCamera(uint32_t currentImage, float deltaTime, int width, int height)
-    {
-        static auto startTime = std::chrono::high_resolution_clock::now();
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-        
+    {        
         UniformBufferObject ubo{};
         ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(270.f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.view = viewportCamera->recalculateView(deltaTime);
@@ -1582,8 +1578,6 @@ private:
         {
             throw std::runtime_error("failed to acquire swap chain image!");
         }
-
-        // updateUniformBuffer(currentFrame);
 
         // Only reset the fence if we are submitting work
         vkResetFences(device, 1, &inFlightFences[currentFrame]);
@@ -2219,6 +2213,7 @@ private:
         vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
     }
     
+    //----------------------------------------------------------------------------
     void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels)
     {
         VkCommandBuffer commandBuffer = beginSingleTimeCommands();

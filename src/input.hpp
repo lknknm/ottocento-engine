@@ -59,14 +59,14 @@ namespace Input
         yoffsetCallback += yoffset;
     }
 
-    //----------------------------------------------------------------------------
-    void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
-    {
-        if (action == GLFW_RELEASE)
-        {
-            std::cout << "Key released: " << key << std::endl;
-            // Take action here
-        }
-    }
+    // //----------------------------------------------------------------------------
+    // void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+    // {
+    //     if (action == GLFW_RELEASE)
+    //     {
+    //         std::cout << "Key released: " << key << std::endl;
+    //         // Take action here
+    //     }
+    // }
     
 }; // namespace Input
