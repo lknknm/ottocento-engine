@@ -9,4 +9,4 @@ riderModule.iml
 *.vcxproj
 *.vcxproj.filters
 Makefile
-vulkan-tutorial.make
+ottocento-tutorial.make
