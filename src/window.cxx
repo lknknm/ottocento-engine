@@ -43,7 +43,13 @@ OttWindow::OttWindow(OttApplication* ApplicationInstance, const char* title, int
         
         glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
         glfwSetWindowRefreshCallback(m_window, windowResizeCallback);
-        
+
+        glfwSetWindowRefreshCallback(m_window,
+        [](GLFWwindow* glfwWindow, int width, int height) -> void {
+          auto* window = reinterpret_cast<OttWindow*>(glfwGetWindowUserPointer(glfwWindow));
+          window->OnWindowResized({width, height});
+        });
+            
         glfwSetScrollCallback(m_window, Input::scrollCallback);
         glfwSetKeyCallback(m_window, keyCallback);
 

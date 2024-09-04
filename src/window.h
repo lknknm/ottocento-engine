@@ -18,11 +18,13 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <vec2.hpp>
 #include <vector>
 
 struct GLFWwindow;
 using VkInstance   = struct VkInstance_T*;
 using VkSurfaceKHR = struct VkSurfaceKHR_T*;
+typedef void (*Delegate)();
 
 class OttApplication;
 
@@ -40,6 +42,8 @@ public:
     void getFrameBufferSize(int* width, int* height) { OttWindow* window = this; width  = &this->m_width; height = &this->m_height; }
     VkSurfaceKHR createSurface(VkInstance instance);
     std::vector<const char*> getRequiredExtensions();
+
+    Delegate<void(glm::vec2)> OnWindowResized;
 
     // Soon to be transfered to the Window Manager.
     void waitEvents() { return glfwWaitEvents(); }
