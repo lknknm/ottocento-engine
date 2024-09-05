@@ -20,25 +20,12 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #endif
 
-#define GLFW_INCLUDE_VULKAN
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include "input.hpp"
-#include <GLFW/glfw3.h>
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <gtx/hash.hpp>
-
-// Win32 Specific API.
-#ifdef _WIN32
-#pragma comment (lib, "Dwmapi")
-#define GLFW_EXPOSE_NATIVE_WIN32
-#define GLFW_EXPOSE_NATIVE_WGL
-#include <GLFW/glfw3native.h>
-#include <windows.h>
-#include <dwmapi.h>
-#endif
 
 #include <imgui.h>
 #include <imconfig.h>
@@ -55,7 +42,6 @@
 #include <chrono>
 #include <cstring>
 #include <cstdint>
-#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <limits>
@@ -66,18 +52,20 @@
 #include <optional>
 #include <vector>
 
+#include "window.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "../stb/stb_image.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "../external/tinyobjloader/tiny_obj_loader.h"
 
-const uint32_t WIN_WIDTH = 1280;
-const uint32_t WIN_HEIGHT = 720;
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
-const std::string MODEL_PATH = "./src/models/sandoy_model.obj";
-const std::string TEXTURE_PATH = "./src/textures/sandoy_model.png";
+std::string MODEL_PATH = "./src/models/viking_room.obj";
+std::string MODEL_PATH_2 = "./src/models/sandoy_model.obj";
+std::string TEXTURE_PATH = "./src/textures/viking_room.png";
+std::string TEXTURE_PATH_2 = "./src/textures/sandoy_model.png";
 
 const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
@@ -112,6 +100,7 @@ inline void DestroyDebugUtilsMessengerEXT(VkInstance instance,
         func(instance, debugMessenger, pAllocator);
     }
 }
+
 
 //----------------------------------------------------------------------------
 // structs declarations
@@ -204,14 +193,11 @@ public:
         cleanup();
     }
 
-    GLFWwindow* getWindowhandle() const { return this->window; }  
-    static OttApplication& getInstance() { return *appInstance; }
+    GLFWwindow* getWindowhandle() const { return appwindow.getWindowhandle(); }  
 
 private:
-    static OttApplication* appInstance;
     
-    GLFWwindow* window = nullptr;
-    GLFWimage icon{};
+    OttWindow appwindow = OttWindow("Ottocento Engine", 1920, 1080);
     
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
@@ -294,73 +280,45 @@ private:
     //  Windows-specific: Refresh window to darkmode.
     void initWindow()
     {
-        glfwInit();
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-
-        windowMidPos_X = (glfwGetVideoMode(glfwGetPrimaryMonitor())->width - WIN_WIDTH) * 0.5;
-        windowMidPos_Y = (glfwGetVideoMode(glfwGetPrimaryMonitor())->height - WIN_HEIGHT) * 0.5;
-        glfwWindowHint(GLFW_POSITION_X, windowMidPos_X);
-        glfwWindowHint(GLFW_POSITION_Y, windowMidPos_Y);
+        viewportCamera->windowHandle = appwindow.getWindowhandle();
+        appwindow.OnFramebufferResized = [&](const glm::ivec2& size) {
+            framebufferResized = true;
+            swapChainExtent.width = size.x;
+            swapChainExtent.height = size.y;
+        };
+        appwindow.OnWindowRefreshed = [&]() {
+            vkDeviceWaitIdle(device);
+            //Recreate the swap chain with the new extent
+            recreateSwapChain();
+            updateUniformBufferCamera(currentFrame, 1, swapChainExtent.width, swapChainExtent.height);
+            drawFrame();
+        };
+        appwindow.OnFileDropped = [&](int count, const char** paths)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                loadModel(paths[i]);
+                createVertexBuffer();
+                createIndexBuffer();
+                createUniformBuffers();
+                createDescriptorPool();
+                createDescriptorSets();
+                createCommandBuffers();
+                createSyncObjects();
+            }
+        };
         
-        window = glfwCreateWindow(WIN_WIDTH, WIN_HEIGHT, "Ottocento Engine", nullptr, nullptr);
-        glfwSetWindowSizeLimits(window, 400, 300, GLFW_DONT_CARE, GLFW_DONT_CARE);
-        glfwSetWindowUserPointer(window, this);
-        glfwSetFramebufferSizeCallback(window, framebufferResizeCallback);
-        glfwSetWindowRefreshCallback(window, windowResizeCallback);
-        glfwSetScrollCallback(window, Input::scrollCallback);
-        //glfwSetKeyCallback(window, Input::keyCallback);
-        viewportCamera->windowHandle = window;
-
-        icon.pixels = stbi_load("src/icon.png", &icon.width, &icon.height, 0, 4);
-        if (icon.pixels) { glfwSetWindowIcon(window, 1, &icon); }
-        
-        #ifdef WIN32
-        ThemeRefreshDarkMode(window);
+        #ifdef _WIN32
+        appwindow.ThemeRefreshDarkMode(appwindow.getWindowhandle());
         #endif
     }
-    
-#if _WIN32
-    //----------------------------------------------------------------------------
-    // Windows Specific: refresh the titlebar to DarkMode.
-    // This code is from a problem already solved by the Blender devs. It is extracted
-    // from the 'ddbac88c08' commit "Win32: Dark Mode Title Bar Color" by Harley Acheson
-    void ThemeRefreshDarkMode(GLFWwindow* WIN32_window)
-    {
-        DWORD lightMode;
-        DWORD pcbData = sizeof(lightMode);
-        HWND hwnd = glfwGetWin32Window(WIN32_window);
-        if (RegGetValueW(HKEY_CURRENT_USER,
-                 L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize\\",
-                 L"AppsUseLightTheme",
-                 RRF_RT_REG_DWORD,
-                 NULL,
-                 &lightMode,
-                 &pcbData) == ERROR_SUCCESS)
-        {
-            BOOL DarkMode = !lightMode;
-            /* 20 == DWMWA_USE_IMMERSIVE_DARK_MODE in Windows 11 SDK.  This value was undocumented for
-            * Windows 10 versions 2004 and later, supported for Windows 11 Build 22000 and later. */
-            // This function is being broken on Debug mode so I'll just leave it for release builds.
-            #ifdef NDEBUG 
-            DwmSetWindowAttribute(hwnd, 20, &DarkMode, sizeof(DarkMode));
-            #endif
-        }
-
-        // This is a workaround I added for the window to minimize and restore so it can display
-        // the darkmode right when the GLFW window is initiated.
-        glfwIconifyWindow(window);
-        if (glfwGetWindowAttrib(window, GLFW_ICONIFIED))
-            glfwRestoreWindow(window); glfwMaximizeWindow(window);
-    }
-#endif
     
     //----------------------------------------------------------------------------
     void initVulkan()
     {
         createInstance();
         setupDebugMessenger();
-        createSurface();
+        surface = appwindow.createWindowSurface(instance);
         pickPhysicalDevice();
         createLogicalDevice();
         createSwapChain();
@@ -373,10 +331,10 @@ private:
         createColorResources();
         createDepthResources();
         createFramebuffers();
-        createTextureImage();
+        createTextureImage(TEXTURE_PATH);
         createTextureImageView();
         createTextureSampler();
-        loadModel();
+        loadModel(MODEL_PATH);
         createVertexBuffer();
         createIndexBuffer();
         createUniformBuffers();
@@ -389,10 +347,10 @@ private:
     //----------------------------------------------------------------------------
     void mainLoop()
     {
-        while (!glfwWindowShouldClose(window))
+        while (!appwindow.windowShouldClose())
         {
             auto startTime = std::chrono::high_resolution_clock::now();
-            glfwPollEvents();
+            appwindow.update();
             drawFrame();
             float deltaTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - startTime).count() * 0.001f * 0.001f * 0.001f;
             updateUniformBufferCamera(currentFrame, deltaTime, swapChainExtent.width, swapChainExtent.height);
@@ -470,13 +428,12 @@ private:
         // Endof Vulkan Specific ------------------------
 
         // Image Specific ----------
-        stbi_image_free(icon.pixels);
         
-        // GLFW Specific ----------
-        glfwDestroyWindow(window);
-        glfwTerminate();
+        
+        // OttWindow Specific ----------
+        //delete appwindow;
+        
     }
-    
     
     //----------------------------------------------------------------------------
     void createInstance()
@@ -544,13 +501,6 @@ private:
             throw std::runtime_error("failed to set up debug messenger!");
     }
 
-    //----------------------------------------------------------------------------
-    void createSurface()
-    {
-        if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS)
-            throw std::runtime_error("failed to create window surface!");
-    }
-    
     //----------------------------------------------------------------------------
     void pickPhysicalDevice()
     {
@@ -951,7 +901,7 @@ private:
 
         VkPipelineColorBlendStateCreateInfo colorBlending{};
         colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-        colorBlending.logicOpEnable = VK_TRUE;
+        colorBlending.logicOpEnable = VK_FALSE;
         colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
         colorBlending.attachmentCount = 1;
         colorBlending.pAttachments = &colorBlendAttachment;
@@ -1094,27 +1044,6 @@ private:
                 throw std::runtime_error("failed to create framebuffer!");
         }
     }
-
-    //----------------------------------------------------------------------------
-    static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
-    {
-        auto app = reinterpret_cast<OttApplication*>(glfwGetWindowUserPointer(window));
-        app->framebufferResized = true;
-        app->swapChainExtent.width = width;
-        app->swapChainExtent.height = height;
-    }
-    
-    //----------------------------------------------------------------------------
-    static void windowResizeCallback(GLFWwindow* window)
-    {
-        auto app = reinterpret_cast<OttApplication*>(glfwGetWindowUserPointer(window));
-        vkDeviceWaitIdle(app->device);
-
-        // Recreate the swap chain with the new extent
-        app->recreateSwapChain();
-        app->updateUniformBufferCamera(app->currentFrame, 1, app->swapChainExtent.width, app->swapChainExtent.height);
-        app->drawFrame();
-    }
     
     //----------------------------------------------------------------------------
     void createCommandPool()
@@ -1153,10 +1082,10 @@ private:
     }
 
     //----------------------------------------------------------------------------
-    void createTextureImage()
+    void createTextureImage(std::string imagePath)
     {
         int texWidth, texHeight, texChannels;
-        stbi_uc* pixels = stbi_load(TEXTURE_PATH.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+        stbi_uc* pixels = stbi_load(imagePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
         VkDeviceSize imageSize = texWidth * texHeight * 4;
         mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
 
@@ -1237,14 +1166,14 @@ private:
     }
     
     //----------------------------------------------------------------------------
-    void loadModel()
+    void loadModel(std::string modelPath)
     {
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
         std::vector<tinyobj::material_t> materials;
         std::string warn, err;
 
-        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str()))
+        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath.c_str()))
             throw std::runtime_error(warn + err);
 
         std::unordered_map<Vertex, uint32_t> uniqueVertices{};
@@ -1527,7 +1456,7 @@ private:
                     throw std::runtime_error("failed to create semaphores!");
                 }
         }
-        
+        std::cout << "SyncObjects created" << std::endl;
     }
     
     //----------------------------------------------------------------------------
@@ -1833,8 +1762,8 @@ private:
         }
         else
         {
-            int width, height;
-            glfwGetFramebufferSize(window, &width, &height);
+            int width  = appwindow.getFrameBufferSize().x;
+            int height = appwindow.getFrameBufferSize().y;
 
             VkExtent2D actualExtent = {
                 static_cast<uint32_t>(width),
@@ -1977,7 +1906,7 @@ private:
         
         return score;
     }
-    
+
     //----------------------------------------------------------------------------
     std::vector<const char*> getRequiredExtensions()
     {
@@ -2069,12 +1998,12 @@ private:
     //-----------------------------------------------------------------------------
     void recreateSwapChain()
     {
-        int width = 0, height = 0;
-        glfwGetFramebufferSize(window, &width, &height);
+        int width = appwindow.getFrameBufferSize().x;
+        int height = appwindow.getFrameBufferSize().y;
         while (width == 0 || height == 0)
         {
-            glfwGetFramebufferSize(window, &width, &height);
-            glfwWaitEvents();
+            width = appwindow.getFrameBufferSize().x; height = appwindow.getFrameBufferSize().y;
+            appwindow.waitEvents();
         }
         vkDeviceWaitIdle(device);
         

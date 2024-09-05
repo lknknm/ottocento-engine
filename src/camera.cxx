@@ -13,8 +13,9 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 #include "camera.h"
-#include "input.hpp"
+#include "input.h"
 #include <gtc/matrix_transform.hpp>
 #include <gtc/quaternion.hpp>
 #include <gtx/quaternion.hpp>
@@ -24,6 +25,10 @@
 // Recalculate view with input handling functions
 glm::mat4 OttCamera::recalculateView(float deltaTime)
 {
+    if (windowHandle == nullptr)
+    {
+        throw std::runtime_error("windowHandle is a nullptr!");
+    }
     if (Input::isKeyDown(windowHandle, GLFW_KEY_F3))
     {
         // walkNavigation = !walkNavigation;
