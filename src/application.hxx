@@ -62,8 +62,10 @@
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
-const std::string MODEL_PATH = "./src/models/viking_room.obj";
-const std::string TEXTURE_PATH = "./src/textures/viking_room.png";
+std::string MODEL_PATH = "./src/models/viking_room.obj";
+std::string MODEL_PATH_2 = "./src/models/sandoy_model.obj";
+std::string TEXTURE_PATH = "./src/textures/viking_room.png";
+std::string TEXTURE_PATH_2 = "./src/textures/sandoy_model.png";
 
 const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
@@ -291,6 +293,20 @@ private:
             updateUniformBufferCamera(currentFrame, 1, swapChainExtent.width, swapChainExtent.height);
             drawFrame();
         };
+        appwindow.OnFileDropped = [&](int count, const char** paths)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                loadModel(paths[i]);
+                createVertexBuffer();
+                createIndexBuffer();
+                createUniformBuffers();
+                createDescriptorPool();
+                createDescriptorSets();
+                createCommandBuffers();
+                createSyncObjects();
+            }
+        };
         
         #ifdef _WIN32
         appwindow.ThemeRefreshDarkMode(appwindow.getWindowhandle());
@@ -315,10 +331,10 @@ private:
         createColorResources();
         createDepthResources();
         createFramebuffers();
-        createTextureImage();
+        createTextureImage(TEXTURE_PATH);
         createTextureImageView();
         createTextureSampler();
-        loadModel();
+        loadModel(MODEL_PATH);
         createVertexBuffer();
         createIndexBuffer();
         createUniformBuffers();
@@ -1066,10 +1082,10 @@ private:
     }
 
     //----------------------------------------------------------------------------
-    void createTextureImage()
+    void createTextureImage(std::string imagePath)
     {
         int texWidth, texHeight, texChannels;
-        stbi_uc* pixels = stbi_load(TEXTURE_PATH.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+        stbi_uc* pixels = stbi_load(imagePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
         VkDeviceSize imageSize = texWidth * texHeight * 4;
         mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
 
@@ -1150,14 +1166,14 @@ private:
     }
     
     //----------------------------------------------------------------------------
-    void loadModel()
+    void loadModel(std::string modelPath)
     {
         tinyobj::attrib_t attrib;
         std::vector<tinyobj::shape_t> shapes;
         std::vector<tinyobj::material_t> materials;
         std::string warn, err;
 
-        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str()))
+        if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath.c_str()))
             throw std::runtime_error(warn + err);
 
         std::unordered_map<Vertex, uint32_t> uniqueVertices{};

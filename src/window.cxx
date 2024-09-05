@@ -66,6 +66,13 @@ OttWindow::OttWindow(const char* title, int winWidth, int winHeight, bool show)
           auto* windowPtr = reinterpret_cast<OttWindow*>(glfwGetWindowUserPointer(window));
           windowPtr->OnWindowRefreshed();
         });
+
+        glfwSetDropCallback(m_window,
+        [](GLFWwindow* window, int count, const char** paths) -> void
+        {
+            auto* windowPtr = reinterpret_cast<OttWindow*>(glfwGetWindowUserPointer(window));
+            windowPtr->OnFileDropped(count, paths);
+        });
             
         glfwSetScrollCallback(m_window, Input::scrollCallback);
         glfwSetKeyCallback(m_window, keyCallback);

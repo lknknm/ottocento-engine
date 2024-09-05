@@ -40,6 +40,7 @@ public:
     
     std::function<void()> OnWindowRefreshed;
     std::function<void(glm::vec2)> OnFramebufferResized;
+    std::function<void(int count, const char** paths)> OnFileDropped;
 
     // Soon to be transfered to the Window Manager.
     bool windowShouldClose() const { return glfwWindowShouldClose(m_window); }
@@ -57,14 +58,6 @@ public:
             std::cout << "Key released: " << key << std::endl;
             //Take action here
         }
-    }
-    
-    //----------------------------------------------------------------------------
-    static void dropFilesCallback(GLFWwindow* window, int path_count, const char* paths[])
-    {
-        auto ptr = reinterpret_cast<OttWindow*>(glfwGetWindowUserPointer(window));
-        std::vector<std::string> filePaths(paths, paths + path_count);
-        //ptr->dropFilesInternal(filePaths);
     }
 
 private:
