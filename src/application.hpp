@@ -20,24 +20,12 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #endif
 
-#define GLFW_INCLUDE_VULKAN
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <GLFW/glfw3.h>
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <gtx/hash.hpp>
-
-// Win32 Specific API.
-#ifdef _WIN32
-#pragma comment (lib, "Dwmapi")
-#define GLFW_EXPOSE_NATIVE_WIN32
-#define GLFW_EXPOSE_NATIVE_WGL
-#include <GLFW/glfw3native.h>
-#include <windows.h>
-#include <dwmapi.h>
-#endif
 
 #include <imgui.h>
 #include <imconfig.h>
@@ -64,7 +52,6 @@
 #include <optional>
 #include <vector>
 
-#include "input.h"
 #include "window.h"
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -73,12 +60,10 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "../external/tinyobjloader/tiny_obj_loader.h"
 
-const uint32_t WIN_WIDTH = 1280;
-const uint32_t WIN_HEIGHT = 720;
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
-const std::string MODEL_PATH = "./src/models/sandoy_model.obj";
-const std::string TEXTURE_PATH = "./src/textures/sandoy_model.png";
+const std::string MODEL_PATH = "./src/models/viking_room.obj";
+const std::string TEXTURE_PATH = "./src/textures/viking_room.png";
 
 const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
@@ -113,6 +98,7 @@ inline void DestroyDebugUtilsMessengerEXT(VkInstance instance,
         func(instance, debugMessenger, pAllocator);
     }
 }
+
 
 //----------------------------------------------------------------------------
 // structs declarations
@@ -205,15 +191,11 @@ public:
         cleanup();
     }
 
-    GLFWwindow* getWindowhandle() const { return this->window; }  
-    static OttApplication& getInstance() { return *appInstance; }
+    GLFWwindow* getWindowhandle() const { return appwindow.getWindowhandle(); }  
 
 private:
-    static OttApplication* appInstance;
     
-    GLFWwindow* window = nullptr;
-    OttWindow* appwindow = nullptr;
-    GLFWimage icon{};
+    OttWindow appwindow = OttWindow("Ottocento Engine", 1920, 1080);
     
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
@@ -296,8 +278,23 @@ private:
     //  Windows-specific: Refresh window to darkmode.
     void initWindow()
     {
-        glfwInit();
-        appwindow(this, "Ottocento Engine", 1280, 720);
+        viewportCamera->windowHandle = appwindow.getWindowhandle();
+        appwindow.OnFramebufferResized = [&](const glm::ivec2& size) {
+            framebufferResized = true;
+            swapChainExtent.width = size.x;
+            swapChainExtent.height = size.y;
+        };
+        appwindow.OnWindowRefreshed = [&]() {
+            vkDeviceWaitIdle(device);
+            //Recreate the swap chain with the new extent
+            recreateSwapChain();
+            updateUniformBufferCamera(currentFrame, 1, swapChainExtent.width, swapChainExtent.height);
+            drawFrame();
+        };
+        
+        #ifdef _WIN32
+        appwindow.ThemeRefreshDarkMode(appwindow.getWindowhandle());
+        #endif
     }
     
     //----------------------------------------------------------------------------
@@ -305,7 +302,7 @@ private:
     {
         createInstance();
         setupDebugMessenger();
-        surface = appwindow->createSurface(instance);
+        surface = appwindow.createWindowSurface(instance);
         pickPhysicalDevice();
         createLogicalDevice();
         createSwapChain();
@@ -334,10 +331,10 @@ private:
     //----------------------------------------------------------------------------
     void mainLoop()
     {
-        while (!appwindow->windowShouldClose())
+        while (!appwindow.windowShouldClose())
         {
             auto startTime = std::chrono::high_resolution_clock::now();
-            appwindow->update();
+            appwindow.update();
             drawFrame();
             float deltaTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - startTime).count() * 0.001f * 0.001f * 0.001f;
             updateUniformBufferCamera(currentFrame, deltaTime, swapChainExtent.width, swapChainExtent.height);
@@ -415,11 +412,11 @@ private:
         // Endof Vulkan Specific ------------------------
 
         // Image Specific ----------
-        stbi_image_free(icon.pixels);
+        
         
         // OttWindow Specific ----------
-        ~appwindow();
-        glfwTerminate();
+        //delete appwindow;
+        
     }
     
     //----------------------------------------------------------------------------
@@ -440,7 +437,7 @@ private:
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &appInfo;
 
-        auto extensions = appwindow->getRequiredExtensions();
+        auto extensions = getRequiredExtensions();
         
         #ifdef __APPLE__
         extensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
@@ -888,7 +885,7 @@ private:
 
         VkPipelineColorBlendStateCreateInfo colorBlending{};
         colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-        colorBlending.logicOpEnable = VK_TRUE;
+        colorBlending.logicOpEnable = VK_FALSE;
         colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
         colorBlending.attachmentCount = 1;
         colorBlending.pAttachments = &colorBlendAttachment;
@@ -1443,7 +1440,7 @@ private:
                     throw std::runtime_error("failed to create semaphores!");
                 }
         }
-        
+        std::cout << "SyncObjects created" << std::endl;
     }
     
     //----------------------------------------------------------------------------
@@ -1467,7 +1464,7 @@ private:
     void updateUniformBufferCamera(uint32_t currentImage, float deltaTime, int width, int height)
     {        
         UniformBufferObject ubo{};
-        ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.f), glm::vec3(0.0f, 0.0f, 1.0f));
+        ubo.model = glm::rotate(glm::mat4(1.0f), glm::radians(270.f), glm::vec3(0.0f, 0.0f, 1.0f));
         ubo.view = viewportCamera->recalculateView(deltaTime);
         ubo.proj = viewportCamera->perspectiveProjection(width / (float)height);
         ubo.viewProjectionInverse = viewportCamera->inverseProjection(ubo.proj, ubo.view);
@@ -1749,8 +1746,8 @@ private:
         }
         else
         {
-            int width, height;
-            appwindow->getFrameBufferSize(&width, &height);
+            int width  = appwindow.getFrameBufferSize().x;
+            int height = appwindow.getFrameBufferSize().y;
 
             VkExtent2D actualExtent = {
                 static_cast<uint32_t>(width),
@@ -1893,6 +1890,20 @@ private:
         
         return score;
     }
+
+    //----------------------------------------------------------------------------
+    std::vector<const char*> getRequiredExtensions()
+    {
+        uint32_t glfwExtensionCount = 0;
+        const char** glfwExtensions;
+        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+        std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+
+        if (enableValidationLayers)
+            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        return extensions;
+    }
     
     //----------------------------------------------------------------------------
     bool checkValidationLayerSupport()
@@ -1971,12 +1982,12 @@ private:
     //-----------------------------------------------------------------------------
     void recreateSwapChain()
     {
-        int width = 0, height = 0;
-        appwindow->getFrameBufferSize(&width, &height);
+        int width = appwindow.getFrameBufferSize().x;
+        int height = appwindow.getFrameBufferSize().y;
         while (width == 0 || height == 0)
         {
-            appwindow->getFrameBufferSize(&width, &height);
-            appwindow->waitEvents();
+            width = appwindow.getFrameBufferSize().x; height = appwindow.getFrameBufferSize().y;
+            appwindow.waitEvents();
         }
         vkDeviceWaitIdle(device);
         

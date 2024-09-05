@@ -14,40 +14,57 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#pragma once
 #include "window.h"
-#include "application.hpp"
-#include <algorithm>
+#include "input.h"
+
+#include "../stb/stb_image.h"
+
 #ifdef _WIN32
 #pragma comment (lib, "Dwmapi")
 #define GLFW_EXPOSE_NATIVE_WIN32
 #define GLFW_EXPOSE_NATIVE_WGL
 #include <GLFW/glfw3native.h>
+#define NOMINMAX
 #include <windows.h>
 #include <dwmapi.h>
 #endif
 
-//----------------------------------------------------------------------------
-// Default constructor for the Ottocento Window. Should be called after glfwInit.
-OttWindow::OttWindow(OttApplication* ApplicationInstance, const char* title, int winWidth, int winHeight, bool show)
-{
-        application = ApplicationInstance;
-        m_width = winWidth;
-        m_height = winHeight;
-        winWidth  = std::clamp(winWidth, 1, glfwGetVideoMode(glfwGetPrimaryMonitor())->width);
-        winHeight = std::clamp(winHeight, 1, glfwGetVideoMode(glfwGetPrimaryMonitor())->height);
+#ifdef NDEBUG
+const bool enableValidationLayers = false;
+#else
+const bool enableValidationLayers = true;
+#endif
 
+//----------------------------------------------------------------------------
+// Default constructor for the Ottocento Window.
+// Initiate GLFW window with specific parameters and sets up the window icon.
+// Windows-specific: Refresh window to darkmode.
+OttWindow::OttWindow(const char* title, int winWidth, int winHeight, bool show)
+{
+        glfwInit();
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+    
+        m_width = winWidth; m_height = winHeight;
+    
         m_window = glfwCreateWindow(winWidth, winHeight, title, nullptr, nullptr);
         if (!m_window) { throw std::runtime_error("Failed to create GLFW window!"); }
         glfwSetWindowUserPointer(m_window, this);
         glfwSetWindowSizeLimits(m_window, 400, 300, GLFW_DONT_CARE, GLFW_DONT_CARE);
         
-        glfwSetFramebufferSizeCallback(m_window, framebufferResizeCallback);
-        glfwSetWindowRefreshCallback(m_window, windowResizeCallback);
-
+        glfwSetFramebufferSizeCallback(m_window,
+        [](GLFWwindow* window, int width, int height) -> void
+        {
+          auto* windowPtr = reinterpret_cast<OttWindow*>(glfwGetWindowUserPointer(window));
+          windowPtr->OnFramebufferResized({width, height});
+        });
+    
         glfwSetWindowRefreshCallback(m_window,
-        [](GLFWwindow* glfwWindow, int width, int height) -> void {
-          auto* window = reinterpret_cast<OttWindow*>(glfwGetWindowUserPointer(glfwWindow));
-          window->OnWindowResized({width, height});
+        [](GLFWwindow* window) -> void
+        {
+          auto* windowPtr = reinterpret_cast<OttWindow*>(glfwGetWindowUserPointer(window));
+          windowPtr->OnWindowRefreshed();
         });
             
         glfwSetScrollCallback(m_window, Input::scrollCallback);
@@ -55,39 +72,34 @@ OttWindow::OttWindow(OttApplication* ApplicationInstance, const char* title, int
 
         m_icon.pixels = stbi_load("src/icon.png", &m_icon.width, &m_icon.height, 0, 4);
         if (m_icon.pixels) { glfwSetWindowIcon(m_window, 1, &m_icon); }
-            
-        #ifdef WIN32
-        ThemeRefreshDarkMode(m_window);
-        #endif
+
+        std::cout << "Window created" << std::endl;
+        std::cout << "Window.cxx side: Pointer address: 0x" << getWindowhandle() << std::endl;
 }
 
 //----------------------------------------------------------------------------
-OttWindow::~OttWindow()
+VkSurfaceKHR OttWindow::createWindowSurface(VkInstance instance)
 {
-    glfwDestroyWindow(m_window);
-}
-
-//----------------------------------------------------------------------------
-VkSurfaceKHR OttWindow::createSurface(VkInstance instance)
-{
-    VkSurfaceKHR surface  = VK_NULL_HANDLE;
+    VkSurfaceKHR surface = VK_NULL_HANDLE;
     if (glfwCreateWindowSurface(instance, m_window, nullptr, &surface) != VK_SUCCESS)
         throw std::runtime_error("failed to create window surface!");
     return surface;
 }
 
 //----------------------------------------------------------------------------
-std::vector<const char*> OttWindow::getRequiredExtensions()
+glm::ivec2 OttWindow::getFrameBufferSize()
 {
-    uint32_t glfwExtensionCount = 0;
-    const char** glfwExtensions;
-    glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+    glm::ivec2 fbSize(0, 0);
+    glfwGetFramebufferSize(m_window, &fbSize.x, &fbSize.y);
+    return fbSize;
+}
 
-    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-
-    if (enableValidationLayers)
-        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    return extensions;
+//----------------------------------------------------------------------------
+OttWindow::~OttWindow()
+{
+    glfwDestroyWindow(m_window);
+    stbi_image_free(m_icon.pixels);
+    glfwTerminate();
 }
 
 //----------------------------------------------------------------------------
@@ -112,13 +124,8 @@ void OttWindow::ThemeRefreshDarkMode(GLFWwindow* WIN32_window)
         /* 20 == DWMWA_USE_IMMERSIVE_DARK_MODE in Windows 11 SDK.  This value was undocumented for
         * Windows 10 versions 2004 and later, supported for Windows 11 Build 22000 and later. */
         // This function is being broken on Debug mode so I'll just leave it for release builds.
-        #ifdef NDEBUG 
         DwmSetWindowAttribute(hwnd, 20, &DarkMode, sizeof(DarkMode));
-        #endif
     }
-
-    // This is a workaround I added for the window to minimize and restore so it can display
-    // the darkmode right when the GLFW window is initiated.
     glfwIconifyWindow(m_window);
     if (glfwGetWindowAttrib(m_window, GLFW_ICONIFIED))
         glfwRestoreWindow(m_window); glfwMaximizeWindow(m_window);

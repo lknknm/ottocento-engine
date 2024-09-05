@@ -17,6 +17,7 @@
 #pragma once
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <functional>
 #include <iostream>
 #include <vec2.hpp>
 #include <vector>
@@ -24,9 +25,6 @@
 struct GLFWwindow;
 using VkInstance   = struct VkInstance_T*;
 using VkSurfaceKHR = struct VkSurfaceKHR_T*;
-typedef void (*Delegate)();
-
-class OttApplication;
 
 // OttWindow Class is an abstraction on top of the GLFWwindow.
 // It defines window specific functions and callbacks to pass them to the application.
@@ -34,43 +32,22 @@ class OttWindow
 {
 //----------------------------------------------------------------------------
 public:
-    OttWindow(OttApplication* ApplicationInstance, const char* title, int width, int height, bool show = true);
+    OttWindow(const char* title, int width, int height, bool show = true);
     ~OttWindow();
-    bool framebufferResized = false;
-
+    
     GLFWwindow* getWindowhandle() const { return this->m_window; }
-    void getFrameBufferSize(int* width, int* height) { OttWindow* window = this; width  = &this->m_width; height = &this->m_height; }
-    VkSurfaceKHR createSurface(VkInstance instance);
-    std::vector<const char*> getRequiredExtensions();
-
-    Delegate<void(glm::vec2)> OnWindowResized;
+    glm::ivec2 getFrameBufferSize();
+    
+    std::function<void()> OnWindowRefreshed;
+    std::function<void(glm::vec2)> OnFramebufferResized;
 
     // Soon to be transfered to the Window Manager.
+    bool windowShouldClose() const { return glfwWindowShouldClose(m_window); }
     void waitEvents() { return glfwWaitEvents(); }
     void update() { return glfwPollEvents(); }
-    bool windowShouldClose() const { return glfwWindowShouldClose(m_window); }
     void windowTerminate() const { return glfwTerminate(); }
-    
-    //----------------------------------------------------------------------------
-    static void windowResizeCallback(GLFWwindow* window)
-    {
-        auto ptr = reinterpret_cast<OttWindow*>(glfwGetWindowUserPointer(window));
-        //vkDeviceWaitIdle(app->device);
-
-        // Recreate the swap chain with the new extent
-        application->recreateSwapChain();
-        application->updateUniformBufferCamera(application->currentFrame, 1, application->swapChainExtent.width, application->swapChainExtent.height);
-        application->drawFrame();
-    }
-    
-    //----------------------------------------------------------------------------
-    static void framebufferResizeCallback(GLFWwindow* window, int width, int height)
-    {
-        auto ptr = reinterpret_cast<OttApplication*>(glfwGetWindowUserPointer(window));
-        application->framebufferResized = true;
-        application->swapChainExtent.width = width;
-        application->swapChainExtent.height = height;
-    }
+    void ThemeRefreshDarkMode(GLFWwindow* WIN32_window);
+    VkSurfaceKHR createWindowSurface(VkInstance instance);
     
     //----------------------------------------------------------------------------
     static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -90,16 +67,11 @@ public:
         //ptr->dropFilesInternal(filePaths);
     }
 
-
-
 private:
 //----------------------------------------------------------------------------
     GLFWwindow* m_window = nullptr;
-    OttApplication* application;
+    GLFWimage m_icon{};
     
     int m_width = 0.0f;
     int m_height = 0.0f;
-    GLFWimage m_icon{};
-    
-    void ThemeRefreshDarkMode(GLFWwindow* WIN32_window);
 };

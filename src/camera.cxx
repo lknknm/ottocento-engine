@@ -25,6 +25,10 @@
 // Recalculate view with input handling functions
 glm::mat4 OttCamera::recalculateView(float deltaTime)
 {
+    if (windowHandle == nullptr)
+    {
+        throw std::runtime_error("windowHandle is a nullptr!");
+    }
     if (Input::isKeyDown(windowHandle, GLFW_KEY_F3))
     {
         // walkNavigation = !walkNavigation;
