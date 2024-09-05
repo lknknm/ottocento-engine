@@ -43,7 +43,7 @@ glm::mat4 OttCamera::recalculateView(float deltaTime)
     
     return glm::lookAt(EyePosition, CenterPosition, upVector);
 }
-        
+
 //----------------------------------------------------------------------------
 // Input Handling functions
 //----------------------------------------------------------------------------
@@ -59,7 +59,7 @@ void OttCamera::viewportInputHandle(float deltaTime)
     
     forwardDirection = CenterPosition - EyePosition;
     rightVector = glm::cross(forwardDirection, upVector);
-
+    
     if(windowHandle != nullptr )
     {
         if (!Input::isMouseButtonDown(windowHandle, GLFW_MOUSE_BUTTON_MIDDLE))
@@ -105,7 +105,7 @@ void OttCamera::viewportInputHandle(float deltaTime)
             
             return;
         }
-
+        wrapAroundMousePos(&lastMousePosition);
         if (Input::isKeyDownRepeat(windowHandle, GLFW_KEY_LEFT_SHIFT))
         {
             if (delta.x != 0.0f || delta.y != 0.0f)
@@ -120,17 +120,49 @@ void OttCamera::viewportInputHandle(float deltaTime)
         
         if (delta.x != 0.0f || delta.y != 0.0f && !Input::isKeyDown(windowHandle, GLFW_KEY_LEFT_SHIFT))
         {
-            float pitchDelta = delta.y * rotationSpeed;
-            float yawDelta = delta.x * speed;
-            
+            float pitchDelta = delta.y * speed * 5.0f / (glm::distance(EyePosition,CenterPosition));
+            float yawDelta = delta.x * speed * 3.0f;
+            std::cout << "DeltaPos Value: " << delta.x << "  " << delta.y << std::endl;
             glm::quat qPitch = glm::angleAxis(-pitchDelta, rightVector);
             glm::quat qYaw = glm::angleAxis(-yawDelta, glm::vec3(0.0f, 0.0f, upVector.z));
             glm::mat4 rotationMatrix = glm::toMat4(glm::normalize(glm::cross(qYaw, qPitch)));
             
             forwardDirection = rotationMatrix * glm::vec4(forwardDirection, 0.0f);
             upVector = glm::normalize(rotationMatrix * glm::vec4(upVector, 0.0f));
-            EyePosition = CenterPosition - forwardDirection;
+            EyePosition = (CenterPosition - forwardDirection);
+            
         }
+    }
+}
+
+//----------------------------------------------------------------------------
+// Gets the mouse pointer to wrap around the framebuffer to get continuous movement
+// while rotating or panning the camera.
+void OttCamera::wrapAroundMousePos(glm::vec2* mousePos)
+{
+    double mxpos, mypos; // Get mouse position, relative to window
+    appwindow->getCursorPos(&mxpos, &mypos);
+    glm::ivec2 framebufferSize = appwindow->getFrameBufferSize();
+
+    if(mxpos > framebufferSize.x - 5)
+    {
+        appwindow->setCursorPos(2, mypos);
+        mousePos->x = 2;
+    }
+    else if(mxpos <= 0)
+    {
+        appwindow->setCursorPos( framebufferSize.x - 5, mypos );
+        mousePos->x = framebufferSize.x - 5 ;
+    }
+    if(mypos > framebufferSize.y )
+    {
+        appwindow->setCursorPos( mxpos, 0 );
+        mousePos->y = 0;
+    }
+    else if(mypos < 0)
+    {
+        appwindow->setCursorPos( mxpos, framebufferSize.y);
+        mousePos->y = framebufferSize.y;
     }
 }
 

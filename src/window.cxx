@@ -94,11 +94,23 @@ VkSurfaceKHR OttWindow::createWindowSurface(VkInstance instance)
 }
 
 //----------------------------------------------------------------------------
-glm::ivec2 OttWindow::getFrameBufferSize()
+glm::ivec2 OttWindow::getFrameBufferSize() const
 {
     glm::ivec2 fbSize(0, 0);
     glfwGetFramebufferSize(m_window, &fbSize.x, &fbSize.y);
     return fbSize;
+}
+
+//----------------------------------------------------------------------------
+void OttWindow::getCursorPos(double* xpos, double* ypos) const
+{
+    glfwGetCursorPos(m_window, xpos, ypos);
+}
+
+//----------------------------------------------------------------------------
+void OttWindow::setCursorPos(double xpos, double ypos) const
+{
+    glfwSetCursorPos(m_window, xpos, ypos);
 }
 
 //----------------------------------------------------------------------------
@@ -114,7 +126,7 @@ OttWindow::~OttWindow()
 // This code is from a problem already solved by the Blender devs. It is extracted
 // from the 'ddbac88c08' commit "Win32: Dark Mode Title Bar Color" by Harley Acheson
 #if _WIN32
-void OttWindow::ThemeRefreshDarkMode(GLFWwindow* WIN32_window)
+void OttWindow::ThemeRefreshDarkMode(GLFWwindow* WIN32_window) const
 {
     DWORD lightMode;
     DWORD pcbData = sizeof(lightMode);

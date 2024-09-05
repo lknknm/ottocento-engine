@@ -280,6 +280,7 @@ private:
     //  Windows-specific: Refresh window to darkmode.
     void initWindow()
     {
+        viewportCamera->appwindow = &appwindow;
         viewportCamera->windowHandle = appwindow.getWindowhandle();
         appwindow.OnFramebufferResized = [&](const glm::ivec2& size) {
             framebufferResized = true;

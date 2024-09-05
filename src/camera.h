@@ -14,16 +14,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
+#include "window.h"
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm.hpp>
+
+
 
 class OttCamera
 {
 //----------------------------------------------------------------------------
 public:
     GLFWwindow* windowHandle = nullptr;
+    OttWindow* appwindow = nullptr;
     glm::mat4 recalculateView(float deltaTime);
         
 //----------------------------------------------------------------------------
@@ -104,6 +108,7 @@ private:
     void resetToInitialPos();
     void orbitStartAnimation(ViewType view);
     void animateResetUpdate();
+    void wrapAroundMousePos(glm::vec2* mousePos);
     
     //----------------------------------------------------------------------------
     void moveUpDirection(float deltaTime);
@@ -114,4 +119,4 @@ private:
     void moveLeftDirection(float deltaTime);
     void zoomIn(double yoffset);
     void zoomOut(double yoffset);
-};
+}; // class OttCamera
