@@ -79,9 +79,6 @@ OttWindow::OttWindow(const char* title, int winWidth, int winHeight, bool show)
 
         m_icon.pixels = stbi_load("src/icon.png", &m_icon.width, &m_icon.height, 0, 4);
         if (m_icon.pixels) { glfwSetWindowIcon(m_window, 1, &m_icon); }
-
-        std::cout << "Window created" << std::endl;
-        std::cout << "Window.cxx side: Pointer address: 0x" << getWindowhandle() << std::endl;
 }
 
 //----------------------------------------------------------------------------
@@ -147,6 +144,7 @@ void OttWindow::ThemeRefreshDarkMode(GLFWwindow* WIN32_window) const
     }
     glfwIconifyWindow(m_window);
     if (glfwGetWindowAttrib(m_window, GLFW_ICONIFIED))
-        glfwRestoreWindow(m_window); glfwMaximizeWindow(m_window);
+        glfwRestoreWindow(m_window);
+    glfwMaximizeWindow(m_window);
 }
 #endif

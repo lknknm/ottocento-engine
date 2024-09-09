@@ -122,7 +122,6 @@ void OttCamera::viewportInputHandle(float deltaTime)
         {
             float pitchDelta = delta.y * speed * 5.0f / (glm::distance(EyePosition,CenterPosition));
             float yawDelta = delta.x * speed * 3.0f;
-            std::cout << "DeltaPos Value: " << delta.x << "  " << delta.y << std::endl;
             glm::quat qPitch = glm::angleAxis(-pitchDelta, rightVector);
             glm::quat qYaw = glm::angleAxis(-yawDelta, glm::vec3(0.0f, 0.0f, upVector.z));
             glm::mat4 rotationMatrix = glm::toMat4(glm::normalize(glm::cross(qYaw, qPitch)));
