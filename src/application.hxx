@@ -59,6 +59,8 @@
 #include "../stb/stb_image.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
+#include <ext/scalar_common.hpp>
+
 #include "../external/tinyobjloader/tiny_obj_loader.h"
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -164,7 +166,6 @@ struct Vertex
     }
 };
 
-
 template<> struct std::hash<Vertex>
 {
     size_t operator()(Vertex const& vertex) const
@@ -182,6 +183,21 @@ struct UniformBufferObject {
     alignas(16) glm::mat4 viewProjectionInverse;
     alignas(16) glm::vec3 cameraPos;
 };
+
+struct PushConstantData {
+    alignas(16) glm::vec3 offset;
+    alignas(16) glm::vec3 color;
+} push;
+
+struct modelObject {
+    uint32_t  startIndex;
+    uint32_t  startVertex;
+    uint32_t  indexCount;
+    glm::vec3 pushColor;
+};
+
+std::vector<modelObject> models;
+
 //----------------------------------------------------------------------------
 
 class OttApplication
@@ -1022,10 +1038,17 @@ private:
     //----------------------------------------------------------------------------
     void OttCreatePipelineLayout()
     {
+        VkPushConstantRange pushConstantRange{};
+        pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        pushConstantRange.offset     = 0;
+        pushConstantRange.size       = sizeof(PushConstantData);
+        
         VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-        pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipelineLayoutInfo.sType          = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = descriptorSetLayouts.size();
-        pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
+        pipelineLayoutInfo.pSetLayouts    = descriptorSetLayouts.data();
+        pipelineLayoutInfo.pushConstantRangeCount = 1;
+        pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
         
         if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
             throw std::runtime_error("failed to create pipeline layout!");
@@ -1112,13 +1135,16 @@ private:
         
         materials.push_back(tinyobj::material_t());
         
-
         for (size_t i = 0; i < materials.size() - 1; i++) {
             printf("material[%d].diffuse_texname = %s\n", int(i),
                    materials[i].diffuse_texname.c_str());
             sceneMaterials.imageTexture_path.clear();
             sceneMaterials.imageTexture_path.push_back(baseDir + materials[i].diffuse_texname);
         }
+        
+        modelObject model{};
+        model.startVertex = static_cast<uint32_t>(vertices.size());
+        model.startIndex  = static_cast<uint32_t>(indices.size());
         
         for (const auto& shape : shapes)
         {
@@ -1149,6 +1175,15 @@ private:
                 indices.push_back(uniqueVertices[vertex]);
             }
         }
+        
+        model.indexCount  = static_cast<uint32_t>(indices.size()) - model.startIndex;
+        model.pushColor   = {Utils::random_nr(0.1, 1.0f),  Utils::random_nr(0.1, 1.0f), Utils::random_nr(0.1, 1.0f)};
+        models.push_back(model);
+        
+        std::cout << "VERTEX COUNT: " << vertices.size() << std::endl;
+        std::cout << "model.startVertex: " << model.startVertex  << std::endl;
+        std::cout << "model.startIndex: " << model.startIndex  << std::endl;
+        std::cout << "model.indexCount: " << model.indexCount  << std::endl;
     }
 
     //----------------------------------------------------------------------------
@@ -1471,7 +1506,13 @@ private:
                 VkDeviceSize offsets[] = {0};
                 vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
                 vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-                vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+                
+                for (auto& m : models)
+                {
+                    push.color = m.pushColor;
+                    vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstantData), &push);
+                    vkCmdDrawIndexed(commandBuffer, m.indexCount, 1, m.startIndex, 0, 0);
+                }
             }
         
             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelines.grid);
