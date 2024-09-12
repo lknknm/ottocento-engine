@@ -141,7 +141,7 @@ void OttCamera::wrapAroundMousePos(glm::vec2* mousePos)
 {
     double mxpos, mypos; // Get mouse position, relative to window
     appwindow->getCursorPos(&mxpos, &mypos);
-    glm::ivec2 framebufferSize = appwindow->getFrameBufferSize();
+    const glm::ivec2 framebufferSize = appwindow->getFrameBufferSize();
 
     if(mxpos > framebufferSize.x - 5)
     {
@@ -151,7 +151,7 @@ void OttCamera::wrapAroundMousePos(glm::vec2* mousePos)
     else if(mxpos <= 0)
     {
         appwindow->setCursorPos( framebufferSize.x - 5, mypos );
-        mousePos->x = framebufferSize.x - 5 ;
+        mousePos->x = static_cast<float>(framebufferSize.x) - 5.0f ;
     }
     if(mypos > framebufferSize.y )
     {
@@ -161,7 +161,7 @@ void OttCamera::wrapAroundMousePos(glm::vec2* mousePos)
     else if(mypos < 0)
     {
         appwindow->setCursorPos( mxpos, framebufferSize.y);
-        mousePos->y = framebufferSize.y;
+        mousePos->y = static_cast<float>(framebufferSize.y);
     }
 }
 

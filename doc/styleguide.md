@@ -32,7 +32,7 @@ if (closestSphere < 0)
 // SIDEWAYS: angle * rotationSpeed * smoothness scalar.
 // UP/DOWN:  angle * rotationSpeed * smoothness scalar / distance to the center of the camera.
 // Scalars are defined arbitrarily and not assigned in order to save up some memory reads.
-void otrCamera::rotateFixedAmount(rotateDirection direction)
+void OttCamera::rotateFixedAmount(rotateDirection direction)
 {
     // Function
 }

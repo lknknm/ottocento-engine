@@ -75,8 +75,8 @@ private:
     GLFWwindow* m_window = nullptr;
     GLFWimage m_icon{};
     
-    int m_width = 0.0f;
-    int m_height = 0.0f;
+    int m_width  = 0;
+    int m_height = 0;
     
     //----------------------------------------------------------------------------
     static void windowTerminate() { return glfwTerminate();  }
