@@ -311,13 +311,50 @@ void VkHelpers::createImage(uint32_t width, uint32_t height, uint32_t mipLevels,
     vkGetImageMemoryRequirements(device, image, &memRequirements);
     
     VkMemoryAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize  = memRequirements.size;
     allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, properties, physicalDevice);
 
     if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
         throw std::runtime_error("failed to allocate image memory!");
     vkBindImageMemory(device, image, imageMemory, 0);
+}
+
+//----------------------------------------------------------------------------
+// Creates a 1x1 blank image to populate the 0 index of the textureImages array.
+void VkHelpers::create1x1BlankImage(VkImage& blankImage, uint32_t mipLevels, VkDevice device, VkPhysicalDevice physicalDevice,
+                                    std::vector<VkImage>& textureImages, VkDeviceMemory textureImageMemory)
+{    
+    VkImageCreateInfo imageInfo {
+                .sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+                .imageType     = VK_IMAGE_TYPE_2D,
+                .format        = VK_FORMAT_R8G8B8A8_SRGB,
+                .extent        = { .width = 1, .height = 1, .depth = 1 },
+                .mipLevels     = mipLevels,
+                .arrayLayers   = 1,
+                .samples       = VK_SAMPLE_COUNT_1_BIT,
+                .tiling        = VK_IMAGE_TILING_OPTIMAL,
+                .usage         = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                .sharingMode   = VK_SHARING_MODE_EXCLUSIVE,
+                .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+    };
+
+    if (vkCreateImage(device, &imageInfo, nullptr, &blankImage) != VK_SUCCESS)
+        throw std::runtime_error("failed to create image!");
+
+    VkMemoryRequirements memRequirements;
+    vkGetImageMemoryRequirements(device, blankImage, &memRequirements);
+    
+    VkMemoryAllocateInfo allocInfo {
+                        .sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+                        .allocationSize  = memRequirements.size,
+                        .memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, physicalDevice)
+    };
+    
+    if (vkAllocateMemory(device, &allocInfo, nullptr, &textureImageMemory) != VK_SUCCESS)
+        throw std::runtime_error("failed to allocate image memory!");
+    vkBindImageMemory(device, blankImage, textureImageMemory, 0);
+    textureImages.push_back(blankImage);
 }
 
 //----------------------------------------------------------------------------

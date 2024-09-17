@@ -13,7 +13,7 @@ project "ottocento-engine"
    kind "ConsoleApp"
    language "C++"
    targetdir "bin/%{cfg.buildcfg}"
-   cppdialect "c++17" -- apply to all toolsets and generators
+   cppdialect "c++20" -- apply to all toolsets and generators
 
    files { "./src/*.h", "./src/*.cpp", "./src/*.hpp", "./src/*.cxx", "./external/imgui/*.cpp" }
    

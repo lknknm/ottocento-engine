@@ -13,7 +13,6 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 #pragma once
 #include <optional>
 #include <vector>
@@ -46,19 +45,28 @@ struct SwapChainSupportDetails
 namespace VkHelpers 
 {
     void endSingleTimeCommands  (VkCommandBuffer commandBuffer, VkQueue graphicsQueue, VkCommandPool commandPool, VkDevice device);
-    void generateMipmaps        (VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels,
-                                 VkPhysicalDevice physicalDevice, VkQueue graphicsQueue, VkCommandPool commandPool, VkDevice device);
-    void createBuffer           (VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-                                 VkBuffer &buffer, VkDeviceMemory &bufferMemory, VkDevice device, VkPhysicalDevice physicalDevice);
-    void copyBuffer             (VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkQueue graphicsQueue, VkCommandPool commandPool, VkDevice device);
-    void copyBufferToImage      (VkBuffer buffer, VkImage image, uint32_t width, uint32_t height,VkQueue graphicsQueue, VkCommandPool commandPool, VkDevice device);
-    void transitionImageLayout  (VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout,
-                                 uint32_t mipLevels, VkQueue graphicsQueue, VkCommandPool commandPool, VkDevice device);
-    void createImage            (uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples,
-                                 VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
-                                 VkImage& image, VkDeviceMemory& imageMemory, VkDevice device, VkPhysicalDevice physicalDevice);
     
-    VkCommandBuffer         beginSingleTimeCommands (VkCommandPool commandPool, VkDevice device);
+    void generateMipmaps        (VkImage image, VkFormat imageFormat, int32_t texWidth,  int32_t texHeight, uint32_t mipLevels,
+                                 VkPhysicalDevice physicalDevice, VkQueue graphicsQueue, VkCommandPool commandPool, VkDevice device);
+    
+    void createBuffer           (VkDeviceSize size, VkBufferUsageFlags usage,     VkMemoryPropertyFlags properties,
+                                 VkBuffer &buffer,  VkDeviceMemory &bufferMemory, VkDevice device,
+                                 VkPhysicalDevice physicalDevice);
+    
+    void copyBuffer             (VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size,               VkQueue graphicsQueue, VkCommandPool commandPool, VkDevice device);
+    void copyBufferToImage      (VkBuffer buffer,    VkImage image,      uint32_t width, uint32_t height, VkQueue graphicsQueue, VkCommandPool commandPool, VkDevice device);
+    
+    void transitionImageLayout  (VkImage image,      VkFormat format,       VkImageLayout oldLayout,   VkImageLayout newLayout,
+                                 uint32_t mipLevels, VkQueue graphicsQueue, VkCommandPool commandPool, VkDevice device);
+    
+    void createImage            (uint32_t width,  uint32_t height, uint32_t mipLevels,           VkSampleCountFlagBits numSamples,
+                                 VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
+                                 VkImage& image,  VkDeviceMemory& imageMemory,  VkDevice device, VkPhysicalDevice physicalDevice);
+    
+    void create1x1BlankImage    (VkImage& blankImage, uint32_t mipLevels, VkDevice device, VkPhysicalDevice physicalDevice,
+                                 std::vector<VkImage>& textureImages, VkDeviceMemory textureImageMemory);
+    
+    VkCommandBuffer         beginSingleTimeCommands (VkCommandPool    commandPool, VkDevice device);
     VkSampleCountFlagBits   getMaxUsableSampleCount (VkPhysicalDevice physicalDevice);
     
     QueueFamilyIndices      findQueueFamilies       (VkPhysicalDevice device, VkSurfaceKHR surface);
@@ -80,12 +88,12 @@ namespace VkHelpers
     bool checkValidationLayerSupport (const std::vector<const char*> &validationLayers);
     
     VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                                                        VkDebugUtilsMessageTypeFlagsEXT messageType,
-                                                        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                                                        void* pUserData);
+                                                 VkDebugUtilsMessageTypeFlagsEXT messageType,
+                                                 const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+                                                 void* pUserData);
     
-    std::vector<const char*> getRequiredExtensions(bool enableValidationLayers);
-    std::vector<char> readFile(const std::string& filename);
+    std::vector<const char*> getRequiredExtensions  (bool enableValidationLayers);
+    std::vector<char>        readFile               (const std::string& filename);
 } //namespace VkHelpers
 
 
