@@ -26,6 +26,11 @@ struct GLFWwindow;
 using VkInstance   = struct VkInstance_T*;
 using VkSurfaceKHR = struct VkSurfaceKHR_T*;
 
+#ifdef NDEBUG
+const bool enableValidationLayers = false;
+#else
+const bool enableValidationLayers = true;
+#endif
 
 // OttWindow Class is an abstraction on top of the GLFWwindow.
 // It defines window specific functions and callbacks to pass them to other classes.

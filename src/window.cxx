@@ -16,7 +16,7 @@
 
 #pragma once
 #include "window.h"
-#include "input.h"
+#include "input.hxx"
 
 #include "../stb/stb_image.h"
 
@@ -28,12 +28,6 @@
 #define NOMINMAX
 #include <windows.h>
 #include <dwmapi.h>
-#endif
-
-#ifdef NDEBUG
-const bool enableValidationLayers = false;
-#else
-const bool enableValidationLayers = true;
 #endif
 
 //----------------------------------------------------------------------------

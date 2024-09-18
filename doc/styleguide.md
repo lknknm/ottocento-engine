@@ -1,7 +1,11 @@
 ﻿## Ottocento Engine Style Guide
 Since this is a study project, I am very flexible about Code Style improvements and suggestions. Here are the basic rules to follow in order to style the code and make it readable.
 
-
+### Extension naming conventions:
+- `.hxx` for C++ header files containing function definitions and declarations within the same file.
+- `.h`   for header files containing only definitions, used for both C and C++.
+- `.cxx` for C++ files with the declarations for the member functions of the related header file.
+- `.c`   for C files with the declarations for the member functions of the related header file.
 ### For the C++ library:
 - Functions/Methods inside classes should be named in camelCase.
 
@@ -38,3 +42,15 @@ void OttCamera::rotateFixedAmount(rotateDirection direction)
 }
 ```
 - Comments inside the methods are also allowed to better clarify the actual intent of some steps.
+- The use of Designated Initializers (compatible with C++20) is preferred, especially for Vulkan related structs, like the example:
+
+ ```cpp
+VkPhysicalDeviceDescriptorIndexingFeaturesEXT physicalDeviceDescriptorIndexingFeatures
+{
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT,
+            .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
+            .descriptorBindingPartiallyBound           = VK_TRUE,
+            .descriptorBindingVariableDescriptorCount  = VK_TRUE,
+            .runtimeDescriptorArray                    = VK_TRUE
+};
+```

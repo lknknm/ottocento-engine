@@ -64,18 +64,11 @@
 #include <ext/scalar_common.hpp>
 #include "../external/tinyobjloader/tiny_obj_loader.h"
 
-#define     TEXTURE_ARRAY_SIZE 8
+#define     TEXTURE_ARRAY_SIZE 1000
 const int   MAX_FRAMES_IN_FLIGHT = 2;
 
 const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME };
-
-#ifdef NDEBUG
-const bool enableValidationLayers = false;
-#else
-const bool enableValidationLayers = true;
-#endif
-
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -513,7 +506,8 @@ private:
             queueCreateInfos.push_back(queueCreateInfo);
         }
 
-        VkPhysicalDeviceDescriptorIndexingFeaturesEXT physicalDeviceDescriptorIndexingFeatures{
+        VkPhysicalDeviceDescriptorIndexingFeaturesEXT physicalDeviceDescriptorIndexingFeatures
+        {
                     .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT,
                     .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
                     .descriptorBindingPartiallyBound           = VK_TRUE,
