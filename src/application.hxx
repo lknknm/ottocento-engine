@@ -53,6 +53,7 @@
 
 #include "camera.h"
 #include "helpers.h"
+#include "model.h"
 #include "window.h"
 #include "utils.hxx"
 
@@ -63,7 +64,8 @@
 #include <ext/scalar_common.hpp>
 #include "../external/tinyobjloader/tiny_obj_loader.h"
 
-const int MAX_FRAMES_IN_FLIGHT = 2;
+#define     TEXTURE_ARRAY_SIZE 8
+const int   MAX_FRAMES_IN_FLIGHT = 2;
 
 const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME };
@@ -74,87 +76,6 @@ const bool enableValidationLayers = false;
 const bool enableValidationLayers = true;
 #endif
 
-//----------------------------------------------------------------------------
-inline VkResult CreateDebugUtilsMessengerEXT(VkInstance instance,
-                                        const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-                                        const VkAllocationCallbacks* pAllocator,
-                                        VkDebugUtilsMessengerEXT* pDebugMessenger)
-{
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-    if (func != nullptr) {
-        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
-    } else {
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
-    }
-}
-
-//----------------------------------------------------------------------------
-inline void DestroyDebugUtilsMessengerEXT(VkInstance instance,
-                                    VkDebugUtilsMessengerEXT debugMessenger,
-                                    const VkAllocationCallbacks* pAllocator)
-{
-    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-    if (func != nullptr) {
-        func(instance, debugMessenger, pAllocator);
-    }
-}
-
-
-//----------------------------------------------------------------------------
-// structs declarations
-struct Vertex
-{
-    glm::vec3 pos;
-    glm::vec3 color;
-    glm::vec2 texCoord;
-
-    static VkVertexInputBindingDescription getBindingDescription()
-    {
-        VkVertexInputBindingDescription bindingDescription{};
-        bindingDescription.binding = 0;
-        bindingDescription.stride = sizeof(Vertex);
-        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-        
-        return bindingDescription;
-    }
-    
-    static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions()
-    {
-        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
-        
-        attributeDescriptions[0].binding = 0;
-        attributeDescriptions[0].location = 0;
-        attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[0].offset = offsetof(Vertex, pos);
-        
-        attributeDescriptions[1].binding = 0;
-        attributeDescriptions[1].location = 1;
-        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[1].offset = offsetof(Vertex, color);
-
-        attributeDescriptions[2].binding = 0;
-        attributeDescriptions[2].location = 2;
-        attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
-        
-        return attributeDescriptions;
-    }
-    
-    bool operator==(const Vertex& other) const
-    {
-        return pos == other.pos && color == other.color && texCoord == other.texCoord;
-    }
-};
-
-template<> struct std::hash<Vertex>
-{
-    size_t operator()(Vertex const& vertex) const
-    {
-        return ((std::hash<glm::vec3>()(vertex.pos) ^
-               (std::hash<glm::vec3>()(vertex.color) << 1)) >> 1) ^
-               (std::hash<glm::vec2>()(vertex.texCoord) << 1);
-    }
-};
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -170,17 +91,7 @@ struct PushConstantData {
     alignas(4)  uint32_t textureID;
 } push;
 
-struct modelObject {
-    uint32_t  startIndex;
-    uint32_t  startVertex;
-    uint32_t  indexCount;
-    uint32_t  textureID;
-    glm::vec3 pushColorID;
-};
-
-#define TEXTURE_ARRAY_SIZE 8
-
-std::vector<modelObject> models;
+std::vector<OttModel::modelObject> models;
 
 //----------------------------------------------------------------------------
 
@@ -260,7 +171,7 @@ private:
     std::vector<VkSemaphore> renderFinishedSemaphores;
     std::vector<VkFence> inFlightFences;
     
-    std::vector<Vertex> vertices;
+    std::vector<OttModel::Vertex> vertices;
     std::vector<uint32_t> indices;
     VkBuffer vertexBuffer;
     VkDeviceMemory vertexBufferMemory;
@@ -475,7 +386,7 @@ private:
         
         vkDestroyDevice(device, nullptr);
         if (enableValidationLayers)
-            DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+            VkHelpers::DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
         vkDestroySurfaceKHR(instance, surface, nullptr);
         vkDestroyInstance(instance, nullptr);
         // Endof Vulkan Specific ------------------------
@@ -543,7 +454,7 @@ private:
         VkDebugUtilsMessengerCreateInfoEXT createInfo;
         populateDebugMessengerCreateInfo(createInfo);
 
-        if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
+        if (VkHelpers::CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
             throw std::runtime_error("failed to set up debug messenger!");
     }
 
@@ -930,8 +841,8 @@ private:
         // and which offset.
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        auto bindingDescription                         = Vertex::getBindingDescription();
-        auto attributeDescriptions                      = Vertex::getAttributeDescriptions();
+        auto bindingDescription                         = OttModel::Vertex::getBindingDescription();
+        auto attributeDescriptions                      = OttModel::Vertex::getAttributeDescriptions();
         vertexInputInfo.vertexBindingDescriptionCount   = 1;
         vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
         vertexInputInfo.pVertexBindingDescriptions      = &bindingDescription;
@@ -1194,26 +1105,29 @@ private:
         std::cout << "Loading Wavefront " << modelPath << std::endl;
         std::cout << "BaseDir " << Utils::GetBaseDir(modelPath).c_str() << std::endl;
 
-        std::unordered_map<Vertex, uint32_t> uniqueVertices{};
+        std::unordered_map<OttModel::Vertex, uint32_t> uniqueVertices{};
         
         materials.push_back(tinyobj::material_t());
         
-        for (size_t i = 0; i < materials.size() - 1; i++) {
+        for (size_t i = 0; i < materials.size() - 1; i++)
+        {
             printf("material[%d].diffuse_texname = %s\n", int(i),
                    materials[i].diffuse_texname.c_str());
             sceneMaterials.imageTexture_path.clear();
             sceneMaterials.imageTexture_path.push_back(baseDir + materials[i].diffuse_texname);
         }
         
-        modelObject model{};
-        model.startVertex = static_cast<uint32_t>(vertices.size());
-        model.startIndex  = static_cast<uint32_t>(indices.size());
+        OttModel::modelObject model
+        {
+            .startIndex  = static_cast<uint32_t>(indices.size()),
+            .startVertex = static_cast<uint32_t>(vertices.size())
+        };
         
         for (const auto& shape : shapes)
         {
             for (const auto& index : shape.mesh.indices)
             {
-                Vertex vertex{};
+                OttModel::Vertex vertex{};
                 
                 vertex.pos =
                 {
@@ -1501,7 +1415,7 @@ private:
             descriptorWrites[1].dstBinding      = 1;
             descriptorWrites[1].dstArrayElement = 0;
             descriptorWrites[1].descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptorWrites[1].descriptorCount = textureImages.size();
+            descriptorWrites[1].descriptorCount = static_cast<uint32_t>(textureImages.size());
             descriptorWrites[1].pImageInfo      = imageInfos;
             
             vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);

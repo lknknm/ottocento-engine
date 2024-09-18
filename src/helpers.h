@@ -65,13 +65,17 @@ namespace VkHelpers
     
     void create1x1BlankImage    (VkImage& blankImage, uint32_t mipLevels, VkDevice device, VkPhysicalDevice physicalDevice,
                                  std::vector<VkImage>& textureImages, VkDeviceMemory textureImageMemory);
+
+    void     DestroyDebugUtilsMessengerEXT (VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
+    VkResult CreateDebugUtilsMessengerEXT  (VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+                                            const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
     
     VkCommandBuffer         beginSingleTimeCommands (VkCommandPool    commandPool, VkDevice device);
     VkSampleCountFlagBits   getMaxUsableSampleCount (VkPhysicalDevice physicalDevice);
-    
     QueueFamilyIndices      findQueueFamilies       (VkPhysicalDevice device, VkSurfaceKHR surface);
     VkFormat                findSupportedFormat     (const std::vector<VkFormat>& candidates, VkImageTiling tiling,
-                                                     VkFormatFeatureFlags features, VkPhysicalDevice physicalDevice);
+                                                     VkFormatFeatureFlags features,           VkPhysicalDevice physicalDevice);
+    
     VkFormat                findDepthFormat         (VkPhysicalDevice physicalDevice);
     uint32_t                findMemoryType          (uint32_t typeFilter, VkMemoryPropertyFlags properties, VkPhysicalDevice physicalDevice);
     
