@@ -15,12 +15,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 #include "window.h"
-#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm.hpp>
-
-
 
 class OttCamera
 {

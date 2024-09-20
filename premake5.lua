@@ -20,9 +20,9 @@ project "ottocento-engine"
    -- Requires to install the VulkanSDK package.
    if os.host() == "windows" then
         system "windows"
-        externalincludedirs  { "external/glfw-3.4.bin.WIN64/include", "%{VULKAN_SDK}/Include", "external/glm", "external/stb", "external/imgui" }
+        externalincludedirs  { "external/glfw-3.4.bin.WIN64/include", "%{VULKAN_SDK}/Include", "external/volk", "external/glm", "external/stb", "external/imgui" }
         libdirs { "external/glfw-3.4.bin.WIN64/lib-vc2022", "%{VULKAN_SDK}/Lib" }
-        links { "glfw3", "vulkan-1" }
+        links { "glfw3" }
         printf("windows setup")
    end
   

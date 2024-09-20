@@ -16,7 +16,6 @@
 #pragma once
 #include <optional>
 #include <vector>
-#include <vulkan/vulkan_core.h>
 #include <string>
 
 #include "window.h"
@@ -65,7 +64,8 @@ namespace VkHelpers
     
     void create1x1BlankImage    (VkImage& blankImage, uint32_t mipLevels, VkDevice device, VkPhysicalDevice physicalDevice,
                                  std::vector<VkImage>& textureImages, VkDeviceMemory textureImageMemory);
-
+    
+    void     debugUtilsObjectNameInfoEXT   (VkDevice device, VkObjectType objType, uint64_t objHandle, const char* objName);
     void     DestroyDebugUtilsMessengerEXT (VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
     VkResult CreateDebugUtilsMessengerEXT  (VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
                                             const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);

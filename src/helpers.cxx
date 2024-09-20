@@ -22,6 +22,7 @@
 #include <set>
 #include <stdexcept>
 
+
 //----------------------------------------------------------------------------
 VkCommandBuffer VkHelpers::beginSingleTimeCommands(VkCommandPool commandPool, VkDevice device)
 {
@@ -211,7 +212,8 @@ void VkHelpers::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width
 
 //----------------------------------------------------------------------------
 void VkHelpers::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout,
-                           VkImageLayout newLayout, uint32_t mipLevels, VkQueue graphicsQueue, VkCommandPool commandPool, VkDevice device)
+                                      VkImageLayout newLayout, uint32_t mipLevels, VkQueue graphicsQueue,
+                                      VkCommandPool commandPool, VkDevice device)
 {
     VkCommandBuffer commandBuffer = beginSingleTimeCommands(commandPool, device);
     VkImageMemoryBarrier barrier{};
@@ -318,6 +320,7 @@ void VkHelpers::createImage(uint32_t width, uint32_t height, uint32_t mipLevels,
     if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
         throw std::runtime_error("failed to allocate image memory!");
     vkBindImageMemory(device, image, imageMemory, 0);
+    debugUtilsObjectNameInfoEXT(device, VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)imageMemory, "application::VkDeviceMemory:1x1textureImageMemory");
 }
 
 //----------------------------------------------------------------------------
@@ -355,10 +358,26 @@ void VkHelpers::create1x1BlankImage(VkImage& blankImage, uint32_t mipLevels, VkD
         throw std::runtime_error("failed to allocate image memory!");
     vkBindImageMemory(device, blankImage, textureImageMemory, 0);
     textureImages.push_back(blankImage);
+    debugUtilsObjectNameInfoEXT(device, VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)textureImageMemory, "application::VkDeviceMemory:1x1textureImageMemory");
 }
 
 //----------------------------------------------------------------------------
-void VkHelpers::DestroyDebugUtilsMessengerEXT  (VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator)
+// Dedicated function to fill the VkDebugUtilsObjectNameInfoEXT and pass it to the
+// vkSetDebugUtilsObjectNameEXT function. It's basically a small wrapper for convenience.
+void VkHelpers::debugUtilsObjectNameInfoEXT(VkDevice device, VkObjectType objType, uint64_t objHandle, const char* objName)
+{
+    const VkDebugUtilsObjectNameInfoEXT debugNameInfo {
+                                  .sType        = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+                                  .objectType   = objType,
+                                  .objectHandle = objHandle,
+                                  .pObjectName  = objName,
+    };
+    if (vkSetDebugUtilsObjectNameEXT(device, &debugNameInfo) != VK_SUCCESS)
+        throw std::runtime_error("Failed to load Object Name Extension");
+}
+
+//----------------------------------------------------------------------------
+void VkHelpers::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator)
 {
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
     if (func != nullptr) {
@@ -584,11 +603,13 @@ int VkHelpers::rateDeviceSuitability(VkPhysicalDevice device)
         return 0;
 
     //Debug Log to detect the GPU.
+    std::cout << "-------------------------------------" << std::endl;
     std::cout << "GPU found." << std::endl;
     std::cout << "Name: " << deviceProperties.deviceName << std::endl;
     std::cout << "Score: " << score << std::endl;
     std::cout << "API Version: " << deviceProperties.apiVersion << std::endl;
     std::cout << "Driver Version: " << deviceProperties.driverVersion << std::endl;
+    std::cout << "-------------------------------------" << std::endl;
     
     return score;
 }
@@ -619,7 +640,7 @@ bool VkHelpers::isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface, 
 
 //----------------------------------------------------------------------------
 // This function is to be called by isDeviceSuitable as an additional check
-// to see if the Device has the Extension Support to Swap Chains
+// to see if the Device has the Extensions Support 
 bool VkHelpers::checkDeviceExtensionSupport(VkPhysicalDevice device, std::vector<const char*> deviceExtensions)
 {
     uint32_t extensionCount;
