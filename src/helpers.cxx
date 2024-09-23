@@ -320,13 +320,13 @@ void VkHelpers::createImage(uint32_t width, uint32_t height, uint32_t mipLevels,
     if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS)
         throw std::runtime_error("failed to allocate image memory!");
     vkBindImageMemory(device, image, imageMemory, 0);
-    debugUtilsObjectNameInfoEXT(device, VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)imageMemory, "application::VkDeviceMemory:1x1textureImageMemory");
+    debugUtilsObjectNameInfoEXT(device, VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)imageMemory, "application::VkDeviceMemory:textureImageMemory");
 }
 
 //----------------------------------------------------------------------------
 // Creates a 1x1 blank image to populate the 0 index of the textureImages array.
 void VkHelpers::create1x1BlankImage(VkImage& blankImage, uint32_t mipLevels, VkDevice device, VkPhysicalDevice physicalDevice,
-                                    std::vector<VkImage>& textureImages, VkDeviceMemory textureImageMemory)
+                                    std::vector<VkImage>& textureImages, VkDeviceMemory& textureImageMemory)
 {    
     VkImageCreateInfo imageInfo {
                 .sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
@@ -358,7 +358,7 @@ void VkHelpers::create1x1BlankImage(VkImage& blankImage, uint32_t mipLevels, VkD
         throw std::runtime_error("failed to allocate image memory!");
     vkBindImageMemory(device, blankImage, textureImageMemory, 0);
     textureImages.push_back(blankImage);
-    debugUtilsObjectNameInfoEXT(device, VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)textureImageMemory, "application::VkDeviceMemory:1x1textureImageMemory");
+    debugUtilsObjectNameInfoEXT(device, VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)textureImageMemory, "application::VkDeviceMemory:1x1blankImageMemory");
 }
 
 //----------------------------------------------------------------------------

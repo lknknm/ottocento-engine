@@ -314,6 +314,7 @@ private:
     //-----------------------------------------------------------------------------
     void cleanupModelObjects()
     {
+        std::cout << "cleanupModelObjects start :::::" << std::endl;
         if (textureSampler != VK_NULL_HANDLE)   { vkDestroySampler   (device, textureSampler,   nullptr); }
         if (textureImageView != VK_NULL_HANDLE) { vkDestroyImageView (device, textureImageView, nullptr); }
         if (textureImage != VK_NULL_HANDLE)     { vkDestroyImage     (device, textureImage,     nullptr); }

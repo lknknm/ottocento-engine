@@ -63,7 +63,7 @@ namespace VkHelpers
                                  VkImage& image,  VkDeviceMemory& imageMemory,  VkDevice device, VkPhysicalDevice physicalDevice);
     
     void create1x1BlankImage    (VkImage& blankImage, uint32_t mipLevels, VkDevice device, VkPhysicalDevice physicalDevice,
-                                 std::vector<VkImage>& textureImages, VkDeviceMemory textureImageMemory);
+                                 std::vector<VkImage>& textureImages, VkDeviceMemory& textureImageMemory);
     
     void     debugUtilsObjectNameInfoEXT   (VkDevice device, VkObjectType objType, uint64_t objHandle, const char* objName);
     void     DestroyDebugUtilsMessengerEXT (VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
