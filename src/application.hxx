@@ -140,7 +140,7 @@ private:
     VkImage                         depthImage;
     VkDeviceMemory                  depthImageMemory    = VK_NULL_HANDLE;
     VkImageView                     depthImageView;
-
+    
     uint32_t                        mipLevels;
     VkImage                         textureImage        = VK_NULL_HANDLE;
     VkDeviceMemory                  textureImageMemory  = VK_NULL_HANDLE;
@@ -217,7 +217,7 @@ private:
         appwindow.OnFileDropped = [&](int count, const char** paths)
         {
             vkDeviceWaitIdle(device);
-            // cleanupModelRelated();
+            cleanupModelObjects();
             for (int i = 0; i < count; i++)
             {
                 loadModel(paths[i]);
@@ -226,14 +226,11 @@ private:
                     createTextureImage(texPath);
                     createTextureImageView();
                 }
-                createTextureSampler();
                 createVertexBuffer();
                 createIndexBuffer();
-                createUniformBuffers();
-                createDescriptorPool();
-                createDescriptorSets();
-                createCommandBuffers();
-                createSyncObjects();
+                // createUniformBuffers();
+                // createDescriptorPool();
+                // createDescriptorSets();
             }
         };
         
@@ -269,8 +266,8 @@ private:
         createTextureImageView();
         createTextureSampler();
         
-        createVertexBuffer();
-        createIndexBuffer();
+        // createVertexBuffer();
+        // createIndexBuffer();
         createUniformBuffers();
         createDescriptorPool();
         createDescriptorSets();
@@ -312,14 +309,25 @@ private:
     }
 
     //-----------------------------------------------------------------------------
-    void cleanupModelObjects()
+    void cleanupTextureObjects()
     {
-        std::cout << "cleanupModelObjects start :::::" << std::endl;
-        if (textureSampler != VK_NULL_HANDLE)   { vkDestroySampler   (device, textureSampler,   nullptr); }
+        std::cout << "cleanupTextureObjects() start :::::" << std::endl;
+        for (uint8_t i = 0; i < textureImageViews.size() - 1; i++)
+        {
+            std::cout << "Texture Image views size: " << textureImageViews.size() << std::endl;
+            if (textureImageViews[i] != VK_NULL_HANDLE) { vkDestroyImageView (device, textureImageViews[i], nullptr); }
+            if (textureImages[i]     != VK_NULL_HANDLE) { vkDestroyImage     (device, textureImages[i],     nullptr); }
+        }
+        textureImageViews.clear();
         if (textureImageView != VK_NULL_HANDLE) { vkDestroyImageView (device, textureImageView, nullptr); }
         if (textureImage != VK_NULL_HANDLE)     { vkDestroyImage     (device, textureImage,     nullptr); }
         if (textureImageMemory != VK_NULL_HANDLE) { vkFreeMemory     (device, textureImageMemory, nullptr); }
-        
+    }
+
+    //-----------------------------------------------------------------------------
+    void cleanupUBO()
+    {
+        std::cout << "cleanupUBO() start :::::" << std::endl;
         if (!uniformBuffers.empty())
         {
             for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -333,6 +341,12 @@ private:
         {
             vkDestroyDescriptorSetLayout(device, descSet, nullptr);
         }
+    }
+
+    //-----------------------------------------------------------------------------
+    void cleanupModelObjects()
+    {
+        std::cout << "cleanupModelObjects start :::::" << std::endl;
         if (indexBuffer != VK_NULL_HANDLE)       { vkDestroyBuffer  (device, indexBuffer,       nullptr); }
         if (indexBufferMemory != VK_NULL_HANDLE) { vkFreeMemory     (device, indexBufferMemory, nullptr); }
         
@@ -345,6 +359,9 @@ private:
     void cleanupVulkanResources()
     {
         cleanupSwapChain();
+        cleanupTextureObjects();
+        if (textureSampler != VK_NULL_HANDLE)   { vkDestroySampler   (device, textureSampler,   nullptr); }
+        cleanupUBO();
         cleanupModelObjects();
         
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -1196,7 +1213,9 @@ private:
                                     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                     vertexBuffer, vertexBufferMemory, device, physicalDevice);
             VkHelpers::debugUtilsObjectNameInfoEXT (device, VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)vertexBufferMemory, "application::VkDeviceMemory:vertexBufferMemory");
+            VkHelpers::debugUtilsObjectNameInfoEXT (device, VK_OBJECT_TYPE_BUFFER, (uint64_t)vertexBuffer, "application::VkBuffer:vertexBuffer");
             VkHelpers::copyBuffer(stagingBuffer, vertexBuffer, bufferSize, graphicsQueue, commandPool, device);
+
             vkDestroyBuffer(device, stagingBuffer, nullptr);
             vkFreeMemory(device, stagingBufferMemory, nullptr);
         }
@@ -1361,11 +1380,12 @@ private:
         poolSizes[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         poolSizes[3].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
-        VkDescriptorPoolCreateInfo scenePoolInfo{};
-        scenePoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        scenePoolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-        scenePoolInfo.pPoolSizes = poolSizes.data();
-        scenePoolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        VkDescriptorPoolCreateInfo scenePoolInfo {
+                                .sType          = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+                                .maxSets        = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT),
+                                .poolSizeCount  = static_cast<uint32_t>(poolSizes.size()),
+                                .pPoolSizes     = poolSizes.data(),
+        };
 
         if(vkCreateDescriptorPool(device, &scenePoolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
             throw std::runtime_error("Failed to Create Descriptor Pool!");
@@ -1436,11 +1456,12 @@ private:
     {
         commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
         
-        VkCommandBufferAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.commandPool = commandPool;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = (uint32_t) commandBuffers.size();
+        VkCommandBufferAllocateInfo allocInfo {
+                                    .sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+                                    .commandPool        = commandPool,
+                                    .level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+                                    .commandBufferCount = (uint32_t) commandBuffers.size(),
+        };
         
         if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS)
             throw std::runtime_error("failed to allocate command buffers!");
@@ -1522,22 +1543,26 @@ private:
         renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
         inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
         
-        VkSemaphoreCreateInfo semaphoreInfo{};
-        semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        VkSemaphoreCreateInfo semaphoreInfo {
+                              .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+        };
         
-        VkFenceCreateInfo fenceInfo{};
-        fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+        VkFenceCreateInfo fenceInfo {
+                          .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+                          .flags = VK_FENCE_CREATE_SIGNALED_BIT,
+        };
         
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {
-        if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
-            vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
-            vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i])                   != VK_SUCCESS
-            )
-                {
-                    throw std::runtime_error("failed to create semaphores!");
-                }
+            if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]) != VK_SUCCESS ||
+                vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS ||
+                vkCreateFence(device, &fenceInfo, nullptr, &inFlightFences[i])                   != VK_SUCCESS
+                )
+                    {
+                        throw std::runtime_error("failed to create semaphores!");
+                    }
+            VkHelpers::debugUtilsObjectNameInfoEXT (device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)imageAvailableSemaphores[i], "application::VkSemaphore:imageAvailableSemaphore");
+            VkHelpers::debugUtilsObjectNameInfoEXT (device, VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)renderFinishedSemaphores[i], "application::VkSemaphore:renderFinishedSemaphores");
         }
     }
     

@@ -45,7 +45,7 @@ VkCommandBuffer VkHelpers::beginSingleTimeCommands(VkCommandPool commandPool, Vk
 }
 
 //----------------------------------------------------------------------------
-void VkHelpers::endSingleTimeCommands(VkCommandBuffer commandBuffer, VkQueue graphicsQueue, VkCommandPool commandPool, VkDevice device)
+void VkHelpers::endSingleTimeCommands(VkCommandBuffer commandBuffer, VkQueue graphicsQueue, VkCommandPool commandPool, VkDevice& device)
 {
     vkEndCommandBuffer(commandBuffer);
 
@@ -61,8 +61,8 @@ void VkHelpers::endSingleTimeCommands(VkCommandBuffer commandBuffer, VkQueue gra
 }
 
 //----------------------------------------------------------------------------
-void VkHelpers::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels,
-                     VkPhysicalDevice physicalDevice, VkQueue graphicsQueue, VkCommandPool commandPool, VkDevice device)
+void VkHelpers::generateMipmaps(VkImage& image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels,
+                     VkPhysicalDevice& physicalDevice, VkQueue& graphicsQueue, VkCommandPool& commandPool, VkDevice& device)
 {
     // Check if image format supports linear blitting
     VkFormatProperties formatProperties;
@@ -152,8 +152,8 @@ void VkHelpers::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t tex
 
 //----------------------------------------------------------------------------
 void VkHelpers::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties,
-                             VkBuffer &buffer, VkDeviceMemory &bufferMemory,
-                             VkDevice device, VkPhysicalDevice physicalDevice)
+                             VkBuffer& buffer, VkDeviceMemory &bufferMemory,
+                             VkDevice& device, VkPhysicalDevice& physicalDevice)
 {
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -180,7 +180,7 @@ void VkHelpers::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
 }
 
 //----------------------------------------------------------------------------
-void VkHelpers::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, VkQueue graphicsQueue, VkCommandPool commandPool, VkDevice device)
+void VkHelpers::copyBuffer(VkBuffer& srcBuffer, VkBuffer& dstBuffer, VkDeviceSize size, VkQueue& graphicsQueue, VkCommandPool& commandPool, VkDevice& device)
 {
     VkCommandBuffer commandBuffer = beginSingleTimeCommands(commandPool, device);
     VkBufferCopy copyRegion{};
@@ -190,7 +190,7 @@ void VkHelpers::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize 
 }
 
 //----------------------------------------------------------------------------
-void VkHelpers::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height,VkQueue graphicsQueue, VkCommandPool commandPool, VkDevice device)
+void VkHelpers::copyBufferToImage(VkBuffer& buffer, VkImage& image, uint32_t width, uint32_t height, VkQueue& graphicsQueue, VkCommandPool& commandPool, VkDevice& device)
 {
     VkCommandBuffer commandBuffer = beginSingleTimeCommands(commandPool, device);
     VkBufferImageCopy region{};
@@ -289,22 +289,25 @@ void VkHelpers::transitionImageLayout(VkImage image, VkFormat format, VkImageLay
 void VkHelpers::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples,
                             VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
                             VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory,
-                            VkDevice device, VkPhysicalDevice physicalDevice)
+                            VkDevice& device, VkPhysicalDevice& physicalDevice)
 {
-    VkImageCreateInfo imageInfo{};
-    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.extent.width = width;
-    imageInfo.extent.height = height;
-    imageInfo.extent.depth = 1;
-    imageInfo.mipLevels = mipLevels;
-    imageInfo.arrayLayers = 1;
-    imageInfo.format = format;
-    imageInfo.tiling = tiling;
-    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.usage = usage;
-    imageInfo.samples = numSamples;
-    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    VkImageCreateInfo imageInfo {
+                        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+                        .imageType = VK_IMAGE_TYPE_2D,
+                        .format = format,
+                        .extent {
+                            .width = width,
+                            .height = height,
+                            .depth = 1,
+                        },
+                        .mipLevels = mipLevels,
+                        .arrayLayers = 1,
+                        .samples = numSamples,
+                        .tiling = tiling,
+                        .usage = usage,
+                        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+                        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+    };
     
     if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS)
         throw std::runtime_error("failed to create image!");
@@ -325,10 +328,10 @@ void VkHelpers::createImage(uint32_t width, uint32_t height, uint32_t mipLevels,
 
 //----------------------------------------------------------------------------
 // Creates a 1x1 blank image to populate the 0 index of the textureImages array.
-void VkHelpers::create1x1BlankImage(VkImage& blankImage, uint32_t mipLevels, VkDevice device, VkPhysicalDevice physicalDevice,
+void VkHelpers::create1x1BlankImage(VkImage& blankImage, uint32_t mipLevels, VkDevice& device, VkPhysicalDevice& physicalDevice,
                                     std::vector<VkImage>& textureImages, VkDeviceMemory& textureImageMemory)
 {    
-    VkImageCreateInfo imageInfo {
+    const VkImageCreateInfo imageInfo {
                 .sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                 .imageType     = VK_IMAGE_TYPE_2D,
                 .format        = VK_FORMAT_R8G8B8A8_SRGB,
@@ -348,7 +351,7 @@ void VkHelpers::create1x1BlankImage(VkImage& blankImage, uint32_t mipLevels, VkD
     VkMemoryRequirements memRequirements;
     vkGetImageMemoryRequirements(device, blankImage, &memRequirements);
     
-    VkMemoryAllocateInfo allocInfo {
+    const VkMemoryAllocateInfo allocInfo {
                         .sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
                         .allocationSize  = memRequirements.size,
                         .memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, physicalDevice)

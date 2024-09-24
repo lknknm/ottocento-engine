@@ -43,26 +43,26 @@ struct SwapChainSupportDetails
 // and refactored into VkHelper functions format.
 namespace VkHelpers 
 {
-    void endSingleTimeCommands  (VkCommandBuffer commandBuffer, VkQueue graphicsQueue, VkCommandPool commandPool, VkDevice device);
+    void endSingleTimeCommands  (VkCommandBuffer commandBuffer, VkQueue graphicsQueue, VkCommandPool commandPool, VkDevice& device);
     
-    void generateMipmaps        (VkImage image, VkFormat imageFormat, int32_t texWidth,  int32_t texHeight, uint32_t mipLevels,
-                                 VkPhysicalDevice physicalDevice, VkQueue graphicsQueue, VkCommandPool commandPool, VkDevice device);
+    void generateMipmaps        (VkImage& image, VkFormat imageFormat, int32_t texWidth,  int32_t texHeight, uint32_t mipLevels,
+                                 VkPhysicalDevice& physicalDevice, VkQueue& graphicsQueue, VkCommandPool& commandPool, VkDevice& device);
     
     void createBuffer           (VkDeviceSize size, VkBufferUsageFlags usage,     VkMemoryPropertyFlags properties,
-                                 VkBuffer &buffer,  VkDeviceMemory &bufferMemory, VkDevice device,
-                                 VkPhysicalDevice physicalDevice);
+                                 VkBuffer& buffer,  VkDeviceMemory &bufferMemory, VkDevice& device,
+                                 VkPhysicalDevice& physicalDevice);
     
-    void copyBuffer             (VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size,               VkQueue graphicsQueue, VkCommandPool commandPool, VkDevice device);
-    void copyBufferToImage      (VkBuffer buffer,    VkImage image,      uint32_t width, uint32_t height, VkQueue graphicsQueue, VkCommandPool commandPool, VkDevice device);
+    void copyBuffer             (VkBuffer& srcBuffer, VkBuffer& dstBuffer, VkDeviceSize size,                VkQueue& graphicsQueue, VkCommandPool& commandPool, VkDevice& device);
+    void copyBufferToImage      (VkBuffer& buffer,    VkImage& image,      uint32_t width, uint32_t height,  VkQueue& graphicsQueue, VkCommandPool& commandPool, VkDevice& device);
     
     void transitionImageLayout  (VkImage image,      VkFormat format,       VkImageLayout oldLayout,   VkImageLayout newLayout,
                                  uint32_t mipLevels, VkQueue graphicsQueue, VkCommandPool commandPool, VkDevice device);
     
     void createImage            (uint32_t width,  uint32_t height, uint32_t mipLevels,           VkSampleCountFlagBits numSamples,
                                  VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
-                                 VkImage& image,  VkDeviceMemory& imageMemory,  VkDevice device, VkPhysicalDevice physicalDevice);
+                                 VkImage& image,  VkDeviceMemory& imageMemory,  VkDevice& device, VkPhysicalDevice& physicalDevice);
     
-    void create1x1BlankImage    (VkImage& blankImage, uint32_t mipLevels, VkDevice device, VkPhysicalDevice physicalDevice,
+    void create1x1BlankImage    (VkImage& blankImage, uint32_t mipLevels, VkDevice& device, VkPhysicalDevice& physicalDevice,
                                  std::vector<VkImage>& textureImages, VkDeviceMemory& textureImageMemory);
     
     void     debugUtilsObjectNameInfoEXT   (VkDevice device, VkObjectType objType, uint64_t objHandle, const char* objName);
