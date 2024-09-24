@@ -9,4 +9,4 @@ riderModule.iml
 *.vcxproj
 *.vcxproj.filters
 Makefile
-ottocento-tutorial.make
+ottocento-engine.make
