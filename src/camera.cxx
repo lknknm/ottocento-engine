@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "camera.h"
-#include "input.h"
+#include "input.hxx"
 #include <gtc/matrix_transform.hpp>
 #include <gtc/quaternion.hpp>
 #include <gtx/quaternion.hpp>
@@ -122,7 +122,6 @@ void OttCamera::viewportInputHandle(float deltaTime)
         {
             float pitchDelta = delta.y * speed * 5.0f / (glm::distance(EyePosition,CenterPosition));
             float yawDelta = delta.x * speed * 3.0f;
-            std::cout << "DeltaPos Value: " << delta.x << "  " << delta.y << std::endl;
             glm::quat qPitch = glm::angleAxis(-pitchDelta, rightVector);
             glm::quat qYaw = glm::angleAxis(-yawDelta, glm::vec3(0.0f, 0.0f, upVector.z));
             glm::mat4 rotationMatrix = glm::toMat4(glm::normalize(glm::cross(qYaw, qPitch)));
@@ -142,7 +141,7 @@ void OttCamera::wrapAroundMousePos(glm::vec2* mousePos)
 {
     double mxpos, mypos; // Get mouse position, relative to window
     appwindow->getCursorPos(&mxpos, &mypos);
-    glm::ivec2 framebufferSize = appwindow->getFrameBufferSize();
+    const glm::ivec2 framebufferSize = appwindow->getFrameBufferSize();
 
     if(mxpos > framebufferSize.x - 5)
     {
@@ -152,7 +151,7 @@ void OttCamera::wrapAroundMousePos(glm::vec2* mousePos)
     else if(mxpos <= 0)
     {
         appwindow->setCursorPos( framebufferSize.x - 5, mypos );
-        mousePos->x = framebufferSize.x - 5 ;
+        mousePos->x = static_cast<float>(framebufferSize.x) - 5.0f ;
     }
     if(mypos > framebufferSize.y )
     {
@@ -162,7 +161,7 @@ void OttCamera::wrapAroundMousePos(glm::vec2* mousePos)
     else if(mypos < 0)
     {
         appwindow->setCursorPos( mxpos, framebufferSize.y);
-        mousePos->y = framebufferSize.y;
+        mousePos->y = static_cast<float>(framebufferSize.y);
     }
 }
 

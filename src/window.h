@@ -15,19 +15,23 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
-#define GLFW_INCLUDE_VULKAN
+#include <volk.h>
 #include <GLFW/glfw3.h>
 #include <functional>
 #include <iostream>
 #include <vec2.hpp>
-#include <vector>
 
 struct GLFWwindow;
 using VkInstance   = struct VkInstance_T*;
 using VkSurfaceKHR = struct VkSurfaceKHR_T*;
 
+#ifdef NDEBUG
+const bool enableValidationLayers = false;
+#else
+const bool enableValidationLayers = true;
+#endif
 
-// OttWindow Class is an abstraction on top of the GLFWwindow.
+// OttWindow Class is a wrapper around the GLFWwindow.
 // It defines window specific functions and callbacks to pass them to other classes.
 class OttWindow
 {
@@ -53,7 +57,7 @@ public:
     std::function<void(glm::vec2)> OnFramebufferResized;
     std::function<void(int count, const char** paths)> OnFileDropped;
 
-    // Soon to be transfered to the Window Manager.
+    // Soon to be transferred to the Window Manager.
     bool windowShouldClose() const { return glfwWindowShouldClose(m_window); }
     static void waitEvents()      { return glfwWaitEvents(); }
     static void update()          { return glfwPollEvents(); }
@@ -75,8 +79,8 @@ private:
     GLFWwindow* m_window = nullptr;
     GLFWimage m_icon{};
     
-    int m_width = 0.0f;
-    int m_height = 0.0f;
+    int m_width  = 0;
+    int m_height = 0;
     
     //----------------------------------------------------------------------------
     static void windowTerminate() { return glfwTerminate();  }
