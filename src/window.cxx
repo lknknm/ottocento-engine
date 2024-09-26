@@ -17,7 +17,7 @@
 #include "window.h"
 #include "input.hxx"
 
-#include "../stb/stb_image.h"
+#include "stb_image.h"
 
 #ifdef _WIN32
 #pragma comment (lib, "Dwmapi")

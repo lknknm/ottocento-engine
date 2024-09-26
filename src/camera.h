@@ -17,7 +17,7 @@
 #include "window.h"
 #include <GLFW/glfw3.h>
 #define GLM_ENABLE_EXPERIMENTAL
-#include <glm.hpp>
+#include <glm/glm.hpp>
 
 class OttCamera
 {

@@ -19,7 +19,7 @@
 #include <GLFW/glfw3.h>
 #include <functional>
 #include <iostream>
-#include <vec2.hpp>
+#include <glm/vec2.hpp>
 
 struct GLFWwindow;
 using VkInstance   = struct VkInstance_T*;

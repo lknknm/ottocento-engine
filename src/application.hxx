@@ -18,17 +18,17 @@
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm.hpp>
-#include <gtc/matrix_transform.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
-#include <gtx/hash.hpp>
+#include <glm/gtx/hash.hpp>
 
 #define IMGUI_IMPL_VULKAN_USE_VOLK
 #include <imgui.h>
 #include <imconfig.h>
 #include <imgui_internal.h>
-#include <imgui_impl_vulkan.h>
-#include <imgui_impl_glfw.h>
+// #include <imgui_impl_vulkan.h>
+// #include <imgui_impl_glfw.h>
 #include <imstb_rectpack.h>
 #include <imstb_textedit.h>
 #include <imstb_truetype.h>
@@ -58,11 +58,11 @@
 #include "volk.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "../stb/stb_image.h"
+#include "stb_image.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
-#include <ext/scalar_common.hpp>
-#include "../external/tinyobjloader/tiny_obj_loader.h"
+#include <glm/ext/scalar_common.hpp>
+#include "tiny_obj_loader.h"
 
 const int TEXTURE_ARRAY_SIZE   = 1000;
 const int MAX_FRAMES_IN_FLIGHT = 2;

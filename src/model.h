@@ -2,9 +2,9 @@
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm.hpp>
+#include <glm/glm.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
-#include <gtx/hash.hpp>
+#include <glm/gtx/hash.hpp>
 
 #include <array>
 #include <vector>
