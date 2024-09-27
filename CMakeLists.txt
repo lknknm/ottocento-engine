@@ -6,7 +6,6 @@ project(ottocento-engine VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
-include(FetchContent)
 include(FindVulkan)
 
 include(Warnings)
