@@ -822,10 +822,10 @@ private:
     // Rasterization (f) > Fragment Shader (p) > Colour Blending (f) > Framebuffer
     void createGraphicsPipeline()
     {
-        auto vertShaderCode     = VkHelpers::readFile("src/shaders/vert.spv");
-        auto fragShaderCode     = VkHelpers::readFile("src/shaders/frag.spv");
-        auto gridVertShaderCode = VkHelpers::readFile("src/shaders/gridVert.spv");
-        auto gridFragShaderCode = VkHelpers::readFile("src/shaders/gridFrag.spv");
+        auto vertShaderCode     = VkHelpers::readFile("resource/shaders/vert.spv");
+        auto fragShaderCode     = VkHelpers::readFile("resource/shaders/frag.spv");
+        auto gridVertShaderCode = VkHelpers::readFile("resource/shaders/gridVert.spv");
+        auto gridFragShaderCode = VkHelpers::readFile("resource/shaders/gridFrag.spv");
 
         VkShaderModule vertShaderModule     = VkHelpers::createShaderModule(vertShaderCode,     device);
         VkShaderModule fragShaderModule     = VkHelpers::createShaderModule(fragShaderCode,     device);

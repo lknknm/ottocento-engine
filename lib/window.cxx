@@ -71,7 +71,7 @@ OttWindow::OttWindow(const char* title, int winWidth, int winHeight, bool show)
         glfwSetScrollCallback(m_window, Input::scrollCallback);
         glfwSetKeyCallback(m_window, keyCallback);
 
-        m_icon.pixels = stbi_load("src/icon.png", &m_icon.width, &m_icon.height, 0, 4);
+        m_icon.pixels = stbi_load("resource/icon.png", &m_icon.width, &m_icon.height, 0, 4);
         if (m_icon.pixels) { glfwSetWindowIcon(m_window, 1, &m_icon); }
 }
 
