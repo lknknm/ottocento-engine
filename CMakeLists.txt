@@ -19,7 +19,10 @@ add_subdirectory(lib)
 add_subdirectory(src)
 
 include(CTest)
-enable_testing()
+
+if(BUILD_TESTING)
+   add_subdirectory(test)
+endif()
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

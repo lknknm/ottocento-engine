@@ -9,6 +9,8 @@
       "volk",
       "glfw3",
       "tinyobjloader",
-      "imgui"
+      "imgui",
+      "catch2",
+      "fmt"
    ]
 }
