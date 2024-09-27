@@ -1,6 +1,7 @@
 ﻿#pragma once
+#include <random>
 #include <string>
-#include "../external/randutils/randutils.hpp"
+#include <randutils.hpp>
 
 namespace Utils
 {

@@ -6,8 +6,6 @@ project(ottocento-engine VERSION 0.1.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 
-include(FindVulkan)
-
 include(Warnings)
 include(Sanitizers)
 include(Coverage)
@@ -17,20 +15,8 @@ enable_sanitizers()
 enable_coverage()
 set_default_buildtype()
 
-find_package(Vulkan REQUIRED)
-find_package(glfw3 CONFIG REQUIRED)
-find_package(glm CONFIG REQUIRED)
-find_package(Stb REQUIRED)
-find_package(volk CONFIG REQUIRED)
-find_package(imgui CONFIG REQUIRED)
-find_package(tinyobjloader CONFIG REQUIRED)
-
-# add_subdirectory(external/volk)
-file(GLOB sources CONFIGURE_DEPENDS src/*.cxx)
-add_executable(ottocento-engine ${sources})
-
-target_include_directories(ottocento-engine PRIVATE ${Stb_INCLUDE_DIR})
-target_link_libraries(ottocento-engine PRIVATE Vulkan::Vulkan glm::glm glfw volk::volk volk::volk_headers imgui::imgui tinyobjloader::tinyobjloader)
+add_subdirectory(lib)
+add_subdirectory(src)
 
 include(CTest)
 enable_testing()
