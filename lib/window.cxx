@@ -17,6 +17,7 @@
 #include "window.h"
 #include "input.hxx"
 
+#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 #ifdef _WIN32
