@@ -18,6 +18,8 @@
 
 #include <algorithm>
 #include <cstring>
+#include <fmt/core.h>
+#include <fmt/format.h>
 #include <fstream>
 #include <iostream>
 #include <set>
@@ -721,9 +723,9 @@ std::vector<char> VkHelpers::readFile(const std::string& filename)
 {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
     if (!file.is_open())
-        throw std::runtime_error("failed to open file!");
+        throw fmt::system_error(1, "Failed to open file {}", filename);
 
-    size_t fileSize = (size_t) file.tellg();
+    auto fileSize = (size_t) file.tellg();
     std::vector<char> buffer(fileSize);
 
     file.seekg(0);

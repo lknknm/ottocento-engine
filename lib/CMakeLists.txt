@@ -6,6 +6,7 @@ find_package(Stb REQUIRED)
 find_package(volk CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(tinyobjloader CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
 
 file(GLOB sources CONFIGURE_DEPENDS *.cxx)
 
@@ -24,4 +25,5 @@ target_link_libraries(lib_ottocento_engine PUBLIC
    volk::volk_headers
    imgui::imgui
    tinyobjloader::tinyobjloader
+   fmt::fmt
 )

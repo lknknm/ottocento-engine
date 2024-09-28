@@ -1,7 +1,7 @@
-#include <catch2/catch_test_macros.hpp>
-#include <fmt/core.h>
+#include <application.hxx>
 
-TEST_CASE("First test") {
-  fmt::print("First test :D\n");
-  REQUIRE(true == true);
+#include <catch2/catch_test_macros.hpp>
+
+TEST_CASE("Create app") {
+  OttApplication app;
 }
