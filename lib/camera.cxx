@@ -320,7 +320,7 @@ glm::vec3 OttCamera::SetViewOrbit(ViewType view)
 // to its initial state of the 0, 0, 0 center position.
 void OttCamera::resetToInitialPos()
 {
-    if((float)resetAnimationStart == 0.0f)
+    if(resetAnimationStart == 0.0)
     {
         upVector = {0.0f, 0.0f, 1.0f};
         startCenter = getCenterPosition();
@@ -336,7 +336,7 @@ void OttCamera::resetToInitialPos()
 // FRONT, RIGHT, TOP (etc...) views, defined in SetViewOrbit(view).
 void OttCamera::orbitStartAnimation(ViewType view)
 {
-    if((float)resetAnimationStart == 0.0f)
+    if(resetAnimationStart == 0.0)
     {
         startCenter = getCenterPosition();
         targetCenterPosition = startCenter;
