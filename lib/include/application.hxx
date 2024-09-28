@@ -33,6 +33,7 @@
 #include <imstb_truetype.h>
 
 #include <cstdint>
+#include <filesystem>
 #include <vector>
 
 #include "camera.h"
@@ -68,15 +69,15 @@ class OttApplication
 public:
 //----------------------------------------------------------------------------
 
-void run()
-{
-    initWindow();
-    initVulkan();
-    mainLoop();
-    cleanupVulkanResources();
-}
+    void run()
+    {
+        initWindow();
+        initVulkan();
+        mainLoop();
+        cleanupVulkanResources();
+    }
 
-GLFWwindow* getWindowhandle() const { return appwindow.getWindowhandle(); }
+    GLFWwindow* getWindowhandle() const { return appwindow.getWindowhandle(); }
 
 //----------------------------------------------------------------------------
 private:
@@ -261,7 +262,7 @@ private:
     void createDepthResources();    
 
     //----------------------------------------------------------------------------
-    void loadModel(std::string modelPath);
+    void loadModel(std::filesystem::path const& modelPath);
 
     //----------------------------------------------------------------------------
     // Buffers in Vulkan are regions of memory used for
@@ -272,7 +273,7 @@ private:
     void createIndexBuffer();    
 
     //----------------------------------------------------------------------------
-    void createTextureImage(std::string imagePath);
+    void createTextureImage(const std::filesystem::path& imagePath);
 
     //----------------------------------------------------------------------------
     // Images are accessed through image views rather than directly, so we need to craete an

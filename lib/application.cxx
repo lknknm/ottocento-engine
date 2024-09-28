@@ -5,6 +5,7 @@
 #include "model.h"
 #include "window.h"
 #include "utils.hxx"
+#include <filesystem>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -959,20 +960,20 @@ void OttApplication::createDepthResources()
 }
 
 //----------------------------------------------------------------------------
-void OttApplication::loadModel(std::string modelPath)
+void OttApplication::loadModel(std::filesystem::path const& modelPath)
 {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
     std::string warn, err;
-    std::string baseDir = Utils::GetBaseDir(modelPath) + "\\";
+    auto baseDir = modelPath.parent_path();
             
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath.c_str(), Utils::GetBaseDir(modelPath).c_str()))
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath.c_str(), baseDir.c_str()))
         throw std::runtime_error(warn + err);
 
     std::cout << "----------------------------------------"   << std::endl;
     std::cout << "Loading Wavefront " << modelPath << std::endl;
-    std::cout << "BaseDir " << Utils::GetBaseDir(modelPath).c_str() << std::endl;
+    std::cout << "BaseDir " << baseDir.c_str() << std::endl;
 
     std::unordered_map<OttModel::Vertex, uint32_t> uniqueVertices{};
     
@@ -983,7 +984,7 @@ void OttApplication::loadModel(std::string modelPath)
         printf("material[%d].diffuse_texname = %s\n", int(i),
                 materials[i].diffuse_texname.c_str());
         sceneMaterials.imageTexture_path.clear();
-        sceneMaterials.imageTexture_path.push_back(baseDir + materials[i].diffuse_texname);
+        sceneMaterials.imageTexture_path.push_back(baseDir / materials[i].diffuse_texname);
     }
     
     OttModel::modelObject model
@@ -1103,7 +1104,7 @@ void OttApplication::createIndexBuffer()
 }
 
 //----------------------------------------------------------------------------
-void OttApplication::createTextureImage(std::string imagePath)
+void OttApplication::createTextureImage(const std::filesystem::path& imagePath)
 {
     int texWidth, texHeight, texChannels;
     std::cout << "----------------------------------------"   << std::endl;
