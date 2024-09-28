@@ -12,11 +12,11 @@ file(GLOB sources CONFIGURE_DEPENDS *.cxx)
 
 add_library(lib_ottocento_engine ${sources})
 
-target_include_directories(lib_ottocento_engine PUBLIC
+target_include_directories(lib_ottocento_engine PUBLIC include)
+target_include_directories(lib_ottocento_engine SYSTEM PRIVATE
    ${Stb_INCLUDE_DIR}
-   ${CMAKE_SOURCE_DIR}/external/randutils
-   include
-)
+   ${CMAKE_SOURCE_DIR}/external/randutils)
+
 target_link_libraries(lib_ottocento_engine PUBLIC
    Vulkan::Vulkan
    glm::glm
