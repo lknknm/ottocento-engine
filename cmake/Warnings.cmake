@@ -4,6 +4,7 @@
 
 function(enable_warnings)
 	option(WARNINGS_AS_ERRORS "Treat compiler warnings as errors" FALSE)
+	option(WARNINGS_DISABLE "Disable warnings" FALSE)
 	option(WARNING_EFFC++ "Enable warnings for effective c++" TRUE)
 
 	set(MSVC_WARNINGS
@@ -53,6 +54,11 @@ function(enable_warnings)
 	if(WARNINGS_AS_ERRORS)
 		set(CLANG_WARNINGS ${CLANG_WARNINGS} -Werror)
 		set(MSVC_WARNINGS ${MSVC_WARNINGS} /WX)
+	endif()
+
+	if(WARNINGS_DISABLE)
+		set(CLANG_WARNINGS -w)
+		set(MSVC_WARNINGS /w)
 	endif()
 
 	if(WIN32)
