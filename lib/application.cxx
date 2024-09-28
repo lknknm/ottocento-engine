@@ -33,6 +33,12 @@
 #include <glm/ext/scalar_common.hpp>
 #include "tiny_obj_loader.h"
 
+constexpr int TEXTURE_ARRAY_SIZE   = 1000;
+constexpr int MAX_FRAMES_IN_FLIGHT = 2;
+
+const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
+const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME };
+
 void OttApplication::run()
 {
     initWindow();

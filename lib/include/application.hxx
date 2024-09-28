@@ -47,12 +47,6 @@
 #include <glm/ext/scalar_common.hpp>
 #include "tiny_obj_loader.h"
 
-constexpr inline int TEXTURE_ARRAY_SIZE   = 1000;
-constexpr inline int MAX_FRAMES_IN_FLIGHT = 2;
-
-const inline std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
-const inline std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME };
-
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
     alignas(16) glm::mat4 view;
