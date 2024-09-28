@@ -77,13 +77,13 @@ struct UniformBufferObject {
     alignas(16) glm::vec3 cameraPos;
 };
 
-struct PushConstantData {
+inline struct PushConstantData {
     alignas(16) glm::vec3 offset;
     alignas(16) glm::vec3 color;
     alignas(4)  uint32_t  textureID;
 } push;
 
-std::vector<OttModel::modelObject> models;
+inline std::vector<OttModel::modelObject> models;
 
 //----------------------------------------------------------------------------
 class OttApplication
