@@ -32,7 +32,7 @@ glm::mat4 OttCamera::recalculateView(float deltaTime)
     if (Input::isKeyDown(windowHandle, GLFW_KEY_F3))
     {
         // walkNavigation = !walkNavigation;
-        glfwWaitEventsTimeout(1.0f);
+        glfwWaitEventsTimeout(1.0);
         std::cout << "walkNavigation: " << walkNavigation << std::endl;
         std::cout << "----------------" << std::endl;
     }
