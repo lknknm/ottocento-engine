@@ -36,12 +36,10 @@
 #include <vector>
 
 #include "camera.h"
-#include "helpers.h"
 #include "model.h"
 #include "window.h"
-#include "utils.hxx"
-#include "volk.h"
 
+#include "volk.h"
 #include "stb_image.h"
 
 #include <glm/ext/scalar_common.hpp>
@@ -69,9 +67,16 @@ class OttApplication
 //----------------------------------------------------------------------------
 public:
 //----------------------------------------------------------------------------
-    void run();
 
-    GLFWwindow* getWindowhandle() const { return appwindow.getWindowhandle(); }  
+void run()
+{
+    initWindow();
+    initVulkan();
+    mainLoop();
+    cleanupVulkanResources();
+}
+
+GLFWwindow* getWindowhandle() const { return appwindow.getWindowhandle(); }
 
 //----------------------------------------------------------------------------
 private:

@@ -39,14 +39,6 @@ constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME };
 
-void OttApplication::run()
-{
-    initWindow();
-    initVulkan();
-    mainLoop();
-    cleanupVulkanResources();
-}
- 
 //----------------------------------------------------------------------------
 // Initiate GLFW window with specific parameters and sets up the window icon.
 // Windows-specific: Refresh window to darkmode.
@@ -277,7 +269,7 @@ void OttApplication::createInstance()
         createInfo.ppEnabledLayerNames = validationLayers.data();
 
         populateDebugMessengerCreateInfo(debugCreateInfo);
-        createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*) &debugCreateInfo;
+        createInfo.pNext = static_cast<void*>(&debugCreateInfo);
     } else {
         createInfo.enabledLayerCount = 0;
         createInfo.pNext = nullptr;
