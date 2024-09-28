@@ -105,7 +105,7 @@ void OttCamera::viewportInputHandle(float deltaTime)
             
             return;
         }
-        wrapAroundMousePos(&lastMousePosition);
+        wrapAroundMousePos(lastMousePosition);
         if (Input::isKeyDownRepeat(windowHandle, GLFW_KEY_LEFT_SHIFT))
         {
             if (delta.x != 0.0f || delta.y != 0.0f)
@@ -137,7 +137,7 @@ void OttCamera::viewportInputHandle(float deltaTime)
 //----------------------------------------------------------------------------
 // Gets the mouse pointer to wrap around the framebuffer to get continuous movement
 // while rotating or panning the camera.
-void OttCamera::wrapAroundMousePos(glm::vec2* mousePos)
+void OttCamera::wrapAroundMousePos(glm::vec2& mousePos)
 {
     double mxpos, mypos; // Get mouse position, relative to window
     appwindow->getCursorPos(&mxpos, &mypos);
@@ -146,22 +146,22 @@ void OttCamera::wrapAroundMousePos(glm::vec2* mousePos)
     if(mxpos > framebufferSize.x - 5)
     {
         appwindow->setCursorPos(2, mypos);
-        mousePos->x = 2;
+        mousePos.x = 2;
     }
     else if(mxpos <= 0)
     {
         appwindow->setCursorPos( framebufferSize.x - 5, mypos );
-        mousePos->x = static_cast<float>(framebufferSize.x) - 5.0f ;
+        mousePos.x = static_cast<float>(framebufferSize.x) - 5.0f ;
     }
     if(mypos > framebufferSize.y )
     {
         appwindow->setCursorPos( mxpos, 0 );
-        mousePos->y = 0;
+        mousePos.y = 0;
     }
     else if(mypos < 0)
     {
         appwindow->setCursorPos( mxpos, framebufferSize.y);
-        mousePos->y = static_cast<float>(framebufferSize.y);
+        mousePos.y = static_cast<float>(framebufferSize.y);
     }
 }
 
