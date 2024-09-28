@@ -16,6 +16,7 @@
 #pragma once
 #include <optional>
 #include <vector>
+#include <filesystem>
 #include <string>
 
 #include "window.h"
@@ -97,7 +98,5 @@ namespace VkHelpers
                                                  void* pUserData);
     
     std::vector<const char*> getRequiredExtensions  (bool enableValidationLayers);
-    std::vector<char>        readFile               (const std::string& filename);
+    std::vector<char>        readFile               (const std::filesystem::path&  filename);
 } //namespace VkHelpers
-
-

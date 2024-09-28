@@ -24,6 +24,7 @@
 #include <imstb_truetype.h>
 
 #include <cstdint>
+#include <filesystem>
 #include <vector>
 #include <set>
 
@@ -673,10 +674,11 @@ void OttApplication::createGridDescriptorSetLayout()
 // Rasterization (f) > Fragment Shader (p) > Colour Blending (f) > Framebuffer
 void OttApplication::createGraphicsPipeline()
 {
-    auto vertShaderCode     = VkHelpers::readFile("resource/shaders/vert.spv");
-    auto fragShaderCode     = VkHelpers::readFile("resource/shaders/frag.spv");
-    auto gridVertShaderCode = VkHelpers::readFile("resource/shaders/gridVert.spv");
-    auto gridFragShaderCode = VkHelpers::readFile("resource/shaders/gridFrag.spv");
+    namespace fs = std::filesystem;
+    auto vertShaderCode     = VkHelpers::readFile(fs::path("resource") / "shaders" / "vert.spv");
+    auto fragShaderCode     = VkHelpers::readFile(fs::path("resource") / "shaders" / "frag.spv");
+    auto gridVertShaderCode = VkHelpers::readFile(fs::path("resource") / "shaders" / "gridVert.spv");
+    auto gridFragShaderCode = VkHelpers::readFile(fs::path("resource") / "shaders" / "gridFrag.spv");
 
     VkShaderModule vertShaderModule     = VkHelpers::createShaderModule(vertShaderCode,     device);
     VkShaderModule fragShaderModule     = VkHelpers::createShaderModule(fragShaderCode,     device);
@@ -968,12 +970,13 @@ void OttApplication::loadModel(std::filesystem::path const& modelPath)
     std::string warn, err;
     auto baseDir = modelPath.parent_path();
             
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath.c_str(), baseDir.c_str()))
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, 
+            modelPath.generic_string().c_str(), baseDir.generic_string().c_str()))
         throw std::runtime_error(warn + err);
 
     std::cout << "----------------------------------------"   << std::endl;
     std::cout << "Loading Wavefront " << modelPath << std::endl;
-    std::cout << "BaseDir " << baseDir.c_str() << std::endl;
+    std::cout << "BaseDir " << baseDir << std::endl;
 
     std::unordered_map<OttModel::Vertex, uint32_t> uniqueVertices{};
     
@@ -984,7 +987,7 @@ void OttApplication::loadModel(std::filesystem::path const& modelPath)
         printf("material[%d].diffuse_texname = %s\n", int(i),
                 materials[i].diffuse_texname.c_str());
         sceneMaterials.imageTexture_path.clear();
-        sceneMaterials.imageTexture_path.push_back(baseDir / materials[i].diffuse_texname);
+        sceneMaterials.imageTexture_path.push_back((baseDir / materials[i].diffuse_texname).generic_string());
     }
     
     OttModel::modelObject model
@@ -1109,7 +1112,7 @@ void OttApplication::createTextureImage(const std::filesystem::path& imagePath)
     int texWidth, texHeight, texChannels;
     std::cout << "----------------------------------------"   << std::endl;
     std::cout << "Image path "          << imagePath          << std::endl;
-    stbi_uc* pixels = stbi_load(imagePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    stbi_uc* pixels = stbi_load(imagePath.generic_string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = texWidth * texHeight * 4;
     mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
 

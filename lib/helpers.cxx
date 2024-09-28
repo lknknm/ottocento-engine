@@ -1,4 +1,4 @@
-﻿// Ottocento Engine. Architectural BIM Engine.
+// Ottocento Engine. Architectural BIM Engine.
 // Copyright (C) 2024  Lucas M. Faria.
 //
 // This program is free software: you can redistribute it and/or modify
@@ -23,6 +23,7 @@
 #include <fstream>
 #include <iostream>
 #include <set>
+#include <filesystem>
 #include <stdexcept>
 
 
@@ -719,11 +720,11 @@ std::vector<const char*> VkHelpers::getRequiredExtensions(bool enableValidationL
 // std::ios::ate will start reading the file at the end.
 // The advantage of starting to read at the end of the file is
 // that we can use the read position to determine the size of the file and allocate a buffer:
-std::vector<char> VkHelpers::readFile(const std::string& filename)
+std::vector<char> VkHelpers::readFile(const std::filesystem::path& filename)
 {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
     if (!file.is_open())
-        throw fmt::system_error(1, "Failed to open file {}", filename);
+        throw fmt::system_error(1, "Failed to open file {}", filename.generic_string());
 
     auto fileSize = (size_t) file.tellg();
     std::vector<char> buffer(fileSize);
