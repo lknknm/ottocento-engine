@@ -1,4 +1,4 @@
-﻿// Ottocento Engine. Architectural BIM Engine.
+// Ottocento Engine. Architectural BIM Engine.
 // Copyright (C) 2024  Lucas M. Faria.
 //
 // This program is free software: you can redistribute it and/or modify
@@ -105,7 +105,7 @@ private:
     void resetToInitialPos();
     void orbitStartAnimation(ViewType view);
     void animateResetUpdate();
-    void wrapAroundMousePos(glm::vec2* mousePos);
+    void wrapAroundMousePos(glm::vec2& mousePos);
     
     //----------------------------------------------------------------------------
     void moveUpDirection(float deltaTime);

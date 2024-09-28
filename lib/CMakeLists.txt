@@ -17,13 +17,16 @@ target_include_directories(lib_ottocento_engine SYSTEM PRIVATE
    ${Stb_INCLUDE_DIR}
    ${CMAKE_SOURCE_DIR}/external/randutils)
 
-target_link_libraries(lib_ottocento_engine PUBLIC
-   Vulkan::Vulkan
+target_link_libraries(lib_ottocento_engine
+   PUBLIC
    glm::glm
+
+   PRIVATE
+   Vulkan::Vulkan
    glfw
    volk::volk
-   volk::volk_headers
    imgui::imgui
-   tinyobjloader::tinyobjloader
    fmt::fmt
+   volk::volk_headers
+   tinyobjloader::tinyobjloader
 )
