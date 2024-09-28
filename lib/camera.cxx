@@ -118,7 +118,7 @@ void OttCamera::viewportInputHandle(float deltaTime)
             }
         }
         
-        if (delta.x != 0.0f || delta.y != 0.0f && !Input::isKeyDown(windowHandle, GLFW_KEY_LEFT_SHIFT))
+        if ((delta.x != 0.0f || delta.y != 0.0f) && !Input::isKeyDown(windowHandle, GLFW_KEY_LEFT_SHIFT))
         {
             float pitchDelta = delta.y * speed * 5.0f / (glm::distance(EyePosition,CenterPosition));
             float yawDelta = delta.x * speed * 3.0f;
