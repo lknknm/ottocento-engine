@@ -1,4 +1,4 @@
-// Ottocento Engine. Architectural BIM Engine.
+﻿// Ottocento Engine. Architectural BIM Engine.
 // Copyright (C) 2024  Lucas M. Faria.
 //
 // This program is free software: you can redistribute it and/or modify
@@ -724,7 +724,7 @@ std::vector<char> VkHelpers::readFile(const std::filesystem::path& filename)
 {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
     if (!file.is_open())
-        throw fmt::system_error(1, "Failed to open file {}", filename.generic_string());
+        throw fmt::system_error(1, "Failed to open file {} starting from {}", filename.generic_string(), std::filesystem::current_path().generic_string());
 
     auto fileSize = (size_t) file.tellg();
     std::vector<char> buffer(fileSize);
