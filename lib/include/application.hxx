@@ -26,8 +26,14 @@
 #include <imgui.h>
 #include <imconfig.h>
 #include <imgui_internal.h>
-// #include <imgui_impl_vulkan.h>
-// #include <imgui_impl_glfw.h>
+
+#define IMGUI_IMPL_VULKAN_USE_VOLK
+#ifndef __APPLE__
+    // These are for some reason not there on the mac download
+    #include <imgui_impl_vulkan.h>
+    #include <imgui_impl_glfw.h>
+#endif
+
 #include <imstb_rectpack.h>
 #include <imstb_textedit.h>
 #include <imstb_truetype.h>
