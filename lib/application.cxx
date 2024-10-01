@@ -261,6 +261,7 @@ void OttApplication::createInstance()
     };
 
     #ifdef __APPLE__
+    extensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     extensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
     createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
     #endif
@@ -276,6 +277,8 @@ void OttApplication::createInstance()
         createInfo.enabledLayerCount = 0;
         createInfo.pNext = nullptr;
     }
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+    createInfo.ppEnabledExtensionNames = extensions.data();
 
     if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
         throw std::runtime_error("failed to create instance!");
