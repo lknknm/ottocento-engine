@@ -23,34 +23,52 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 
+#define IMGUI_IMPL_VULKAN_USE_VOLK
 #include <imgui.h>
 #include <imconfig.h>
 #include <imgui_internal.h>
 
-#define IMGUI_IMPL_VULKAN_USE_VOLK
-#ifndef __APPLE__
-    // These are for some reason not there on the mac download
-    #include <imgui_impl_vulkan.h>
-    #include <imgui_impl_glfw.h>
-#endif
+// #include <imgui_impl_vulkan.h>
+// #include <imgui_impl_glfw.h>
 
 #include <imstb_rectpack.h>
 #include <imstb_textedit.h>
 #include <imstb_truetype.h>
 
+#include <algorithm>
+#include <array>
+#include <chrono>
+#include <cstring>
 #include <cstdint>
-#include <filesystem>
+#include <iostream>
+#include <fstream>
+#include <limits>
+#include <map>
+#include <set>
+#include <stdexcept>
+#include <unordered_map>
+#include <optional>
 #include <vector>
 
 #include "camera.h"
+#include "device.h"
+#include "helpers.h"
 #include "model.h"
 #include "window.h"
+#include "utils.hxx"
 
 #include "volk.h"
+
 #include "stb_image.h"
 
 #include <glm/ext/scalar_common.hpp>
 #include "tiny_obj_loader.h"
+
+// const int TEXTURE_ARRAY_SIZE   = 1000;
+// const int MAX_FRAMES_IN_FLIGHT = 2;
+
+// const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
+// const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME };
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -60,13 +78,12 @@ struct UniformBufferObject {
     alignas(16) glm::vec3 cameraPos;
 };
 
-inline struct PushConstantData {
+struct PushConstantData {
     alignas(16) glm::vec3 offset;
     alignas(16) glm::vec3 color;
     alignas(4)  uint32_t  textureID;
-} push;
+};
 
-inline std::vector<OttModel::modelObject> models;
 
 //----------------------------------------------------------------------------
 class OttApplication
@@ -74,7 +91,6 @@ class OttApplication
 //----------------------------------------------------------------------------
 public:
 //----------------------------------------------------------------------------
-
     void run()
     {
         initWindow();
@@ -83,23 +99,16 @@ public:
         cleanupVulkanResources();
     }
 
-    GLFWwindow* getWindowhandle() const { return appwindow.getWindowhandle(); }
+    GLFWwindow* getWindowhandle() const { return appwindow.getWindowhandle(); }  
 
 //----------------------------------------------------------------------------
 private:
 //----------------------------------------------------------------------------
+    
     OttWindow appwindow = OttWindow("Ottocento Engine", 1920, 1080);
-    
-    VkInstance               instance;
-    VkSurfaceKHR             surface;
-    VkDebugUtilsMessengerEXT debugMessenger;
-
-    VkPhysicalDevice         physicalDevice = VK_NULL_HANDLE;
-    VkSampleCountFlagBits    msaaSamples    = VK_SAMPLE_COUNT_1_BIT;
-    VkDevice                 device;
-    
-    VkQueue                  graphicsQueue;
-    VkQueue                  presentQueue;
+    OttDevice appDevice = OttDevice(appwindow);
+    VkDevice  device    = appDevice.getDevice();
+    VkPhysicalDevice physicalDevice = appDevice.getPhysicalDevice();
 
     VkSwapchainKHR           swapChain;
     VkFormat                 swapChainImageFormat;
@@ -112,7 +121,6 @@ private:
     VkDescriptorSetLayout               descriptorSetLayout;
     std::vector<VkDescriptorSetLayout>  descriptorSetLayouts;
         
-    VkCommandPool                   commandPool;
     std::vector<VkFramebuffer>      swapChainFramebuffers;
     std::vector<VkCommandBuffer>    commandBuffers;
     
@@ -174,15 +182,16 @@ private:
     //----------------------------------------------------------------------------
     
     //----------------------------------------------------------------------------
-    // Initiate GLFW window with specific parameters and sets up the window icon.
-    // Windows-specific: Refresh window to darkmode.
-    // AppWindow: This will assign the appwindow and  initiate the callbacks to the OttWindow GLFW wrapper.
-    // This function can potentially be transfered to the window class, with a different class
-    // relationship between members.
+    /** Initiate GLFW window with specific parameters and sets up the window icon.
+     *  - Windows-specific: Refresh window to darkmode.
+     *  - AppWindow: This will assign the appwindow and  initiate the callbacks to the OttWindow GLFW wrapper.
+     *  
+     *  This function can potentially be transfered to the window class, with a different class
+     *  relationship between members. **/
     void initWindow();
     
     //----------------------------------------------------------------------------
-    // Initiates and creates Vulkan related resources.
+    /** Initiates and creates Vulkan related resources. **/
     void initVulkan();
     
     //----------------------------------------------------------------------------
@@ -206,23 +215,6 @@ private:
     void cleanupVulkanResources();
     
     //----------------------------------------------------------------------------
-    void createInstance();
-    
-    //----------------------------------------------------------------------------
-    void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-    
-    //----------------------------------------------------------------------------
-    void setupDebugMessenger();
-
-    //----------------------------------------------------------------------------
-    void pickPhysicalDevice();
-    
-    //----------------------------------------------------------------------------
-    // Responsible for allocating a logical device to interface
-    // with the selected Physical Device
-    void createLogicalDevice();
-
-    //----------------------------------------------------------------------------
     void createSwapChain();
     
     //-----------------------------------------------------------------------------
@@ -230,7 +222,7 @@ private:
     
     //----------------------------------------------------------------------------
     void createImageViews();
-    
+
     //----------------------------------------------------------------------------
     VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
     
@@ -247,28 +239,25 @@ private:
     void createGridDescriptorSetLayout();
     
     //----------------------------------------------------------------------------
-    // f = fixed-function stage; p = programmable stage.
-    // Input Assembler (f) > Vertex Shader (p) > Tessellation (p) > Geometry Shader>
-    // Rasterization (f) > Fragment Shader (p) > Colour Blending (f) > Framebuffer
+    /** f = fixed-function stage; p = programmable stage.
+     *  Input Assembler (f) > Vertex Shader (p) > Tessellation (p) > Geometry Shader >
+     *  Rasterization (f) > Fragment Shader (p) > Colour Blending (f) > Framebuffer **/
     void createGraphicsPipeline();
-    
+
     //----------------------------------------------------------------------------
     void OttCreatePipelineLayout();
     
     //----------------------------------------------------------------------------
-    void createFramebuffers();    
-
-    //----------------------------------------------------------------------------
-    void createCommandPool();    
+    void createFramebuffers();
 
     //----------------------------------------------------------------------------
     void createColorResources();
 
     //----------------------------------------------------------------------------
-    void createDepthResources();    
-
+    void createDepthResources(); 
+    
     //----------------------------------------------------------------------------
-    void loadModel(std::filesystem::path const& modelPath);
+    void loadModel(std::string modelPath); 
 
     //----------------------------------------------------------------------------
     // Buffers in Vulkan are regions of memory used for
@@ -276,10 +265,10 @@ private:
     void createVertexBuffer();
 
     //----------------------------------------------------------------------------
-    void createIndexBuffer();    
-
+    void createIndexBuffer();
+    
     //----------------------------------------------------------------------------
-    void createTextureImage(const std::filesystem::path& imagePath);
+    void createTextureImage(std::string imagePath);
 
     //----------------------------------------------------------------------------
     // Images are accessed through image views rather than directly, so we need to craete an
@@ -309,11 +298,11 @@ private:
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
     //----------------------------------------------------------------------------
-    void createSyncObjects();    
-
+    void createSyncObjects();
+    
     //----------------------------------------------------------------------------
-    void updateUniformBufferCamera(uint32_t currentImage, float deltaTime, int width, int height);    
-
+    void updateUniformBufferCamera(uint32_t currentImage, float deltaTime, int width, int height);
+    
     //----------------------------------------------------------------------------
     void drawFrame();
 };

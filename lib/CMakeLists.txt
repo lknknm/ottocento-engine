@@ -12,16 +12,15 @@ file(GLOB sources CONFIGURE_DEPENDS *.cxx)
 
 add_library(lib_ottocento_engine ${sources})
 
+set_target_properties(lib_ottocento_engine PROPERTIES CXX_STANDARD 20)
+
 target_include_directories(lib_ottocento_engine PUBLIC include)
 target_include_directories(lib_ottocento_engine SYSTEM PRIVATE
    ${Stb_INCLUDE_DIR}
    ${CMAKE_SOURCE_DIR}/external/randutils)
 
-target_link_libraries(lib_ottocento_engine
-   PUBLIC
+target_link_libraries(lib_ottocento_engine PUBLIC
    glm::glm
-
-   PRIVATE
    Vulkan::Vulkan
    glfw
    volk::volk

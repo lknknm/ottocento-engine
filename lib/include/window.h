@@ -59,10 +59,9 @@ public:
 
     // Soon to be transferred to the Window Manager.
     bool windowShouldClose() const { return glfwWindowShouldClose(m_window); }
-    static void waitEvents()      { return glfwWaitEvents(); }
-    static void update()          { return glfwPollEvents(); }
+    static void waitEvents()       { return glfwWaitEvents(); }
+    static void update()           { return glfwPollEvents(); }
     void ThemeRefreshDarkMode(GLFWwindow* WIN32_window) const;
-    VkSurfaceKHR createWindowSurface(VkInstance instance);
     
     //----------------------------------------------------------------------------
     static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)

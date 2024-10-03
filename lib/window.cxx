@@ -30,9 +30,9 @@
 #endif
 
 //----------------------------------------------------------------------------
-// Default constructor for the Ottocento Window.
-// Initiate GLFW window with specific parameters and sets up the window icon.
-// Windows-specific: Refresh window to darkmode.
+/** Default constructor for the Ottocento Window.
+ *  Initiate GLFW window with specific parameters + callbacks and sets up the window icon.
+ *  - Windows-specific: Refresh window to darkmode. **/
 OttWindow::OttWindow(const char* title, int winWidth, int winHeight, bool show)
 {
         glfwInit();
@@ -75,15 +75,6 @@ OttWindow::OttWindow(const char* title, int winWidth, int winHeight, bool show)
 }
 
 //----------------------------------------------------------------------------
-VkSurfaceKHR OttWindow::createWindowSurface(VkInstance instance)
-{
-    VkSurfaceKHR surface = VK_NULL_HANDLE;
-    if (glfwCreateWindowSurface(instance, m_window, nullptr, &surface) != VK_SUCCESS)
-        throw std::runtime_error("failed to create window surface!");
-    return surface;
-}
-
-//----------------------------------------------------------------------------
 glm::ivec2 OttWindow::getFrameBufferSize() const
 {
     glm::ivec2 fbSize(0, 0);
@@ -111,11 +102,11 @@ OttWindow::~OttWindow()
     glfwTerminate();
 }
 
-//----------------------------------------------------------------------------
-// Windows Specific: refresh the titlebar to DarkMode.
-// This code is from a problem already solved by the Blender devs. It is extracted
-// from the 'ddbac88c08' commit "Win32: Dark Mode Title Bar Color" by Harley Acheson
 #if _WIN32
+//----------------------------------------------------------------------------
+/** Windows Specific: refresh the titlebar to DarkMode.
+ *  This code is from a problem already solved by the Blender devs. It is extracted
+ *  from the 'ddbac88c08' commit "Win32: Dark Mode Title Bar Color" by Harley Acheson **/
 void OttWindow::ThemeRefreshDarkMode(GLFWwindow* WIN32_window) const
 {
     DWORD lightMode;
