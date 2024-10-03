@@ -71,16 +71,16 @@ public:
     VkQueue               getPresentQueue()   const { return presentQueue; }
     VkSampleCountFlagBits getMSAASamples()    const { return msaaSamples; }
     
-    SwapChainSupportDetails  querySwapChainSupport   ();
-    QueueFamilyIndices       findQueueFamilies       () const;
+    SwapChainSupportDetails  querySwapChainSupport   (VkPhysicalDevice physical_device);
+    QueueFamilyIndices       findQueueFamilies       (VkPhysicalDevice physical_device) const;
     VkFormat                 findSupportedFormat     (const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
     VkFormat                 findDepthFormat         ();
-    uint32_t                 findMemoryType          (uint32_t typeFilter, VkMemoryPropertyFlags properties);
+    uint32_t                 findMemoryType          (uint32_t typeFilter, VkMemoryPropertyFlags props);
     
     VkCommandBuffer beginSingleTimeCommands() const;
     
     void endSingleTimeCommands  (VkCommandBuffer commandBuffer);
-    void createBuffer           (VkDeviceSize size, VkMemoryPropertyFlags propertiesFlags, VkBufferUsageFlags usage, VkBuffer& buffer,  VkDeviceMemory &bufferMemory);
+    void createBuffer           (VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags propertiesFlags, VkBuffer& buffer, VkDeviceMemory &bufferMemory);
         
     void copyBuffer             (VkBuffer& srcBuffer, VkBuffer& dstBuffer, VkDeviceSize size);
     void copyBufferToImage      (VkBuffer& buffer,    VkImage& image,      uint32_t width, uint32_t height);
@@ -119,9 +119,9 @@ private:
     std::vector<const char*> getRequiredExtensions   () const;
     VkSampleCountFlagBits    getMaxUsableSampleCount () const;
 
-    int  rateDeviceSuitability();
-    bool isDeviceSuitable            (VkPhysicalDevice physicalDevice, std::vector<const char*> deviceExtensions);
-    bool checkDeviceExtensionSupport (std::vector<const char*> deviceExtensions);
+    int  rateDeviceSuitability       (VkPhysicalDevice physical_device);
+    bool isDeviceSuitable            (VkPhysicalDevice physical_device, std::vector<const char*> device_extensions);
+    bool checkDeviceExtensionSupport (VkPhysicalDevice physical_device, std::vector<const char*> device_extensions);
     bool checkValidationLayerSupport (const std::vector<const char*> &validationLayers);
 
 // End of helper functions --------------------------------------------------

@@ -149,7 +149,7 @@ void OttDevice::endSingleTimeCommands(VkCommandBuffer commandBuffer)
 /** This function is used to create a buffer in Vulkan. It involves the following steps:
  *  Creating a buffer object, allocating memory for the buffer, binding the buffer to the allocated memory,
  *  and finally mapping the buffer memory if necessary. **/
-void OttDevice::createBuffer(VkDeviceSize size, VkMemoryPropertyFlags propertiesFlags, VkBufferUsageFlags usage, VkBuffer& buffer, VkDeviceMemory &bufferMemory)
+void OttDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags propertiesFlags, VkBuffer& buffer, VkDeviceMemory &bufferMemory)
 {
     const VkBufferCreateInfo bufferInfo {
                             .sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -324,7 +324,7 @@ void OttDevice::pickPhysicalDevice()
 
     for (const auto& device : devices)
     {
-        int score = rateDeviceSuitability();
+        int score = rateDeviceSuitability(device);
         candidates.insert(std::make_pair(score, device));
     }
         
@@ -347,7 +347,7 @@ void OttDevice::pickPhysicalDevice()
  *  with the selected Physical Device. **/
 void OttDevice::createLogicalDevice()
 {
-    QueueFamilyIndices indices = findQueueFamilies();
+    QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
@@ -418,7 +418,7 @@ void OttDevice::createLogicalDevice()
        Allow command buffers to be rerecorded individually, without this flag they all have to be reset together **/
 void OttDevice::createCommandPool(VkCommandPoolCreateFlags flags)
 {
-    const QueueFamilyIndices queueFamilyIndices = findQueueFamilies();
+    const QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
     const VkCommandPoolCreateInfo poolInfo {
                                   .sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
                                   .flags            = flags,
@@ -469,27 +469,27 @@ VkSampleCountFlagBits OttDevice::getMaxUsableSampleCount() const
 //----------------------------------------------------------------------------
 /** Queries if the physical device and the window surface both support the
  * swap chain present mode. **/
-SwapChainSupportDetails OttDevice::querySwapChainSupport()
+SwapChainSupportDetails OttDevice::querySwapChainSupport(VkPhysicalDevice physical_device)
 {
     SwapChainSupportDetails details;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &details.capabilities);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &details.capabilities);
     
     uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &formatCount, nullptr);
 
     if (formatCount != 0)
     {
         details.formats.resize(formatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, details.formats.data());
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device, surface, &formatCount, details.formats.data());
     }
 
     uint32_t presentModeCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &presentModeCount, nullptr);
 
     if (presentModeCount != 0)
     {
         details.presentModes.resize(presentModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, details.presentModes.data());
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &presentModeCount, details.presentModes.data());
     }
     
     return details;
@@ -498,21 +498,21 @@ SwapChainSupportDetails OttDevice::querySwapChainSupport()
 //----------------------------------------------------------------------------
 /** Operations in GPUs require that commands are submitted to a queue.
  *  This helper function will find the Queue Family type that we need for draw commands **/
-QueueFamilyIndices OttDevice::findQueueFamilies() const
+QueueFamilyIndices OttDevice::findQueueFamilies(VkPhysicalDevice physical_device) const
 {
     QueueFamilyIndices indices;
 
     uint32_t queueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
+    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queueFamilyCount, nullptr);
 
     std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, queueFamilies.data());
+    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queueFamilyCount, queueFamilies.data());
 
     int i = 0;
     for (const auto& queueFamily : queueFamilies)
     {
         VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &presentSupport);
+        vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, i, surface, &presentSupport);
         if (presentSupport)
             indices.presentFamily = i;
         
@@ -556,14 +556,14 @@ VkFormat OttDevice::findDepthFormat()
 //----------------------------------------------------------------------------
 /** Graphics cards can offer different types of memory to allocate from.
  *  Each type of memory varies in terms of allowed operations and performance characteristics. **/
-uint32_t OttDevice::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+uint32_t OttDevice::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags props)
 {
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
 
     for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
     {
-        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties)
+        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & props) == props)
         {
             return i;
         }
@@ -573,12 +573,12 @@ uint32_t OttDevice::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags pr
 
 //----------------------------------------------------------------------------
 /** Queries the device for specific parameters such as score and geometry shader availability. **/
-int OttDevice::rateDeviceSuitability()
+int OttDevice::rateDeviceSuitability(VkPhysicalDevice physical_device)
 {
     VkPhysicalDeviceProperties deviceProperties;
     VkPhysicalDeviceFeatures deviceFeatures;
-    vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
-    vkGetPhysicalDeviceFeatures(physicalDevice, &deviceFeatures);
+    vkGetPhysicalDeviceProperties(physical_device, &deviceProperties);
+    vkGetPhysicalDeviceFeatures(physical_device, &deviceFeatures);
 
     int score = 0;
 
@@ -619,19 +619,19 @@ bool OttDevice::hasStencilComponent(VkFormat format)
 /** Basic check to see if the device is suitable to be used for our needs.
  *  It checks if the device supports Vulkan extensions, Swap Chain and
  *  features like sampler anisotropy. **/
-bool OttDevice::isDeviceSuitable(VkPhysicalDevice physicalDevice,  std::vector<const char*> deviceExtensions )
+bool OttDevice::isDeviceSuitable(VkPhysicalDevice physical_device,  std::vector<const char*> device_extensions )
 {
-    QueueFamilyIndices indices = findQueueFamilies();
-    const bool extensionsSupported = checkDeviceExtensionSupport(deviceExtensions);
+    QueueFamilyIndices indices = findQueueFamilies(physical_device);
+    const bool extensionsSupported = checkDeviceExtensionSupport(physical_device, device_extensions);
 
     bool swapChainAdequate = false;
     if (extensionsSupported)
     {
-        SwapChainSupportDetails swapChainSupport = querySwapChainSupport();
+        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physical_device);
         swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
     }
     VkPhysicalDeviceFeatures supportedFeatures;
-    vkGetPhysicalDeviceFeatures(physicalDevice, &supportedFeatures);
+    vkGetPhysicalDeviceFeatures(physical_device, &supportedFeatures);
     
     return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
 }
@@ -639,14 +639,14 @@ bool OttDevice::isDeviceSuitable(VkPhysicalDevice physicalDevice,  std::vector<c
 //----------------------------------------------------------------------------
 /** Called by isDeviceSuitable as an additional check
  *  to see if the Device has the Extensions Support needed. **/
-bool OttDevice::checkDeviceExtensionSupport(std::vector<const char*> deviceExtensions)
+bool OttDevice::checkDeviceExtensionSupport(VkPhysicalDevice physical_device, std::vector<const char*> device_extensions)
 {
     uint32_t extensionCount;
-    vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, nullptr);
+    vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &extensionCount, nullptr);
 
     std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-    vkEnumerateDeviceExtensionProperties(physicalDevice, nullptr, &extensionCount, availableExtensions.data());
-    std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+    vkEnumerateDeviceExtensionProperties(physical_device, nullptr, &extensionCount, availableExtensions.data());
+    std::set<std::string> requiredExtensions(device_extensions.begin(), device_extensions.end());
 
     for (const VkExtensionProperties extension : availableExtensions)
         requiredExtensions.erase(extension.extensionName);

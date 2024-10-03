@@ -211,7 +211,7 @@ private:
         appwindow.OnFileDropped = [&](int count, const char** paths)
         {
             vkDeviceWaitIdle(device);
-            cleanupModelObjects();
+            //cleanupModelObjects();
             for (int i = 0; i < count; i++)
             {
                 loadModel(paths[i]);
@@ -361,7 +361,7 @@ private:
     //----------------------------------------------------------------------------
     void createSwapChain()
     {
-        SwapChainSupportDetails swapChainSupport = appDevice.querySwapChainSupport();
+        SwapChainSupportDetails swapChainSupport = appDevice.querySwapChainSupport(appDevice.getPhysicalDevice());
 
         VkSurfaceFormatKHR surfaceFormat = VkHelpers::chooseSwapSurfaceFormat(swapChainSupport.formats);
         VkPresentModeKHR   presentMode   = VkHelpers::chooseSwapPresentMode(swapChainSupport.presentModes);
@@ -387,7 +387,7 @@ private:
                                 .clipped            = VK_TRUE,
         };
         
-        QueueFamilyIndices indices = appDevice.findQueueFamilies();
+        QueueFamilyIndices indices = appDevice.findQueueFamilies(appDevice.getPhysicalDevice());
         uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 
         if (indices.graphicsFamily != indices.presentFamily)
@@ -889,9 +889,13 @@ private:
     void createColorResources()
     {
         const VkFormat colorFormat = swapChainImageFormat;
-        VkHelpers::createImage(swapChainExtent.width, swapChainExtent.height, 1, appDevice.getMSAASamples(),
-                                colorFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorImage, colorImageMemory, appDevice);
+        VkHelpers::createImage (swapChainExtent.width, swapChainExtent.height,
+                                1, appDevice.getMSAASamples(),
+                                colorFormat, VK_IMAGE_TILING_OPTIMAL,
+                                VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+                                VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                                colorImage, colorImageMemory, appDevice
+                                );
         appDevice.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)colorImageMemory, "application::VkDeviceMemory:colorImageMemory");
         colorImageView = createImageView(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
     }
