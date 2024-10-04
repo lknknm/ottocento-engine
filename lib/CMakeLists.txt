@@ -12,7 +12,8 @@ file(GLOB sources CONFIGURE_DEPENDS *.cxx)
 
 add_library(lib_ottocento_engine ${sources})
 
-set_target_properties(lib_ottocento_engine PROPERTIES CXX_STANDARD 20)
+set_target_properties(lib_ottocento_engine PROPERTIES CXX_STANDARD 20
+   CXX_STANDARD_REQUIRED true)
 
 target_include_directories(lib_ottocento_engine PUBLIC include)
 target_include_directories(lib_ottocento_engine SYSTEM PRIVATE
