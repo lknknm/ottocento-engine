@@ -23,16 +23,6 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <gtx/hash.hpp>
 
-#define IMGUI_IMPL_VULKAN_USE_VOLK
-#include <imgui.h>
-#include <imconfig.h>
-#include <imgui_internal.h>
-#include <imgui_impl_vulkan.h>
-#include <imgui_impl_glfw.h>
-#include <imstb_rectpack.h>
-#include <imstb_textedit.h>
-#include <imstb_truetype.h>
-
 #include <algorithm>
 #include <array>
 #include <chrono>
@@ -211,7 +201,7 @@ private:
         appwindow.OnFileDropped = [&](int count, const char** paths)
         {
             vkDeviceWaitIdle(device);
-            //cleanupModelObjects();
+            cleanupModelObjects();
             for (int i = 0; i < count; i++)
             {
                 loadModel(paths[i]);
@@ -222,6 +212,9 @@ private:
                 }
                 createVertexBuffer();
                 createIndexBuffer();
+                createUniformBuffers();
+                createDescriptorPool();
+                createDescriptorSets();
             }
         };
         

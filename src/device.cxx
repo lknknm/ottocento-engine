@@ -220,14 +220,17 @@ void OttDevice::copyBufferToImage(VkBuffer& buffer, VkImage& image, uint32_t wid
  *  vkSetDebugUtilsObjectNameEXT function. It's basically a small wrapper for convenience. **/
 void OttDevice::debugUtilsObjectNameInfoEXT(VkObjectType objType, uint64_t objHandle, const char* objName) const
 {
-    const VkDebugUtilsObjectNameInfoEXT debugNameInfo {
-        .sType        = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
-        .objectType   = objType,
-        .objectHandle = objHandle,
-        .pObjectName  = objName,
-    };
-    if (vkSetDebugUtilsObjectNameEXT(device, &debugNameInfo) != VK_SUCCESS)
-        throw std::runtime_error("Failed to load Object Name Extension");
+    if (enableValidationLayers == true)
+    {
+        const VkDebugUtilsObjectNameInfoEXT debugNameInfo {
+            .sType        = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+            .objectType   = objType,
+            .objectHandle = objHandle,
+            .pObjectName  = objName,
+        };
+        if (vkSetDebugUtilsObjectNameEXT(device, &debugNameInfo) != VK_SUCCESS)
+            throw std::runtime_error("Failed to load Object Name Extension");
+    }
 }
 
 //----------------------------------------------------------------------------
@@ -282,6 +285,7 @@ void OttDevice::createInstance()
 
     if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
         throw std::runtime_error("failed to create instance!");
+    std::cout << "Vulkan Instance created ::::: " << std::endl;
 }
 
 //----------------------------------------------------------------------------
@@ -401,12 +405,12 @@ void OttDevice::createLogicalDevice()
 
     if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
         throw std::runtime_error("failed to create logical device!");
-    std::cout << "Logical Device Successfully created" << std::endl;
     
     debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_PHYSICAL_DEVICE, (uint64_t) physicalDevice, "OttDevice::physicalDevice");
     debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE, (uint64_t) device, "OttDevice::device");
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
     vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
+    std::cout << "Logical Device Successfully created" << std::endl;
 }
 
 //----------------------------------------------------------------------------
@@ -418,6 +422,7 @@ void OttDevice::createLogicalDevice()
        Allow command buffers to be rerecorded individually, without this flag they all have to be reset together **/
 void OttDevice::createCommandPool(VkCommandPoolCreateFlags flags)
 {
+    std::cout << "createCommandPool start::::: " << std::endl;
     const QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
     const VkCommandPoolCreateInfo poolInfo {
                                   .sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -427,6 +432,7 @@ void OttDevice::createCommandPool(VkCommandPoolCreateFlags flags)
 
     if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS)
         throw std::runtime_error("failed to create command pool!");
+    std::cout << "CommandPool Created::::: " << std::endl;
 }
 
 //----------------------------------------------------------------------------

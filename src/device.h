@@ -56,11 +56,11 @@ public:
     OttDevice(OttWindow &window);
     ~OttDevice();
 
-    // // Not copyable or movable
-    // OttDevice(const OttDevice &) = delete;
-    // OttDevice &operator=(const OttDevice &) = delete;
-    // OttDevice(OttDevice &&) = delete;
-    // OttDevice &operator=(OttDevice &&) = delete;
+    // Not copyable or movable
+    OttDevice(const OttDevice &) = delete;
+    OttDevice &operator=(const OttDevice &) = delete;
+    OttDevice(OttDevice &&) = delete;
+    OttDevice &operator=(OttDevice &&) = delete;
 
     VkInstance            getInstance()       const { return instance; }
     VkCommandPool         getCommandPool()    const { return commandPool; }
