@@ -16,3 +16,4 @@
 - [How not to test graphics algorithms](https://bartwronski.com/2019/08/14/how-not-to-test-graphics-algorithms/)
 - [Multisampling Primer](https://www.rastergrid.com/blog/gpu-tech/2021/10/multisampling-primer/)
 - [Nvidia Tips and Tricks: Vulkan Dos and Don’ts](https://developer.nvidia.com/blog/vulkan-dos-donts/)
+- [Managing Bindless descriptors in Vulkan](https://dev.to/gasim/implementing-bindless-design-in-vulkan-34no)
