@@ -41,14 +41,25 @@ public:
     OttSwapChain(OttDevice* device_reference, OttWindow* window_reference);
     ~OttSwapChain();
 
-    VkFramebuffer   getFrameBuffer(int index)   const { return swapChainFramebuffers[index]; }
-    VkRenderPass    getRenderPass()             const { return renderPass; }
-    VkImageView     getImageView(int index)     const { return swapChainImageViews[index]; }
-    size_t          imageCount()                const { return swapChainImages.size(); }
-    VkFormat        getSwapChainImageFormat()   const { return swapChainImageFormat; }
-    VkExtent2D      getSwapChainExtent()        const { return swapChainExtent; }
-    uint32_t        width()                     const { return swapChainExtent.width; }
-    uint32_t        height()                    const { return swapChainExtent.height; }
+    void            setFramebufferResized(bool resized) { framebufferResized = resized; }
+    bool            isFramebufferResized()        const { return framebufferResized; }
+
+    [[nodiscard]] VkSwapchainKHR  getSwapChain()              const { return swapChain; }
+    [[nodiscard]] VkFramebuffer   getFrameBuffer(int index)   const { return swapChainFramebuffers[index]; }
+    [[nodiscard]] VkRenderPass    getRenderPass()             const { return renderPass; }
+    [[nodiscard]] VkImageView     getImageView(int index)     const { return swapChainImageViews[index]; }
+    [[nodiscard]] VkFormat        getSwapChainImageFormat()   const { return swapChainImageFormat; }
+    [[nodiscard]] VkExtent2D      getSwapChainExtent()        const { return swapChainExtent; }
+    [[nodiscard]] size_t          imageCount()                const { return swapChainImages.size(); }
+    [[nodiscard]] uint32_t        getCurrentFrame()           const { return currentFrame; }
+    [[nodiscard]] uint32_t        width()                     const { return swapChainExtent.width; }
+    [[nodiscard]] uint32_t        height()                    const { return swapChainExtent.height; }
+    
+    void            setWidth(uint32_t size_x)   { swapChainExtent.width = size_x; }
+    void            setHeight(uint32_t size_y)  { swapChainExtent.height = size_y; }
+    void            refreshSwapChain()          { return recreateSwapChain(); }
+
+    void drawFrame(std::vector<VkCommandBuffer>& command_buffers);
     
 //----------------------------------------------------------------------------
 private:
@@ -78,6 +89,9 @@ private:
     std::vector<VkSemaphore>        imageAvailableSemaphores;
     std::vector<VkSemaphore>        renderFinishedSemaphores;
     std::vector<VkFence>            inFlightFences;
+    
+    uint32_t currentFrame = 0;
+    bool   framebufferResized = false;
     
     VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) const;
     

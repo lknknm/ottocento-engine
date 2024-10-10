@@ -17,17 +17,18 @@
 #include <algorithm>
 #include <array>
 #include "swapchain.h"
+
 #include "helpers.h"
 
 //----------------------------------------------------------------------------
 /** Default OttSwapChain constructor.
- *  \param deviceRef: A reference of the current device instantiated by the application.
- *  \param windowRef: We need the window's width, height and other utilities to create and recreate our Swapchain
+ *  \param device_reference: A reference of the current device instantiated by the application.
+ *  \param window_reference: We need the window's width, height and other utilities to create and recreate our Swapchain
  *  to present the image to the screen. **/
 OttSwapChain::OttSwapChain(OttDevice* device_reference, OttWindow* window_reference)
 {
-    appDeviceRef = device_reference;
-    appWindowRef = window_reference;
+    appDeviceRef   = device_reference;
+    appWindowRef   = window_reference;
     device = appDeviceRef->getDevice();
     createSwapChain();
     createImageViews();
@@ -42,6 +43,13 @@ OttSwapChain::OttSwapChain(OttDevice* device_reference, OttWindow* window_refere
 OttSwapChain::~OttSwapChain()
 {
     cleanupSwapChain();
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        vkDestroySemaphore(device, imageAvailableSemaphores[i], nullptr);
+        vkDestroySemaphore(device, renderFinishedSemaphores[i], nullptr);
+        vkDestroyFence(device, inFlightFences[i], nullptr);
+    }
+    vkDestroyRenderPass(device, renderPass, nullptr);
 }
 
 //----------------------------------------------------------------------------
@@ -348,6 +356,73 @@ void OttSwapChain::createSyncObjects()
         appDeviceRef->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)imageAvailableSemaphores[i], "SyncObject::VkSemaphore:imageAvailableSemaphore");
         appDeviceRef->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)renderFinishedSemaphores[i], "SyncObject::VkSemaphore:renderFinishedSemaphores");
     }
+}
+
+//----------------------------------------------------------------------------
+void OttSwapChain::drawFrame(std::vector<VkCommandBuffer>& command_buffers)
+{
+    vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+    
+    uint32_t imageIndex;
+    VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+        recreateSwapChain();
+        return;
+    }
+    else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+    {
+        throw std::runtime_error("failed to acquire swap chain image!");
+    }
+
+    // Only reset the fence if we are submitting work
+    vkResetFences(device, 1, &inFlightFences[currentFrame]);
+    vkResetCommandBuffer(command_buffers[currentFrame], 0);
+    recordCommandBuffer(command_buffers[currentFrame], imageIndex);
+
+    VkSemaphore          waitSemaphores[]   = { imageAvailableSemaphores[currentFrame] };
+    VkSemaphore          signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
+    VkPipelineStageFlags waitStages[]       = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    const VkSubmitInfo submitInfo {
+                    .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+
+                    .waitSemaphoreCount = 1,
+                    .pWaitSemaphores = waitSemaphores,
+                    .pWaitDstStageMask = waitStages,
+    
+                    .commandBufferCount = 1,
+                    .pCommandBuffers = &command_buffers[currentFrame],
+
+                    .signalSemaphoreCount = 1,
+                    .pSignalSemaphores = signalSemaphores,
+    };
+    
+    if (vkQueueSubmit(appDeviceRef->getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) 
+        throw std::runtime_error("failed to submit draw command buffer!");
+    
+    VkSwapchainKHR swapChains[] = { swapChain };
+    const VkPresentInfoKHR presentInfo {
+                     .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+                     .waitSemaphoreCount = 1,
+                     .pWaitSemaphores    = signalSemaphores,
+
+                     .swapchainCount     = 1,
+                     .pSwapchains        = swapChains,
+                     .pImageIndices      = &imageIndex,
+                     .pResults           = nullptr, // Optional
+    };
+
+    result = vkQueuePresentKHR(appDeviceRef->getPresentQueue(), &presentInfo);
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized)
+    {
+        framebufferResized = false;
+        recreateSwapChain();
+    }
+    else if (result != VK_SUCCESS)
+        throw std::runtime_error("failed to present swap chain image!");
+    
+    currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 //----------------------------------------------------------------------------
