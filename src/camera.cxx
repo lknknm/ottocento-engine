@@ -135,8 +135,8 @@ void OttCamera::viewportInputHandle(float deltaTime)
 }
 
 //----------------------------------------------------------------------------
-// Gets the mouse pointer to wrap around the framebuffer to get continuous movement
-// while rotating or panning the camera.
+/** Gets the mouse pointer to wrap around the framebuffer to get continuous movement
+ *  while rotating or panning the camera. **/
 void OttCamera::wrapAroundMousePos(glm::vec2* mousePos)
 {
     double mxpos, mypos; // Get mouse position, relative to window
@@ -264,11 +264,12 @@ void OttCamera::rotateFixedAmount(rotateDirection direction)
 }
     
 //----------------------------------------------------------------------------
-// Originally implemented on F3D with the help of
-// Michael Migliore, Mathieu Westphal and Snoyer.
-// This function takes the current position of the camera and reorient it facing
-// a given axis, as per the formula:
-// P' = P + radius * viewAxis.
+/** Originally implemented as a contribution to F3D with the help of
+ * Michael Migliore, Mathieu Westphal and Snoyer.
+ * Copyright Michael Migliore, Mathieu Westphal. \n
+ * This function takes the current position of the camera and reorient it facing
+ * a given axis, as per the formula:
+ * P' = P + radius * viewAxis. **/
 glm::vec3 OttCamera::SetViewOrbit(ViewType view)
 {
     glm::vec3 foc = getCenterPosition();

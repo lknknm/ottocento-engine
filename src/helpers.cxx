@@ -21,6 +21,8 @@
 #include <set>
 #include <stdexcept>
 
+#include "macros.h"
+
 
 //----------------------------------------------------------------------------
 void VkHelpers::generateMipmaps(VkImage& image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels,
@@ -230,7 +232,7 @@ void VkHelpers::createImage(uint32_t width, uint32_t height, uint32_t mipLevels,
 }
 
 //----------------------------------------------------------------------------
-// Creates a 1x1 blank image to populate the 0 index of the textureImages array.
+/** Creates a 1x1 blank image to populate the 0 index of the textureImages array. **/
 void VkHelpers::create1x1BlankImage(VkImage& blankImage, uint32_t mipLevels, OttDevice& appDevice,
                                     std::vector<VkImage>& textureImages, VkDeviceMemory& textureImageMemory)
 {    
@@ -268,7 +270,7 @@ void VkHelpers::create1x1BlankImage(VkImage& blankImage, uint32_t mipLevels, Ott
 }
 
 //-----------------------------------------------------------------------------
-// Helper function will take a buffer with the bytecode as parameter and create a VkShaderModule from it.
+/** Helper function will take a buffer with the bytecode as parameter and create a VkShaderModule from it. **/
 VkShaderModule VkHelpers::createShaderModule(const std::vector<char>& code, VkDevice device)
 {
     VkShaderModuleCreateInfo createInfo{};
@@ -279,8 +281,7 @@ VkShaderModule VkHelpers::createShaderModule(const std::vector<char>& code, VkDe
     VkShaderModule shaderModule;
     if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
         throw std::runtime_error("failed to create shader module!");
-    else
-        std::cout << "Shader Module Created" << std::endl;
+    LOG_INFO("Shader Module Created");
     
     return shaderModule;
 }

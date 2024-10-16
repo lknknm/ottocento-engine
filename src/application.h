@@ -43,16 +43,12 @@
 #include "helpers.h"
 #include "swapchain.h"
 #include "model.h"
+#include "renderer.h"
 #include "window.h"
 #include "utils.hxx"
 
-#define VOLK_IMPLEMENTATION
-#include "volk.h"
-
-#define STB_IMAGE_IMPLEMENTATION
 #include "../stb/stb_image.h"
 
-#define TINYOBJLOADER_IMPLEMENTATION
 #include <ext/scalar_common.hpp>
 #include "../external/tinyobjloader/tiny_obj_loader.h"
 
@@ -73,9 +69,7 @@ struct PushConstantData {
     alignas(16) glm::vec3 offset;
     alignas(16) glm::vec3 color;
     alignas(4)  uint32_t  textureID;
-} push;
-
-std::vector<OttModel::modelObject> models;
+};
 
 //----------------------------------------------------------------------------
 class OttApplication
@@ -84,9 +78,7 @@ class OttApplication
 public:
 //----------------------------------------------------------------------------
     
-    void run();
-    void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
-    
+    void run();    
     GLFWwindow* getWindowhandle() const { return appwindow.getWindowhandle(); }  
 
 //----------------------------------------------------------------------------
@@ -98,6 +90,10 @@ private:
     VkDevice  device    = appDevice.getDevice();
     VkPhysicalDevice physicalDevice = appDevice.getPhysicalDevice();
     OttSwapChain appSwapChain = OttSwapChain(&appDevice, &appwindow);
+    OttRenderer  ottRenderer  = OttRenderer(&appDevice, &appSwapChain);
+
+    PushConstantData push;
+    std::vector<OttModel::modelObject> models;
     
     VkPipelineLayout                    pipelineLayout;
     VkDescriptorSetLayout               descriptorSetLayout;
@@ -149,6 +145,8 @@ private:
     void initWindow();
     void initVulkan();
     void mainLoop();
+    void drawFrame();
+    void drawScene(VkCommandBuffer command_buffer);
     void cleanupTextureObjects();
     void cleanupUBO() const;
     void cleanupModelObjects() const;
@@ -174,6 +172,5 @@ private:
     void createDescriptorPool();
     void createDescriptorSets();
 
-    void createCommandBuffers();
     void updateUniformBufferCamera(uint32_t currentImage, float deltaTime, int width, int height);
 };

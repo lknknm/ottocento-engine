@@ -16,14 +16,21 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
 #include <vector>
-
 #include "device.h"
-#include "volk.h"
 
-const int MAX_FRAMES_IN_FLIGHT = 2;
+const int MAX_FRAMES_IN_FLIGHT = 3;
+
+/** Мид: "The first thing is that your swap chain images and your frames in flight are different things.
+ * Let your SwapChain class manage the VkSwapchainKHR and its associated VkImageViews and the "rendering's done"
+ * VkSemaphore that goes with each of those images (and maybe their associated VkFrameBuffers,
+ * if you're not using dynamic rendering, I guess). Everything else belongs somewhere else.
+ * Your swap chain should have a function that takes a semaphore that you want it to signal
+ * when it's safe to start writing pixels (which goes with your frames-in-flight data) and it returns a struct that's got the
+ * framebuffer/image to render into and the semaphore which you must signal when pixels are all written.
+ * You call that at the top of the function that draws a frame. And once rendering commands are all submitted
+ * you'll call another function that does the present call.
+ * Everything else is just managing the lifetimes of the contained resources." **/
 
 /** The swapchain is an infrastructure that we need to create explicitly in Vulkan.
  *  The OttSwapChain class is a wrapper around the Vulkan SwapChain that will
@@ -40,26 +47,28 @@ public:
     
     OttSwapChain(OttDevice* device_reference, OttWindow* window_reference);
     ~OttSwapChain();
-
-    void            setFramebufferResized(bool resized) { framebufferResized = resized; }
-    bool            isFramebufferResized()        const { return framebufferResized; }
-
+    
     [[nodiscard]] VkSwapchainKHR  getSwapChain()              const { return swapChain; }
     [[nodiscard]] VkFramebuffer   getFrameBuffer(int index)   const { return swapChainFramebuffers[index]; }
+    [[nodiscard]] uint32_t        getCurrentFrame()           const { return currentFrame; }
     [[nodiscard]] VkRenderPass    getRenderPass()             const { return renderPass; }
     [[nodiscard]] VkImageView     getImageView(int index)     const { return swapChainImageViews[index]; }
     [[nodiscard]] VkFormat        getSwapChainImageFormat()   const { return swapChainImageFormat; }
     [[nodiscard]] VkExtent2D      getSwapChainExtent()        const { return swapChainExtent; }
     [[nodiscard]] size_t          imageCount()                const { return swapChainImages.size(); }
-    [[nodiscard]] uint32_t        getCurrentFrame()           const { return currentFrame; }
+
     [[nodiscard]] uint32_t        width()                     const { return swapChainExtent.width; }
     [[nodiscard]] uint32_t        height()                    const { return swapChainExtent.height; }
+    [[nodiscard]] VkResult        acquireNextImage(uint32_t& image_index);
+    [[nodiscard]] VkResult        submitCommandBuffer(const VkCommandBuffer* buffers, uint32_t image_index);
     
-    void            setWidth(uint32_t size_x)   { swapChainExtent.width = size_x; }
-    void            setHeight(uint32_t size_y)  { swapChainExtent.height = size_y; }
-    void            refreshSwapChain()          { return recreateSwapChain(); }
-
-    void drawFrame(std::vector<VkCommandBuffer>& command_buffers);
+    /** Public wrapper to recreateSwapChain(). **/
+    void refreshSwapChain()          { return recreateSwapChain(); }
+    void resetFenceResources(VkCommandBuffer command_buffer);
+    void setWidth(uint32_t size_x)   { swapChainExtent.width = size_x; }
+    void setHeight(uint32_t size_y)  { swapChainExtent.height = size_y; }
+    void setFramebufferResized(bool resized) { framebufferResized = resized; }
+    bool isFramebufferResized()        const { return framebufferResized; }
     
 //----------------------------------------------------------------------------
 private:

@@ -21,6 +21,8 @@
 #include <iostream>
 #include <vec2.hpp>
 
+#include "macros.h"
+
 struct GLFWwindow;
 using VkInstance   = struct VkInstance_T*;
 using VkSurfaceKHR = struct VkSurfaceKHR_T*;
@@ -69,7 +71,7 @@ public:
         if (action == GLFW_RELEASE)
         {
             std::cout << "Key released: " << key << std::endl;
-            //Take action here
+            /** TODO **/
         }
     }
 

@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "device.h"
+#include "macros.h"
 #include <set>
 #include <map>
 
@@ -31,7 +32,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBits
     std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
     return VK_FALSE;
 }
-}
+} // anonymous namespace
 
 //----------------------------------------------------------------------------
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
@@ -285,7 +286,7 @@ void OttDevice::createInstance()
 
     if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
         throw std::runtime_error("failed to create instance!");
-    std::cout << "Vulkan Instance created ::::: " << std::endl;
+    LOG_INFO("Vulkan Instance Created");
 }
 
 //----------------------------------------------------------------------------
@@ -303,7 +304,7 @@ void OttDevice::setupDebugMessenger()
 //----------------------------------------------------------------------------
 /** Wrapper for the glfwCreateWindowSurface function.
  *  More details can be provided by the original GLFW function.
- *  \param &window: We need the window properly created in advance
+ *  \param window: We need the window properly created in advance
  *  to call the aforementioned GLFW function. **/
 void OttDevice::createWindowSurface(const OttWindow& window)
 {
@@ -337,8 +338,8 @@ void OttDevice::pickPhysicalDevice()
         if (physicalDevice = candidates.rbegin()->second)
         {
             msaaSamples = getMaxUsableSampleCount();
-            std::cout << "GPU is properly scored and suitable for usage." <<  std::endl;
-            std::cout << "Max Usable Sample Count: " << msaaSamples << "xMSAA" << std::endl;
+            LOG_INFO("GPU is properly scored and suitable for usage.");
+            std::cout << C_GREEN << "[INFO] " << "Max Usable Sample Count: " << msaaSamples << "xMSAA" << C_RESET << std::endl;
         }
     }
         
@@ -410,7 +411,8 @@ void OttDevice::createLogicalDevice()
     debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE, (uint64_t) device, "OttDevice::device");
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
     vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
-    std::cout << "Logical Device Successfully created" << std::endl;
+    
+    LOG_INFO("Logical Device Successfully created");
 }
 
 //----------------------------------------------------------------------------
@@ -422,7 +424,6 @@ void OttDevice::createLogicalDevice()
        Allow command buffers to be rerecorded individually, without this flag they all have to be reset together **/
 void OttDevice::createCommandPool(VkCommandPoolCreateFlags flags)
 {
-    std::cout << "createCommandPool start::::: " << std::endl;
     const QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
     const VkCommandPoolCreateInfo poolInfo {
                                   .sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -432,7 +433,7 @@ void OttDevice::createCommandPool(VkCommandPoolCreateFlags flags)
 
     if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS)
         throw std::runtime_error("failed to create command pool!");
-    std::cout << "CommandPool Created::::: " << std::endl;
+    LOG_INFO("CommandPool Created");
 }
 
 //----------------------------------------------------------------------------

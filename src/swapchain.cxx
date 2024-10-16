@@ -19,6 +19,7 @@
 #include "swapchain.h"
 
 #include "helpers.h"
+#include "macros.h"
 
 //----------------------------------------------------------------------------
 /** Default OttSwapChain constructor.
@@ -33,6 +34,7 @@ OttSwapChain::OttSwapChain(OttDevice* device_reference, OttWindow* window_refere
     createSwapChain();
     createImageViews();
     createRenderPass();
+    createColorResources();
     createDepthResources();
     createFramebuffers();
     createSyncObjects();
@@ -105,6 +107,7 @@ void OttSwapChain::createSwapChain()
     
     if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS)
         throw std::runtime_error("failed to create swap chain!");
+    LOG_INFO("SwapChain Created");
     
     vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
     swapChainImages.resize(imageCount);
@@ -134,6 +137,8 @@ void OttSwapChain::cleanupSwapChain() const
 }
 
 //-----------------------------------------------------------------------------
+/** Every time we resize or minimize the window, we need to destroy and recreate our
+ * swap chain with the new size to present (or not) the rendered image **/
 void OttSwapChain::recreateSwapChain()
 {
     int width  = appWindowRef->getFrameBufferSize().x;
@@ -267,7 +272,7 @@ void OttSwapChain::createRenderPass()
 
     if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
         throw std::runtime_error("failed to create render pass!");
-    std::cout << "Render Pass Created" << std::endl;
+    LOG_INFO("Render Pass Created");
 }
 
 //----------------------------------------------------------------------------
@@ -335,11 +340,11 @@ void OttSwapChain::createSyncObjects()
     renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
         
-    VkSemaphoreCreateInfo semaphoreInfo {
+    constexpr VkSemaphoreCreateInfo semaphoreInfo {
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
     };
         
-    VkFenceCreateInfo fenceInfo {
+    constexpr VkFenceCreateInfo fenceInfo {
         .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
         .flags = VK_FENCE_CREATE_SIGNALED_BIT,
     };
@@ -359,43 +364,38 @@ void OttSwapChain::createSyncObjects()
 }
 
 //----------------------------------------------------------------------------
-void OttSwapChain::drawFrame(std::vector<VkCommandBuffer>& command_buffers)
+/** Wrapper for the vkAcquireNextImageKHR.
+ *  \param image_index: Index of the next available presentable image **/
+VkResult OttSwapChain::acquireNextImage(uint32_t& image_index)
 {
     vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
-    
-    uint32_t imageIndex;
-    VkResult result = vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+    return vkAcquireNextImageKHR (device,
+                                  swapChain,
+                                  UINT64_MAX,
+                                  imageAvailableSemaphores[currentFrame],
+                                  VK_NULL_HANDLE,
+                                  &image_index);
+}
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR)
-    {
-        recreateSwapChain();
-        return;
-    }
-    else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-    {
-        throw std::runtime_error("failed to acquire swap chain image!");
-    }
-
-    // Only reset the fence if we are submitting work
-    vkResetFences(device, 1, &inFlightFences[currentFrame]);
-    vkResetCommandBuffer(command_buffers[currentFrame], 0);
-    recordCommandBuffer(command_buffers[currentFrame], imageIndex);
-
+//----------------------------------------------------------------------------
+VkResult OttSwapChain::submitCommandBuffer(const VkCommandBuffer* command_buffers, uint32_t image_index)
+{    
     VkSemaphore          waitSemaphores[]   = { imageAvailableSemaphores[currentFrame] };
     VkSemaphore          signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
     VkPipelineStageFlags waitStages[]       = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-    const VkSubmitInfo submitInfo {
-                    .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-
-                    .waitSemaphoreCount = 1,
-                    .pWaitSemaphores = waitSemaphores,
-                    .pWaitDstStageMask = waitStages,
     
-                    .commandBufferCount = 1,
-                    .pCommandBuffers = &command_buffers[currentFrame],
+    const VkSubmitInfo submitInfo {
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
 
-                    .signalSemaphoreCount = 1,
-                    .pSignalSemaphores = signalSemaphores,
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores    = waitSemaphores,
+        .pWaitDstStageMask  = waitStages,
+    
+        .commandBufferCount = 1,
+        .pCommandBuffers    = command_buffers,
+
+        .signalSemaphoreCount = 1,
+        .pSignalSemaphores    = signalSemaphores,
     };
     
     if (vkQueueSubmit(appDeviceRef->getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) 
@@ -403,27 +403,91 @@ void OttSwapChain::drawFrame(std::vector<VkCommandBuffer>& command_buffers)
     
     VkSwapchainKHR swapChains[] = { swapChain };
     const VkPresentInfoKHR presentInfo {
-                     .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-                     .waitSemaphoreCount = 1,
-                     .pWaitSemaphores    = signalSemaphores,
+        .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores    = signalSemaphores,
 
-                     .swapchainCount     = 1,
-                     .pSwapchains        = swapChains,
-                     .pImageIndices      = &imageIndex,
-                     .pResults           = nullptr, // Optional
+        .swapchainCount     = 1,
+        .pSwapchains        = swapChains,
+        .pImageIndices      = &image_index,
+        .pResults           = nullptr, // Optional
     };
-
-    result = vkQueuePresentKHR(appDeviceRef->getPresentQueue(), &presentInfo);
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized)
-    {
-        framebufferResized = false;
-        recreateSwapChain();
-    }
-    else if (result != VK_SUCCESS)
-        throw std::runtime_error("failed to present swap chain image!");
     
+    const VkResult result = vkQueuePresentKHR(appDeviceRef->getPresentQueue(), &presentInfo);
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    
+    return result;
 }
+
+// //----------------------------------------------------------------------------
+// /** TODO: Port it and split this function into a proper renderer class **/
+// void OttSwapChain::drawFrame(std::vector<VkCommandBuffer>& command_buffers)
+// {
+//     // Moved to OttRenderer::beginFrame() -----------------------------------
+//     uint32_t imageIndex;
+//     VkResult result = acquireNextImage(imageIndex);
+//
+//     if (result == VK_ERROR_OUT_OF_DATE_KHR)
+//     {
+//         recreateSwapChain();
+//         return;
+//     }
+//     else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+//     {
+//         throw std::runtime_error("failed to acquire swap chain image!");
+//     }
+//     //----------------------------------------------------------------------
+//     
+//     // Moved to OttSwapChain::submitCommandBuffer() -----------------------------------
+//     // Only reset the fence if we are submitting work
+//     vkResetFences(device, 1, &inFlightFences[currentFrame]);
+//     vkResetCommandBuffer(command_buffers[currentFrame], 0);
+//     recordCommandBuffer(command_buffers[currentFrame], imageIndex);
+//
+//     VkSemaphore          waitSemaphores[]   = { imageAvailableSemaphores[currentFrame] };
+//     VkSemaphore          signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
+//     VkPipelineStageFlags waitStages[]       = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+//     const VkSubmitInfo submitInfo {
+//                     .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+//
+//                     .waitSemaphoreCount = 1,
+//                     .pWaitSemaphores = waitSemaphores,
+//                     .pWaitDstStageMask = waitStages,
+//     
+//                     .commandBufferCount = 1,
+//                     .pCommandBuffers = &command_buffers[currentFrame],
+//
+//                     .signalSemaphoreCount = 1,
+//                     .pSignalSemaphores = signalSemaphores,
+//     };
+//     
+//     if (vkQueueSubmit(appDeviceRef->getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) 
+//         throw std::runtime_error("failed to submit draw command buffer!");
+//     
+//     VkSwapchainKHR swapChains[] = { swapChain };
+//     const VkPresentInfoKHR presentInfo {
+//                      .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+//                      .waitSemaphoreCount = 1,
+//                      .pWaitSemaphores    = signalSemaphores,
+//
+//                      .swapchainCount     = 1,
+//                      .pSwapchains        = swapChains,
+//                      .pImageIndices      = &imageIndex,
+//                      .pResults           = nullptr, // Optional
+//     };
+//     //--------------------------------------------------------------------------
+//     
+//     result = vkQueuePresentKHR(appDeviceRef->getPresentQueue(), &presentInfo);
+//     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || framebufferResized)
+//     {
+//         framebufferResized = false;
+//         recreateSwapChain();
+//     }
+//     else if (result != VK_SUCCESS)
+//         throw std::runtime_error("failed to present swap chain image!");
+//     
+//     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+// }
 
 //----------------------------------------------------------------------------
 // Helper Functions
@@ -481,3 +545,11 @@ VkExtent2D OttSwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabi
         return actualExtent;
     }
 }
+
+//----------------------------------------------------------------------------
+void OttSwapChain::resetFenceResources(VkCommandBuffer command_buffer)
+{
+    vkResetFences(device, 1, &inFlightFences[currentFrame]);
+    vkResetCommandBuffer(command_buffer, 0); 
+}
+
