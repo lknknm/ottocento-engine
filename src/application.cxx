@@ -14,8 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include "application.h"
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
 
+#include "application.h"
 #include "macros.h"
 
 //----------------------------------------------------------------------------
@@ -76,7 +79,6 @@ void OttApplication::initWindow()
             createDescriptorSets();
         }
     };
-    
     #ifdef _WIN32
     appwindow.ThemeRefreshDarkMode(appwindow.getWindowhandle());
     #endif
@@ -119,17 +121,20 @@ void OttApplication::mainLoop()
 //----------------------------------------------------------------------------
 void OttApplication::drawFrame()
 {
-    const auto startTime = std::chrono::high_resolution_clock::now();
-    if (const VkCommandBuffer commandBuffer = ottRenderer.beginFrame())
-    {        
-        ottRenderer.beginSwapChainRenderPass(commandBuffer);
-        const float deltaTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - startTime).count() * 0.001f * 0.001f * 0.001f;
-        updateUniformBufferCamera(appSwapChain.getCurrentFrame(), deltaTime, appSwapChain.width(), appSwapChain.height());
-        
-        drawScene(commandBuffer);
-        
-        ottRenderer.endSwapChainRenderPass(commandBuffer);
-        ottRenderer.endFrame();
+    if (static_cast<float>(appSwapChain.width()) > 0.0f && static_cast<float>(appSwapChain.height()) > 0.0f)
+    {
+        const auto startTime = std::chrono::high_resolution_clock::now();
+        if (const VkCommandBuffer commandBuffer = ottRenderer.beginFrame())
+        {        
+            ottRenderer.beginSwapChainRenderPass(commandBuffer);
+            const float deltaTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - startTime).count() * 0.001f * 0.001f * 0.001f;
+            
+            drawScene(commandBuffer);
+            updateUniformBufferCamera(appSwapChain.getCurrentFrame(), deltaTime, appSwapChain.width(), appSwapChain.height());
+            
+            ottRenderer.endSwapChainRenderPass(commandBuffer);
+            ottRenderer.endFrame();
+        }
     }
 }
 
@@ -139,35 +144,33 @@ void OttApplication::drawScene(VkCommandBuffer command_buffer)
     assert(command_buffer == ottRenderer.getCurrentCommandBuffer() &&
           "Can't begin render pass on command buffer from a different frame");
     
-    /** TODO: pass this if condition for the entire drawFrame() call **/
-    if (static_cast<float>(appSwapChain.width()) > 0.0f && static_cast<float>(appSwapChain.height()) > 0.0f)
+    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+                        0, 1, &descriptorSets[ottRenderer.getCurrentFrameIndex()], 0, nullptr);
+    
+    if (!vertices.empty() && !indices.empty())
     {
-        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-                            0, 1, &descriptorSets[appSwapChain.getCurrentFrame()], 0, nullptr);
-        if (!vertices.empty() && !indices.empty())
+        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelines.object);
+        const VkBuffer vertexBuffers[] = { vertexBuffer };
+        const VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(command_buffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+        for (auto& m : models)
         {
-            vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelines.object);
-            VkBuffer vertexBuffers[] = { vertexBuffer };
-            VkDeviceSize offsets[] = {0};
-            vkCmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers, offsets);
-            vkCmdBindIndexBuffer(command_buffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-            for (auto& m : models)
-            {
-                push.color      = m.pushColorID;
-                push.textureID  = m.textureID;
-                vkCmdPushConstants(command_buffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstantData), &push);
-                vkCmdDrawIndexed(command_buffer, m.indexCount, 1, m.startIndex, 0, 0);
-            }
+            push.offset     = m.offset;
+            push.color      = m.pushColorID;
+            push.textureID  = m.textureID;
+            vkCmdPushConstants(command_buffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstantData), &push);
+            vkCmdDrawIndexed(command_buffer, m.indexCount, 1, m.startIndex, 0, 0);
         }
-        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelines.grid);
-        vkCmdDraw(command_buffer, 6, 1, 0, 0);
     }
+    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelines.grid);
+    vkCmdDraw(command_buffer, 6, 1, 0, 0);
 }
 
 //-----------------------------------------------------------------------------
 void OttApplication::cleanupTextureObjects()
 {
-    for (uint8_t i = 0; i < textureImageViews.size() - 1; i++)
+    for (uint32_t i = 0; i < textureImageViews.size() - 1; i++)
     {
         std::cout << "Texture Image views size: " << textureImageViews.size() << std::endl;
         if (textureImageViews[i] != VK_NULL_HANDLE) { vkDestroyImageView (device, textureImageViews[i], nullptr); }
@@ -200,7 +203,6 @@ void OttApplication::cleanupUBO() const
 //-----------------------------------------------------------------------------
 void OttApplication::cleanupModelObjects() const
 {
-    std::cout << "cleanupModelObjects start :::::" << std::endl;
     if (indexBuffer != VK_NULL_HANDLE)       { vkDestroyBuffer  (device, indexBuffer,       nullptr); }
     if (indexBufferMemory != VK_NULL_HANDLE) { vkFreeMemory     (device, indexBufferMemory, nullptr); }
     
@@ -403,6 +405,8 @@ void OttApplication::createGraphicsPipeline()
         .depthWriteEnable       = VK_TRUE,
         .depthCompareOp         = VK_COMPARE_OP_LESS,
         .depthBoundsTestEnable  = VK_FALSE,
+        .minDepthBounds = 0.0f,
+        .maxDepthBounds = 1.0f,
     };
     
     VkPipelineColorBlendAttachmentState colorBlendAttachment {
@@ -618,7 +622,7 @@ void OttApplication::loadModel(std::string modelPath)
             indices.push_back(uniqueVertices[vertex]);
         }
     }
-            
+
     model.indexCount  = static_cast<uint32_t>(indices.size()) - model.startIndex;
     model.pushColorID = {Utils::random_nr(0, 1),  Utils::random_nr(0, 1), Utils::random_nr(0, 1)};
     model.textureID   = static_cast<uint32_t>(textureImages.size());
@@ -872,107 +876,20 @@ void OttApplication::createDescriptorSets()
                 .pBufferInfo     = &bufferInfo
                 },
                         
-                VkWriteDescriptorSet {
-                    .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                    .dstSet          = descriptorSets[i],
-                    .dstBinding      = 1,
-                    .dstArrayElement = 0,
-                    .descriptorCount = static_cast<uint32_t>(textureImages.size()),
-                    .descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                    .pImageInfo      = imageInfos
-                    }
+            VkWriteDescriptorSet {
+                .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                .dstSet          = descriptorSets[i],
+                .dstBinding      = 1,
+                .dstArrayElement = 0,
+                .descriptorCount = static_cast<uint32_t>(textureImages.size()),
+                .descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                .pImageInfo      = imageInfos
+                }
         };
         
         vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     }
 }
-
-// //----------------------------------------------------------------------------
-// /** TODO: Transfer this function to the swapchain and renderer classes **/
-// void OttApplication::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
-// {
-//     // Moved to OttRenderer::beginFrame()--------
-//     // VkCommandBufferBeginInfo beginInfo{};
-//     // beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-//     //
-//     // if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS)
-//     //     throw std::runtime_error("failed to begin recording command buffer!");
-//     //
-//     
-//     // ------------------------------------------
-//     // Moved to OttRenderer::beginSwapChainRenderPass ------------------------------------------
-//     // VkRenderPassBeginInfo renderPassInfo {
-//     //     .sType        = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-//     //     .renderPass   = appSwapChain.getRenderPass(),
-//     //     .framebuffer  = appSwapChain.getFrameBuffer(imageIndex),
-//     //     .renderArea
-//     //     {
-//     //         .offset = {0, 0},
-//     //         .extent = appSwapChain.getSwapChainExtent(),
-//     //       },
-//     // };
-//
-//     // // The order of clearValues should be identical to the order of attachments.
-//     // std::array<VkClearValue, 2> clearValues{};
-//     // clearValues[0].color = {{0.015f, 0.015f, 0.015f, 1.0f}};
-//     // clearValues[1].depthStencil = {1.0f, 0};
-//     //
-//     // renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-//     // renderPassInfo.pClearValues = clearValues.data();
-//     //
-//     // if (static_cast<float>(appSwapChain.width()) > 0.0f && static_cast<float>(appSwapChain.height()) > 0.0f)
-//     // {
-//     //     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-//     //     VkViewport viewport {
-//     //         .x          = 0.0f,
-//     //         .y          = 0.0f,
-//     //         .width      = static_cast<float>(appSwapChain.width()),
-//     //         .height     = static_cast<float>(appSwapChain.height()),
-//     //         .minDepth   = 0.0f,
-//     //         .maxDepth   = 1.0f,
-//     //     };
-//     //     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-//     //
-//     //     VkRect2D scissor {
-//     //         .offset = {0, 0},
-//     //         .extent = appSwapChain.getSwapChainExtent(),
-//     //     };
-//     //     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-//     //     
-//     //-----------------------------------------------------------------
-//     //-----------------------------------------------------------------
-//     
-//         vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-//                                 0, 1, &descriptorSets[appSwapChain.getCurrentFrame()], 0, nullptr);
-//
-//         if (!vertices.empty() && !indices.empty())
-//         {
-//             vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelines.object);
-//             VkBuffer vertexBuffers[] = {vertexBuffer};
-//             VkDeviceSize offsets[] = {0};
-//             vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-//             vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-//             for (auto& m : models)
-//             {
-//                 push.color      = m.pushColorID;
-//                 push.textureID  = m.textureID;
-//                 vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstantData), &push);
-//                 vkCmdDrawIndexed(commandBuffer, m.indexCount, 1, m.startIndex, 0, 0);
-//             }
-//         }
-//     
-//         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelines.grid);
-//         vkCmdDraw(commandBuffer, 6, 1, 0, 0);
-//         
-//     //---------------------------------------------------------------------
-//     //---------------------------------------------------------------------
-//     //     vkCmdEndRenderPass(commandBuffer);
-//     // }
-//     //
-//     // if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS)
-//     //     throw std::runtime_error("failed to record command buffer!");
-// }
-
 
 //----------------------------------------------------------------------------
 void OttApplication::updateUniformBufferCamera(uint32_t currentImage, float deltaTime, int width, int height)
@@ -987,6 +904,6 @@ void OttApplication::updateUniformBufferCamera(uint32_t currentImage, float delt
                                                  ),
         .cameraPos             = viewportCamera->getEyePosition(),
     };
-    ubo.proj[1][1] *= -1,
+    ubo.proj[1][1] *= -1;
     memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
 }

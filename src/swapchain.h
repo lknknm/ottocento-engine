@@ -15,11 +15,14 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
 
 #include <vector>
 #include "device.h"
 
-const int MAX_FRAMES_IN_FLIGHT = 3;
+const int MAX_FRAMES_IN_FLIGHT = 2;
 
 /** Мид: "The first thing is that your swap chain images and your frames in flight are different things.
  * Let your SwapChain class manage the VkSwapchainKHR and its associated VkImageViews and the "rendering's done"

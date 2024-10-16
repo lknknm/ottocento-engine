@@ -18,8 +18,9 @@
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
+
+#include <glm.hpp>
 #include <gtx/hash.hpp>
 
 #include <array>
@@ -82,6 +83,7 @@ namespace OttModel
         uint32_t  indexCount;
         uint32_t  textureID;
         glm::vec3 pushColorID;
+        glm::vec3 offset{0.0f, 0.0f, 0.0f};
     };
 
     

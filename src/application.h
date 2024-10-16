@@ -18,9 +18,10 @@
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <glm.hpp>
 #include <gtc/matrix_transform.hpp>
-#define GLM_ENABLE_EXPERIMENTAL
 #include <gtx/hash.hpp>
 
 #include <algorithm>
@@ -75,15 +76,15 @@ struct PushConstantData {
 class OttApplication
 {
 //----------------------------------------------------------------------------
-public:
-//----------------------------------------------------------------------------
+    public:
+    //----------------------------------------------------------------------------
     
     void run();    
     GLFWwindow* getWindowhandle() const { return appwindow.getWindowhandle(); }  
 
-//----------------------------------------------------------------------------
-private:
-//----------------------------------------------------------------------------
+    //----------------------------------------------------------------------------
+    private:
+    //----------------------------------------------------------------------------
     
     OttWindow appwindow = OttWindow("Ottocento Engine", 1920, 1080);
     OttDevice appDevice = OttDevice(appwindow);

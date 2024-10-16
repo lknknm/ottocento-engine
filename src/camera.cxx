@@ -14,6 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include "camera.h"
 #include "input.hxx"
 #include <gtc/matrix_transform.hpp>
@@ -217,6 +221,8 @@ void OttCamera::walkNavigationInputHandle(float deltaTime)
 //----------------------------------------------------------------------------
     
 //----------------------------------------------------------------------------
+/** Wrapper for the glm::perspective function
+ * \param aspectRatio: camera aspect ratio height / width. **/
 glm::mat4 OttCamera::perspectiveProjection(float aspectRatio)
 {
     return glm::perspective(glm::radians(VerticalFOV), aspectRatio, NearClip, FarClip);

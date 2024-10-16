@@ -15,13 +15,15 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <volk.h>
 #include <GLFW/glfw3.h>
 #include <functional>
 #include <iostream>
 #include <vec2.hpp>
-
-#include "macros.h"
 
 struct GLFWwindow;
 using VkInstance   = struct VkInstance_T*;

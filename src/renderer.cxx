@@ -14,6 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <array>
 #include "renderer.h"
 
@@ -120,38 +124,34 @@ void OttRenderer::beginSwapChainRenderPass(VkCommandBuffer command_buffer)
     renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
     renderPassInfo.pClearValues = clearValues.data();
     
-    if (static_cast<float>(swapchainRef->width()) > 0.0f && static_cast<float>(swapchainRef->height()) > 0.0f)
-    {
-        vkCmdBeginRenderPass(command_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-        const VkViewport viewport {
-            .x          = 0.0f,
-            .y          = 0.0f,
-            .width      = static_cast<float>(swapchainRef->width()),
-            .height     = static_cast<float>(swapchainRef->height()),
-            .minDepth   = 0.0f,
-            .maxDepth   = 1.0f,
-        };
-        vkCmdSetViewport(command_buffer, 0, 1, &viewport);
-    
-        const VkRect2D scissor {
-            .offset = {0, 0},
-            .extent = swapchainRef->getSwapChainExtent(),
-        };
-        vkCmdSetScissor(command_buffer, 0, 1, &scissor);
-    }
+    vkCmdBeginRenderPass(command_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    const VkViewport viewport {
+        .x          = 0.0f,
+        .y          = 0.0f,
+        .width      = static_cast<float>(swapchainRef->width()),
+        .height     = static_cast<float>(swapchainRef->height()),
+        .minDepth   = 0.0f,
+        .maxDepth   = 1.0f,
+    };
+    vkCmdSetViewport(command_buffer, 0, 1, &viewport);
+
+    const VkRect2D scissor {
+        .offset = {0, 0},
+        .extent = swapchainRef->getSwapChainExtent(),
+    };
+    vkCmdSetScissor(command_buffer, 0, 1, &scissor);
+
 }
 
 //----------------------------------------------------------------------------
 /** Wrapper for the vkCmdEndRenderPass function with assertion and size rules **/
-void OttRenderer::endSwapChainRenderPass(VkCommandBuffer command_buffer)
+void OttRenderer::endSwapChainRenderPass(VkCommandBuffer command_buffer) const
 {
     assert(isFrameStarted && "Can't call endSwapChainRenderPass if frame is not in progress");
     assert(
         command_buffer == getCurrentCommandBuffer() &&
         "Can't end render pass on command buffer from a different frame");
-    
-    if (static_cast<float>(swapchainRef->width()) > 0.0f && static_cast<float>(swapchainRef->height()) > 0.0f)
-        vkCmdEndRenderPass(command_buffer);
+    vkCmdEndRenderPass(command_buffer);
 }
 
 //----------------------------------------------------------------------------

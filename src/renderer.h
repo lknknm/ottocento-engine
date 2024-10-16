@@ -15,6 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
 #include "device.h"
 #include "swapchain.h"
@@ -39,7 +41,7 @@ public:
     VkCommandBuffer beginFrame();
     void endFrame();
     void beginSwapChainRenderPass (VkCommandBuffer command_buffer);
-    void endSwapChainRenderPass   (VkCommandBuffer command_buffer);
+    void endSwapChainRenderPass   (VkCommandBuffer command_buffer) const;
     
 //----------------------------------------------------------------------------
 private:
