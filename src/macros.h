@@ -34,7 +34,23 @@
 #define C_BWHITE "\033[47m"
 
 //----------------------------------------------------------------------------
-/** Function for formatted logging **/
+/** Utils for text layout **/
+#define DASHED_SEPARATOR "-------------------------------------"
+
+//----------------------------------------------------------------------------
+/** Function for formatted logging. **/
+inline void log(const char* color, const char* format, ...)
+{
+    std::cout << color;
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+    std::cout << C_RESET << std::endl;
+}
+
+//----------------------------------------------------------------------------
+/** Function for formatted logging with level output. **/
 inline void log(const char* color, const char* level, const char* format, ...)
 {
     std::cout << color << "[" << level << "] ";
@@ -61,6 +77,7 @@ inline std::string formatString(const char* format, ...)
 
 //----------------------------------------------------------------------------
 /** LOG macros **/
+#define LOG(format, ...)            log(C_GREEN, format, ##__VA_ARGS__)
 #define LOG_INFO(format, ...)       log(C_GREEN,   "INFO",      format, ##__VA_ARGS__)
 #define LOG_DEBUG(format, ...)      log(C_ORANGE,  "DEBUG",     format, ##__VA_ARGS__)
 #define LOG_WARNING(format, ...)    log(C_YELLOW,  "WARNING",   format, ##__VA_ARGS__)

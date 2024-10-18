@@ -96,14 +96,12 @@ OttDevice::OttDevice(OttWindow& window)
 /** Default OttDevice destructor. **/
 OttDevice::~OttDevice()
 {
-    LOG_WARNING("OttDevice destroyed");
     vkDestroyCommandPool(device, commandPool, nullptr);
     vkDestroyDevice(device, nullptr);
     if (enableValidationLayers)
         ::DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);
     vkDestroyInstance(instance, nullptr);
-    
 }
 
 //----------------------------------------------------------------------------
@@ -602,18 +600,14 @@ int OttDevice::rateDeviceSuitability(VkPhysicalDevice physical_device)
     // Maximum possible size of textures affects graphics quality
     score += static_cast<int>(deviceProperties.limits.maxImageDimension2D);
     
-    // Application can't function without geometry shaders
-    if (!deviceFeatures.geometryShader)
-        return 0;
-
     //Debug Log to detect the GPU.
-    std::cout << "-------------------------------------" << std::endl;
-    std::cout << "GPU found." << std::endl;
-    std::cout << "Name: " << deviceProperties.deviceName << std::endl;
-    std::cout << "Score: " << score << std::endl;
-    std::cout << "API Version: " << deviceProperties.apiVersion << std::endl;
-    std::cout << "Driver Version: " << deviceProperties.driverVersion << std::endl;
-    std::cout << "-------------------------------------" << std::endl;
+    LOG(DASHED_SEPARATOR);
+    LOG_INFO("GPU found.");
+    LOG_INFO("Name: %s", deviceProperties.deviceName);
+    LOG_INFO("Score: %i", score);
+    LOG_INFO("API Version: %u", deviceProperties.apiVersion);
+    LOG_INFO("Driver Version: %u", deviceProperties.driverVersion);
+    LOG(DASHED_SEPARATOR);
     
     return score;
 }

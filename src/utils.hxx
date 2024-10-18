@@ -6,6 +6,7 @@
 
 #include <string>
 #include "../external/randutils/randutils.hpp"
+#include "macros.h"
 
 namespace Utils
 {
@@ -44,15 +45,14 @@ namespace Utils
 
         file.seekg(0);
         file.read(buffer.data(), fileSize);
-    
-        std::cout << std::endl;
-        std::cout << "---- Loaded: " << filename << std::endl;
-        std::cout << "FileSize:" << fileSize << std::endl;
-        std::cout << "BufferSize:" << buffer.size() << std::endl;
-        if (buffer.size() == fileSize)
-            std::cout << "ASSERT: file/shader loaded correctly" << std::endl;
+        
+        LOG(DASHED_SEPARATOR);
+        LOG_INFO("Loaded:     %s", filename.c_str());
+        LOG_INFO("FileSize:   %i", fileSize);
+        LOG_INFO("BufferSize: %i", buffer.size());
+        LOG(DASHED_SEPARATOR);
 
         file.close();
         return buffer;
     }
-}
+} // namespace Utils

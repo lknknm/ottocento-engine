@@ -119,12 +119,7 @@ void OttApplication::mainLoop()
 {
     while (!appwindow.windowShouldClose())
     {
-        // auto startTime = std::chrono::high_resolution_clock::now();
-        // OttWindow::update();
-        // appSwapChain.drawFrame(commandBuffers);
-        // float deltaTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - startTime).count() * 0.001f * 0.001f * 0.001f;
-        // updateUniformBufferCamera(appSwapChain.getCurrentFrame(), deltaTime, appSwapChain.width(), appSwapChain.height());
-        appwindow.update();
+        OttWindow::update();
         drawFrame();
     }
     vkDeviceWaitIdle(device);
@@ -184,7 +179,6 @@ void OttApplication::cleanupTextureObjects()
 {
     for (uint32_t i = 0; i < textureImageViews.size() - 1; i++)
     {
-        std::cout << "Texture Image views size: " << textureImageViews.size() << std::endl;
         if (textureImageViews[i] != VK_NULL_HANDLE) { vkDestroyImageView (device, textureImageViews[i], nullptr); }
         if (textureImages[i]     != VK_NULL_HANDLE) { vkDestroyImage     (device, textureImages[i],     nullptr); }
     }
@@ -200,7 +194,6 @@ void OttApplication::cleanupTextureObjects()
 //-----------------------------------------------------------------------------
 void OttApplication::cleanupUBO() const
 {
-    LOG_DEBUG("OttApplication::cleanupUBO() > Init");
     if (!uniformBuffers.empty())
     {
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -230,7 +223,6 @@ void OttApplication::cleanupModelObjects() const
 /** Cleanup function to destroy all Vulkan allocated resources **/
 void OttApplication::cleanupVulkanResources()
 {
-    LOG_DEBUG("OttApplication::cleanupVulkanResources() > Init");
     cleanupTextureObjects();
     if (textureSampler != VK_NULL_HANDLE)   { vkDestroySampler   (device, textureSampler,   nullptr); }
     cleanupUBO();
@@ -239,7 +231,6 @@ void OttApplication::cleanupVulkanResources()
     vkDestroyPipeline(device, graphicsPipelines.object, nullptr);
     vkDestroyPipeline(device, graphicsPipelines.grid, nullptr);
     vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
-
 }
     
 //----------------------------------------------------------------------------
@@ -586,7 +577,7 @@ void OttApplication::loadModel(std::string modelPath)
     if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath.c_str(), Utils::GetBaseDir(modelPath).c_str()))
         throw std::runtime_error(warn + err);
 
-    std::cout << "----------------------------------------"   << std::endl;
+    LOG(DASHED_SEPARATOR);
     std::cout << "Loading Wavefront " << modelPath << std::endl;
     std::cout << "BaseDir " << Utils::GetBaseDir(modelPath).c_str() << std::endl;
 
@@ -643,13 +634,13 @@ void OttApplication::loadModel(std::string modelPath)
     model.textureID   = static_cast<uint32_t>(textureImages.size());
     models.push_back(model);
     
-    std::cout << "----------------------------------------"   << std::endl;
+    LOG(DASHED_SEPARATOR);
     std::cout << "VERTEX COUNT: "       << vertices.size()    << std::endl;
     std::cout << "model.startVertex: "  << model.startVertex  << std::endl;
     std::cout << "model.startIndex: "   << model.startIndex   << std::endl;
     std::cout << "model.indexCount: "   << model.indexCount   << std::endl;
     std::cout << "model.textureID "     << model.textureID    << std::endl;
-    std::cout << "----------------------------------------"   << std::endl;
+    LOG(DASHED_SEPARATOR);
 }
 
 //----------------------------------------------------------------------------
@@ -721,8 +712,8 @@ void OttApplication::createIndexBuffer()
 void OttApplication::createTextureImage(std::string imagePath)
 {
     int texWidth, texHeight, texChannels;
-    std::cout << "----------------------------------------"   << std::endl;
-    std::cout << "Image path "          << imagePath          << std::endl;
+    LOG(DASHED_SEPARATOR);
+    LOG_INFO("Image path: %s", imagePath.c_str());
     stbi_uc* pixels = stbi_load(imagePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = texWidth * texHeight * 4;
     mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
