@@ -76,15 +76,15 @@ struct PushConstantData {
 class OttApplication
 {
 //----------------------------------------------------------------------------
-    public:
-    //----------------------------------------------------------------------------
+public:
+//----------------------------------------------------------------------------
     
     void run();    
     GLFWwindow* getWindowhandle() const { return appwindow.getWindowhandle(); }  
 
-    //----------------------------------------------------------------------------
-    private:
-    //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+private:
+//----------------------------------------------------------------------------
     
     OttWindow appwindow = OttWindow("Ottocento Engine", 1920, 1080);
     OttDevice appDevice = OttDevice(appwindow);
@@ -103,7 +103,7 @@ class OttApplication
     std::vector<VkCommandBuffer>    commandBuffers;
     uint32_t                        mipLevels;
     VkImage                         textureImage        = VK_NULL_HANDLE;
-    VkDeviceMemory                  textureImageMemory  = VK_NULL_HANDLE;
+    std::vector<VkDeviceMemory>     textureImageMemory;
     VkImageView                     textureImageView    = VK_NULL_HANDLE;
     VkSampler                       textureSampler      = VK_NULL_HANDLE;
     std::vector<VkImage>            textureImages;

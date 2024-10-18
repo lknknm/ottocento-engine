@@ -64,6 +64,16 @@ void OttApplication::initWindow()
     {
         vkDeviceWaitIdle(device);
         cleanupModelObjects();
+        
+        if (!uniformBuffers.empty())
+        {
+            for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+            {
+                vkDestroyBuffer (device, uniformBuffers[i],       nullptr);
+                vkFreeMemory    (device, uniformBuffersMemory[i], nullptr);
+            }
+        }
+        vkDestroyDescriptorPool(device, descriptorPool, nullptr);
         for (int i = 0; i < count; i++)
         {
             loadModel(paths[i]);
@@ -93,7 +103,9 @@ void OttApplication::initVulkan()
     createGraphicsPipeline();
     
     mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(1, 1)))) + 1;
-    VkHelpers::create1x1BlankImage(textureImage, mipLevels, appDevice, textureImages, textureImageMemory);
+    const VkDeviceMemory blankImage = VK_NULL_HANDLE;
+    textureImageMemory.push_back(blankImage);
+    VkHelpers::create1x1BlankImage(textureImage, mipLevels, appDevice, textureImages, textureImageMemory[0]);
     createTextureImageView();
     createTextureSampler();
     
@@ -179,12 +191,16 @@ void OttApplication::cleanupTextureObjects()
     textureImageViews.clear();
     if (textureImageView != VK_NULL_HANDLE) { vkDestroyImageView (device, textureImageView, nullptr); }
     if (textureImage != VK_NULL_HANDLE)     { vkDestroyImage     (device, textureImage,     nullptr); }
-    if (textureImageMemory != VK_NULL_HANDLE) { vkFreeMemory     (device, textureImageMemory, nullptr); }
+    for (uint32_t i = 0; i < textureImageMemory.size(); i++)
+    {
+        if (textureImageMemory[i] != VK_NULL_HANDLE) { vkFreeMemory(device, textureImageMemory[i], nullptr); }
+    }
 }
 
 //-----------------------------------------------------------------------------
 void OttApplication::cleanupUBO() const
 {
+    LOG_DEBUG("OttApplication::cleanupUBO() > Init");
     if (!uniformBuffers.empty())
     {
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -214,6 +230,7 @@ void OttApplication::cleanupModelObjects() const
 /** Cleanup function to destroy all Vulkan allocated resources **/
 void OttApplication::cleanupVulkanResources()
 {
+    LOG_DEBUG("OttApplication::cleanupVulkanResources() > Init");
     cleanupTextureObjects();
     if (textureSampler != VK_NULL_HANDLE)   { vkDestroySampler   (device, textureSampler,   nullptr); }
     cleanupUBO();
@@ -289,7 +306,6 @@ void OttApplication::createObjectDescriptorSetLayout()
     if(vkCreateDescriptorSetLayout(device, &objectLayoutInfo, nullptr, &objectDescriptorSetLayout) != VK_SUCCESS)
         throw std::runtime_error("Failed to create descriptor set layout!");
     descriptorSetLayouts.push_back(objectDescriptorSetLayout);
-    std::cout << "descriptorSetLayouts Size: " << descriptorSetLayouts.size() << std::endl;
 }
 
 //----------------------------------------------------------------------------
@@ -316,7 +332,6 @@ void OttApplication::createGridDescriptorSetLayout()
     if(vkCreateDescriptorSetLayout(device, &gridLayoutInfo, nullptr, &gridDescriptorSetLayout) != VK_SUCCESS)
         throw std::runtime_error("Failed to create descriptor set layout!");
     descriptorSetLayouts.push_back(gridDescriptorSetLayout);
-    std::cout << "descriptorSetLayouts Size: " << descriptorSetLayouts.size() << std::endl;
 }
     
 //----------------------------------------------------------------------------
@@ -662,8 +677,8 @@ void OttApplication::createVertexBuffer()
                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                 vertexBuffer, vertexBufferMemory);
-        appDevice.debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)vertexBufferMemory, "application::VkDeviceMemory:vertexBufferMemory");
-        appDevice.debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_BUFFER, (uint64_t)vertexBuffer, "application::VkBuffer:vertexBuffer");
+        appDevice.debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)vertexBufferMemory, CSTR_RED("application::VkDeviceMemory:vertexBufferMemory"));
+        appDevice.debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_BUFFER, (uint64_t)vertexBuffer, CSTR_RED("application::VkBuffer:vertexBuffer"));
         appDevice.copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
 
         vkDestroyBuffer(device, stagingBuffer, nullptr);
@@ -727,9 +742,11 @@ void OttApplication::createTextureImage(std::string imagePath)
     vkUnmapMemory(device, stagingBufferMemory);
     stbi_image_free(pixels);
 
+    VkDeviceMemory textureImageMemoryBuffer;
+    textureImageMemory.push_back(textureImageMemoryBuffer);
     VkHelpers::createImage (texWidth, texHeight, mipLevels, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
                             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory, appDevice
+                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory.back(), appDevice
                             );
 
     VkHelpers::transitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -803,7 +820,7 @@ void OttApplication::createUniformBuffers()
                                uniformBuffers[i],
                                uniformBuffersMemory[i]);
         vkMapMemory(device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
-        appDevice.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t) uniformBuffersMemory[i], "application::VkDeviceMemory:uniformBuffersMemory");
+        appDevice.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t) uniformBuffersMemory[i], CSTR_RED(" application::VkDeviceMemory:uniformBuffersMemory %i ", i));
     }
 }
 
@@ -886,8 +903,8 @@ void OttApplication::createDescriptorSets()
                 .pImageInfo      = imageInfos
                 }
         };
-        
         vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+        appDevice.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t) descriptorSets[i], CSTR_RED(" application::descriptorSet[%i] ", i));
     }
 }
 

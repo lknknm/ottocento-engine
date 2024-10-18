@@ -15,6 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
+
 #include <iostream>
 #include <cstdarg>
 
@@ -47,9 +48,34 @@ inline void log(const char* color, const char* level, const char* format, ...)
 }
 
 //----------------------------------------------------------------------------
+/** Formats the std::string to receive arguments that can be output to the console. **/
+inline std::string formatString(const char* format, ...)
+{
+    char buffer[256];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+    return std::string(buffer);
+}
+
+//----------------------------------------------------------------------------
 /** LOG macros **/
 #define LOG_INFO(format, ...)       log(C_GREEN,   "INFO",      format, ##__VA_ARGS__)
 #define LOG_DEBUG(format, ...)      log(C_ORANGE,  "DEBUG",     format, ##__VA_ARGS__)
 #define LOG_WARNING(format, ...)    log(C_YELLOW,  "WARNING",   format, ##__VA_ARGS__)
 #define LOG_ERROR(format, ...)      log(C_RED,     "ERROR",     format, ##__VA_ARGS__)
 #define LOG_CRITICAL(format, ...)   log(C_RED,     "CRITICAL",  format, ##__VA_ARGS__)
+
+//----------------------------------------------------------------------------
+/** Function to concatenate colored strings. **/
+#define COLORED_STRING_WITH_ARGS(color, fmt, ...) (std::string(color) + formatString(fmt, ##__VA_ARGS__) + C_RESET)
+
+//----------------------------------------------------------------------------
+/** Colored strings as char* for object naming. Colors can be assigned to each object arbitrarily. **/
+#define CSTR_GREEN(fmt, ...)  (std::string(C_GREEN) + formatString(fmt, __VA_ARGS__) + C_RESET).c_str()
+#define CSTR_YELLOW(fmt, ...) (std::string(C_YELLOW) + formatString(fmt, __VA_ARGS__) + C_RESET).c_str()
+#define CSTR_RED(fmt, ...)    (std::string(C_RED) + formatString(fmt, __VA_ARGS__) + C_RESET).c_str()
+#define CSTR_BLUE(fmt, ...)   (std::string(C_BLUE) + formatString(fmt, __VA_ARGS__) + C_RESET).c_str()
+#define CSTR_CYAN(fmt, ...)   (std::string(C_CYAN) + formatString(fmt, __VA_ARGS__) + C_RESET).c_str()
+

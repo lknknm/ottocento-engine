@@ -291,7 +291,7 @@ void OttSwapChain::createDepthResources()
     depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
     VkHelpers::transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1,
                                      *appDeviceRef);
-    appDeviceRef->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)depthImageMemory, "SwapChain::VkDeviceMemory:depthImageMemory");
+    appDeviceRef->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)depthImageMemory, CSTR_RED("SwapChain::VkDeviceMemory:depthImageMemory"));
 }
 
 
@@ -306,7 +306,7 @@ void OttSwapChain::createColorResources()
                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                             colorImage, colorImageMemory, *appDeviceRef
                             );
-    appDeviceRef->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)colorImageMemory, "SwapChain::VkDeviceMemory:colorImageMemory");
+    appDeviceRef->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)colorImageMemory,CSTR_RED(" SwapChain::VkDeviceMemory:colorImageMemory "));
     colorImageView = createImageView(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 }
 
@@ -362,8 +362,8 @@ void OttSwapChain::createSyncObjects()
         {
             throw std::runtime_error("failed to create semaphores!");
         }
-        appDeviceRef->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)imageAvailableSemaphores[i], "SyncObject::VkSemaphore:imageAvailableSemaphore");
-        appDeviceRef->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)renderFinishedSemaphores[i], "SyncObject::VkSemaphore:renderFinishedSemaphores");
+        appDeviceRef->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)imageAvailableSemaphores[i], CSTR_RED("SyncObject::VkSemaphore:imageAvailableSemaphore"));
+        appDeviceRef->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)renderFinishedSemaphores[i], CSTR_RED("SyncObject::VkSemaphore:renderFinishedSemaphores"));
     }
 }
 

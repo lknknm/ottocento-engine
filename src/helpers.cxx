@@ -237,7 +237,7 @@ void VkHelpers::createImage(uint32_t width, uint32_t height, uint32_t mipLevels,
 /** Creates a 1x1 blank image to populate the 0 index of the textureImages array. **/
 void VkHelpers::create1x1BlankImage(VkImage& blankImage, uint32_t mipLevels, OttDevice& appDevice,
                                     std::vector<VkImage>& textureImages, VkDeviceMemory& textureImageMemory)
-{    
+{
     const VkImageCreateInfo imageInfo {
                 .sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                 .imageType     = VK_IMAGE_TYPE_2D,
@@ -268,7 +268,7 @@ void VkHelpers::create1x1BlankImage(VkImage& blankImage, uint32_t mipLevels, Ott
         throw std::runtime_error("failed to allocate image memory!");
     vkBindImageMemory(appDevice.getDevice(), blankImage, textureImageMemory, 0);
     textureImages.push_back(blankImage);
-    appDevice.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)textureImageMemory, "application::VkDeviceMemory:1x1blankImageMemory");
+    appDevice.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)textureImageMemory, CSTR_CYAN(" application::VkDeviceMemory:1x1blankImageMemory "));
 }
 
 //-----------------------------------------------------------------------------

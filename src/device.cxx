@@ -96,12 +96,14 @@ OttDevice::OttDevice(OttWindow& window)
 /** Default OttDevice destructor. **/
 OttDevice::~OttDevice()
 {
+    LOG_WARNING("OttDevice destroyed");
     vkDestroyCommandPool(device, commandPool, nullptr);
     vkDestroyDevice(device, nullptr);
     if (enableValidationLayers)
         ::DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);
     vkDestroyInstance(instance, nullptr);
+    
 }
 
 //----------------------------------------------------------------------------
@@ -411,8 +413,8 @@ void OttDevice::createLogicalDevice()
     if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
         throw std::runtime_error("failed to create logical device!");
     
-    debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_PHYSICAL_DEVICE, (uint64_t) physicalDevice, "OttDevice::physicalDevice");
-    debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE, (uint64_t) device, "OttDevice::device");
+    debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_PHYSICAL_DEVICE, (uint64_t) physicalDevice, CSTR_RED(" OttDevice::physicalDevice "));
+    debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE, (uint64_t) device, CSTR_RED(" OttDevice::device "));
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
     vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
     
