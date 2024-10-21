@@ -27,8 +27,9 @@
 
 //----------------------------------------------------------------------------
 /** Default OttSwapChain constructor.
- *  \param device_reference: A reference of the current device instantiated by the application.
- *  \param window_reference: We need the window's width, height and other utilities to create and recreate our Swapchain
+ *  \param device_reference: Pointer to the current device instantiated by the application.
+ *  \param window_reference: Pointer to the current window handled by the application.
+ *  We need the window's width, height and other utilities to create and recreate our Swapchain
  *  to present the image to the screen. **/
 OttSwapChain::OttSwapChain(OttDevice* device_reference, OttWindow* window_reference)
 {
@@ -122,7 +123,7 @@ void OttSwapChain::createSwapChain()
 }
 
 //-----------------------------------------------------------------------------
-/** Cleanup to SwapChain related objects **/
+/** Cleanup to SwapChain related objects. **/
 void OttSwapChain::cleanupSwapChain() const
 {
     vkDestroyImageView (device, depthImageView,   nullptr);
@@ -195,6 +196,12 @@ VkImageView OttSwapChain::createImageView(VkImage image, VkFormat format, VkImag
 }
 
 //----------------------------------------------------------------------------
+/** The renderPass object is a wrapper for the information we need to be handled
+ * throughout the rendering process, such as how many color, depth buffers or possibly
+ * stencil buffers will be and so on.
+ * It is called before the creation of the graphics pipelines.\n\n
+ * TODO: This function can possibly be rewritten to avoid the hard coding of the struct fields
+ * for a more flexible implementation. **/
 void OttSwapChain::createRenderPass()
 {
     VkAttachmentDescription colorAttachment {
@@ -338,6 +345,14 @@ void OttSwapChain::createFramebuffers()
 }
 
 //----------------------------------------------------------------------------
+/** Creates the objects needed to synchronize the execution and submission of
+ *  commands recorded in the commandBuffer to the Device Queue (VkQueue).
+ *  - Semaphores: can be used to control resource access across multiple queues or inside the same queue.
+ *  This control happens only on the device, without the influence from the CPU (host).
+ *  - Fences: can be used to communicate to the host that execution of
+ *  some task on the device has completed, controlling resource access between host and device.
+ *  Fences must be reset manually to put them back into the unsignaled state.
+ *  The host is responsible for resetting the fence. **/
 void OttSwapChain::createSyncObjects()
 {
     imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -362,8 +377,8 @@ void OttSwapChain::createSyncObjects()
         {
             throw std::runtime_error("failed to create semaphores!");
         }
-        appDeviceRef->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)imageAvailableSemaphores[i], CSTR_RED("SyncObject::VkSemaphore:imageAvailableSemaphore"));
-        appDeviceRef->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)renderFinishedSemaphores[i], CSTR_RED("SyncObject::VkSemaphore:renderFinishedSemaphores"));
+        appDeviceRef->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)imageAvailableSemaphores[i], CSTR_RED("SyncObject::VkSemaphore:imageAvailableSemaphore[%i]", i));
+        appDeviceRef->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)renderFinishedSemaphores[i], CSTR_RED("SyncObject::VkSemaphore:renderFinishedSemaphore[%i]", i));
     }
 }
 
@@ -382,6 +397,8 @@ VkResult OttSwapChain::acquireNextImage(uint32_t& image_index)
 }
 
 //----------------------------------------------------------------------------
+/** Submits the current command buffer for execution to the GPU during the endFrame
+ *  call from the renderer class. **/
 VkResult OttSwapChain::submitCommandBuffer(const VkCommandBuffer* command_buffers, uint32_t image_index)
 {    
     VkSemaphore          waitSemaphores[]   = { imageAvailableSemaphores[currentFrame] };
@@ -455,8 +472,8 @@ VkPresentModeKHR OttSwapChain::chooseSwapPresentMode(const std::vector<VkPresent
 }
 
 //----------------------------------------------------------------------------
-// "The swap extent is the resolution of the swap chain images and
-// it's almost always exactly equal to the resolution of the window that we're drawing to in pixels"
+/** "The swap extent is the resolution of the swap chain images and
+ *  it's almost always exactly equal to the resolution of the window that we're drawing to in pixels." **/
 VkExtent2D OttSwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
 {
     if (capabilities.currentExtent.width != (std::numeric_limits<uint32_t>::max)())
@@ -481,9 +498,9 @@ VkExtent2D OttSwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabi
 }
 
 //----------------------------------------------------------------------------
+/** Wrapper to group the vkResetFences and vkResetCommandBuffer functions **/
 void OttSwapChain::resetFenceResources(VkCommandBuffer command_buffer)
 {
     vkResetFences(device, 1, &inFlightFences[currentFrame]);
     vkResetCommandBuffer(command_buffer, 0); 
 }
-

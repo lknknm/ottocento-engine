@@ -27,8 +27,8 @@
 
 //----------------------------------------------------------------------------
 /** OttRenderer default constructor.
-*  \param device_reference: A reference of the current device instantiated by the application.
- * \param swapchain_reference: A reference to the swapchain that we will present the images into.
+*  \param device_reference: A pointer of the current device instantiated by the application.
+ * \param swapchain_reference: A pointer to the swapchain that we will present the images into.
  * **/
 OttRenderer::OttRenderer(OttDevice* device_reference, OttSwapChain* swapchain_reference)
 {
@@ -36,10 +36,11 @@ OttRenderer::OttRenderer(OttDevice* device_reference, OttSwapChain* swapchain_re
     swapchainRef = swapchain_reference;
     currentFrameIndex = swapchainRef->getCurrentFrame();
     createCommandBuffers();
-    LOG_INFO("OttRenderer::OttRenderer Created");
+    LOG_INFO("OttRenderer::OttRenderer Object Created");
 }
 
 //----------------------------------------------------------------------------
+/** OttRenderer default constructor. **/
 OttRenderer::~OttRenderer()
 {
     vkFreeCommandBuffers(deviceRef->getDevice(), deviceRef->getCommandPool(), static_cast<uint32_t>(commandBuffers.size()), commandBuffers.data());
@@ -68,7 +69,10 @@ void OttRenderer::createCommandBuffers()
 }
 
 //----------------------------------------------------------------------------
-/** TODO: pass image_index as argument **/
+/** Begins our command_buffer for execution through vkBeginCommandBuffer().
+ * - vkBeginCommandBuffer: changes the state of a command buffer from the initial state to the recording state.
+ * - Commands are recorded into the command_buffer using vkCmd... functions.
+ * \return: VkCommandBuffer. **/
 VkCommandBuffer OttRenderer::beginFrame()
 {
     assert(!isFrameStarted && "Can't call beginFrame while already in progress");
@@ -98,7 +102,13 @@ VkCommandBuffer OttRenderer::beginFrame()
 }
 
 //----------------------------------------------------------------------------
-void OttRenderer::beginSwapChainRenderPass(VkCommandBuffer command_buffer)
+/** The renderer needs to query the SwapChain renderPass properties
+ *  to record it to a command buffer.
+ *  The renderer also needs to set a Viewport and Scissor, with the
+ *  extensions queried from the swapChain.
+ *  \param command_buffer: Current command buffer in its recording state
+ *  to record the renderPass, Viewport and Scissor's properties.**/
+void OttRenderer::beginSwapChainRenderPass(VkCommandBuffer command_buffer) const
 {
     assert(isFrameStarted && "Can't call beginSwapChainRenderPass if frame is not in progress");
     assert(
@@ -125,6 +135,7 @@ void OttRenderer::beginSwapChainRenderPass(VkCommandBuffer command_buffer)
     renderPassInfo.pClearValues = clearValues.data();
     
     vkCmdBeginRenderPass(command_buffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    
     const VkViewport viewport {
         .x          = 0.0f,
         .y          = 0.0f,
@@ -140,7 +151,6 @@ void OttRenderer::beginSwapChainRenderPass(VkCommandBuffer command_buffer)
         .extent = swapchainRef->getSwapChainExtent(),
     };
     vkCmdSetScissor(command_buffer, 0, 1, &scissor);
-
 }
 
 //----------------------------------------------------------------------------
@@ -155,6 +165,8 @@ void OttRenderer::endSwapChainRenderPass(VkCommandBuffer command_buffer) const
 }
 
 //----------------------------------------------------------------------------
+/** vkEndCommandBuffer ends the recording of a command buffer, and moves it from the recording state to the executable state.\n
+ * The renderer commandBuffer is then submitted to execution through the OttSwapChain class object reference. **/
 void OttRenderer::endFrame()
 {
     assert(isFrameStarted && "Can't call endFrame while frame is not in progress");
@@ -175,5 +187,3 @@ void OttRenderer::endFrame()
     isFrameStarted = false;
     currentFrameIndex = (currentFrameIndex + 1) % MAX_FRAMES_IN_FLIGHT;
 }
-
-

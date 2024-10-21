@@ -39,9 +39,9 @@ public:
     }
 
     VkCommandBuffer beginFrame();
-    void endFrame();
-    void beginSwapChainRenderPass (VkCommandBuffer command_buffer);
+    void beginSwapChainRenderPass (VkCommandBuffer command_buffer) const;
     void endSwapChainRenderPass   (VkCommandBuffer command_buffer) const;
+    void endFrame();
     
 //----------------------------------------------------------------------------
 private:

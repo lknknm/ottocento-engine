@@ -257,7 +257,7 @@ void OttDevice::createInstance()
                         .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
                         .pEngineName        = "No Engine",
                         .engineVersion      = VK_MAKE_VERSION(1, 0, 0),
-                        .apiVersion         = VK_API_VERSION_1_0,
+                        .apiVersion         = VK_API_VERSION_1_3,
     };
 
     auto extensions = getRequiredExtensions();
@@ -359,7 +359,7 @@ void OttDevice::createLogicalDevice()
     QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+    std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
     float queuePriority = 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies)
@@ -373,8 +373,8 @@ void OttDevice::createLogicalDevice()
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
-    VkPhysicalDeviceDescriptorIndexingFeaturesEXT physicalDeviceDescriptorIndexingFeatures {
-                                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT,
+    VkPhysicalDeviceVulkan12Features physicalDeviceDVulkan12Features {
+                                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
                                 .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
                                 .descriptorBindingPartiallyBound           = VK_TRUE,
                                 .descriptorBindingVariableDescriptorCount  = VK_TRUE,
@@ -383,7 +383,7 @@ void OttDevice::createLogicalDevice()
     
     VkPhysicalDeviceFeatures2 deviceFeatures {
                                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-                                .pNext = &physicalDeviceDescriptorIndexingFeatures,
+                                .pNext = &physicalDeviceDVulkan12Features,
                                 .features = {.sampleRateShading = VK_TRUE,
                                                 .samplerAnisotropy = VK_TRUE, }
     };
