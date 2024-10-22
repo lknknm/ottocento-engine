@@ -121,7 +121,7 @@ private:
 // SwapChain Specific Helper functions ---------------------------------------
 
     VkSurfaceFormatKHR      chooseSwapSurfaceFormat (const std::vector<VkSurfaceFormatKHR>& availableFormats);
-    VkPresentModeKHR        chooseSwapPresentMode   (const std::vector<VkPresentModeKHR>& availablePresentModes);
+    VkPresentModeKHR        chooseSwapPresentMode   (const std::vector<VkPresentModeKHR>& availablePresentModes, VkPresentModeKHR desiredPresentMode);
     VkExtent2D              chooseSwapExtent        (const VkSurfaceCapabilitiesKHR& capabilities);
     
 // End of helper functions --------------------------------------------------

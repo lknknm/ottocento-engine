@@ -71,7 +71,7 @@ void OttSwapChain::createSwapChain()
     SwapChainSupportDetails swapChainSupport = appDeviceRef->querySwapChainSupport(appDeviceRef->getPhysicalDevice());
 
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
-    VkPresentModeKHR   presentMode   = chooseSwapPresentMode(swapChainSupport.presentModes);
+    VkPresentModeKHR   presentMode   = chooseSwapPresentMode(swapChainSupport.presentModes, VK_PRESENT_MODE_MAILBOX_KHR);
     VkExtent2D         extent        = chooseSwapExtent(swapChainSupport.capabilities);
 
     uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
@@ -458,14 +458,19 @@ VkSurfaceFormatKHR OttSwapChain::chooseSwapSurfaceFormat(const std::vector<VkSur
 }
 
 //----------------------------------------------------------------------------
-/** "VK_PRESENT_MODE_MAILBOX_KHR is a very nice trade-off if energy usage is not a concern.
- *  On mobile devices, where energy usage is more important,
- *  you will probably want to use VK_PRESENT_MODE_FIFO_KHR instead" **/
-VkPresentModeKHR OttSwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+/** We can choose our swapchain present mode based on what are the available
+ *  present modes on the Physical Device. If the desired one is not found, VK_PRESENT_MODE_FIFO_KHR
+ *  will be returned instead.
+ *  \param availablePresentModes: The available Present Modes queried on the function querySwapChainSupport,
+ *  which returns the struct SwapChainSupportDetails with the "presentModes" field.
+ *  \param desiredPresentMode: The VkPresentModeKHR we actually want for our application.
+ *  Usually VK_PRESENT_MODE_IMMEDIATE_KHR or VK_PRESENT_MODE_MAILBOX_KHR for our current overall implementation.
+ *  **/
+VkPresentModeKHR OttSwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes, VkPresentModeKHR desiredPresentMode)
 {
     for (const auto& availablePresentMode : availablePresentModes)
     {
-        if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+        if (availablePresentMode == desiredPresentMode)
             return availablePresentMode;
     }
     return VK_PRESENT_MODE_FIFO_KHR;
