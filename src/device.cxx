@@ -14,7 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include "device.h"
+#include "macros.h"
 #include <set>
 #include <map>
 
@@ -31,7 +36,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBits
     std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
     return VK_FALSE;
 }
-}
+} // anonymous namespace
 
 //----------------------------------------------------------------------------
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
@@ -252,7 +257,7 @@ void OttDevice::createInstance()
                         .applicationVersion = VK_MAKE_VERSION(1, 0, 0),
                         .pEngineName        = "No Engine",
                         .engineVersion      = VK_MAKE_VERSION(1, 0, 0),
-                        .apiVersion         = VK_API_VERSION_1_0,
+                        .apiVersion         = VK_API_VERSION_1_3,
     };
 
     auto extensions = getRequiredExtensions();
@@ -285,7 +290,7 @@ void OttDevice::createInstance()
 
     if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
         throw std::runtime_error("failed to create instance!");
-    std::cout << "Vulkan Instance created ::::: " << std::endl;
+    LOG_INFO("Vulkan Instance Created");
 }
 
 //----------------------------------------------------------------------------
@@ -303,7 +308,7 @@ void OttDevice::setupDebugMessenger()
 //----------------------------------------------------------------------------
 /** Wrapper for the glfwCreateWindowSurface function.
  *  More details can be provided by the original GLFW function.
- *  \param &window: We need the window properly created in advance
+ *  \param window: We need the window properly created in advance
  *  to call the aforementioned GLFW function. **/
 void OttDevice::createWindowSurface(const OttWindow& window)
 {
@@ -326,10 +331,10 @@ void OttDevice::pickPhysicalDevice()
         
     std::multimap<int, VkPhysicalDevice> candidates;
 
-    for (const auto& device : devices)
+    for (const auto& physical_device : devices)
     {
-        int score = rateDeviceSuitability(device);
-        candidates.insert(std::make_pair(score, device));
+        int score = rateDeviceSuitability(physical_device);
+        candidates.insert(std::make_pair(score, physical_device));
     }
         
     if (candidates.rbegin()->first > 0 && isDeviceSuitable(candidates.rbegin()->second, deviceExtensions))
@@ -337,8 +342,9 @@ void OttDevice::pickPhysicalDevice()
         if (physicalDevice = candidates.rbegin()->second)
         {
             msaaSamples = getMaxUsableSampleCount();
-            std::cout << "GPU is properly scored and suitable for usage." <<  std::endl;
-            std::cout << "Max Usable Sample Count: " << msaaSamples << "xMSAA" << std::endl;
+            LOG_INFO("GPU is properly scored and suitable for usage.");
+            
+            std::cout << C_GREEN << "[INFO] " << "Max Usable Sample Count: " << msaaSamples << "xMSAA" << C_RESET << std::endl;
         }
     }
         
@@ -354,7 +360,7 @@ void OttDevice::createLogicalDevice()
     QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+    std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
     float queuePriority = 1.0f;
     for (uint32_t queueFamily : uniqueQueueFamilies)
@@ -368,8 +374,8 @@ void OttDevice::createLogicalDevice()
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
-    VkPhysicalDeviceDescriptorIndexingFeaturesEXT physicalDeviceDescriptorIndexingFeatures {
-                                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES_EXT,
+    VkPhysicalDeviceVulkan12Features physicalDeviceVulkan12Features {
+                                .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
                                 .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
                                 .descriptorBindingPartiallyBound           = VK_TRUE,
                                 .descriptorBindingVariableDescriptorCount  = VK_TRUE,
@@ -378,7 +384,7 @@ void OttDevice::createLogicalDevice()
     
     VkPhysicalDeviceFeatures2 deviceFeatures {
                                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-                                .pNext = &physicalDeviceDescriptorIndexingFeatures,
+                                .pNext = &physicalDeviceVulkan12Features,
                                 .features = {.sampleRateShading = VK_TRUE,
                                                 .samplerAnisotropy = VK_TRUE, }
     };
@@ -392,9 +398,9 @@ void OttDevice::createLogicalDevice()
                                 .ppEnabledExtensionNames = deviceExtensions.data(),
     };
 
-    // "Previous implementations of Vulkan made a distinction between instance and device specific
-    // validation layers, but this is no longer the case.
-    // However, it is still a good idea to set them anyway to be compatible with older implementations:"
+    /** "Previous implementations of Vulkan made a distinction between instance and device specific
+     *  validation layers, but this is no longer the case.
+     *  However, it is still a good idea to set them anyway to be compatible with older implementations:" **/
     if (enableValidationLayers)
     {
         createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
@@ -406,11 +412,12 @@ void OttDevice::createLogicalDevice()
     if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
         throw std::runtime_error("failed to create logical device!");
     
-    debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_PHYSICAL_DEVICE, (uint64_t) physicalDevice, "OttDevice::physicalDevice");
-    debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE, (uint64_t) device, "OttDevice::device");
+    debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_PHYSICAL_DEVICE, (uint64_t) physicalDevice, CSTR_RED(" OttDevice::physicalDevice "));
+    debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE, (uint64_t) device, CSTR_RED(" OttDevice::device "));
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
     vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
-    std::cout << "Logical Device Successfully created" << std::endl;
+    
+    LOG_INFO("Logical Device Successfully created");
 }
 
 //----------------------------------------------------------------------------
@@ -422,7 +429,6 @@ void OttDevice::createLogicalDevice()
        Allow command buffers to be rerecorded individually, without this flag they all have to be reset together **/
 void OttDevice::createCommandPool(VkCommandPoolCreateFlags flags)
 {
-    std::cout << "createCommandPool start::::: " << std::endl;
     const QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
     const VkCommandPoolCreateInfo poolInfo {
                                   .sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -432,7 +438,7 @@ void OttDevice::createCommandPool(VkCommandPoolCreateFlags flags)
 
     if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS)
         throw std::runtime_error("failed to create command pool!");
-    std::cout << "CommandPool Created::::: " << std::endl;
+    LOG_INFO("CommandPool Created");
 }
 
 //----------------------------------------------------------------------------
@@ -595,18 +601,14 @@ int OttDevice::rateDeviceSuitability(VkPhysicalDevice physical_device)
     // Maximum possible size of textures affects graphics quality
     score += static_cast<int>(deviceProperties.limits.maxImageDimension2D);
     
-    // Application can't function without geometry shaders
-    if (!deviceFeatures.geometryShader)
-        return 0;
-
     //Debug Log to detect the GPU.
-    std::cout << "-------------------------------------" << std::endl;
-    std::cout << "GPU found." << std::endl;
-    std::cout << "Name: " << deviceProperties.deviceName << std::endl;
-    std::cout << "Score: " << score << std::endl;
-    std::cout << "API Version: " << deviceProperties.apiVersion << std::endl;
-    std::cout << "Driver Version: " << deviceProperties.driverVersion << std::endl;
-    std::cout << "-------------------------------------" << std::endl;
+    LOG(DASHED_SEPARATOR);
+    LOG_INFO("GPU found.");
+    LOG_INFO("Name: %s", deviceProperties.deviceName);
+    LOG_INFO("Score: %i", score);
+    LOG_INFO("API Version: %u", deviceProperties.apiVersion);
+    LOG_INFO("Driver Version: %u", deviceProperties.driverVersion);
+    LOG(DASHED_SEPARATOR);
     
     return score;
 }

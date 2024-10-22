@@ -15,9 +15,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
+
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+
 #include "window.h"
 #include <GLFW/glfw3.h>
-#define GLM_ENABLE_EXPERIMENTAL
 #include <glm.hpp>
 
 class OttCamera

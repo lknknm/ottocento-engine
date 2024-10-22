@@ -14,6 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include "camera.h"
 #include "input.hxx"
 #include <gtc/matrix_transform.hpp>
@@ -135,8 +139,8 @@ void OttCamera::viewportInputHandle(float deltaTime)
 }
 
 //----------------------------------------------------------------------------
-// Gets the mouse pointer to wrap around the framebuffer to get continuous movement
-// while rotating or panning the camera.
+/** Gets the mouse pointer to wrap around the framebuffer to get continuous movement
+ *  while rotating or panning the camera. **/
 void OttCamera::wrapAroundMousePos(glm::vec2* mousePos)
 {
     double mxpos, mypos; // Get mouse position, relative to window
@@ -217,6 +221,8 @@ void OttCamera::walkNavigationInputHandle(float deltaTime)
 //----------------------------------------------------------------------------
     
 //----------------------------------------------------------------------------
+/** Wrapper for the glm::perspective function
+ * \param aspectRatio: camera aspect ratio height / width. **/
 glm::mat4 OttCamera::perspectiveProjection(float aspectRatio)
 {
     return glm::perspective(glm::radians(VerticalFOV), aspectRatio, NearClip, FarClip);
@@ -264,11 +270,12 @@ void OttCamera::rotateFixedAmount(rotateDirection direction)
 }
     
 //----------------------------------------------------------------------------
-// Originally implemented on F3D with the help of
-// Michael Migliore, Mathieu Westphal and Snoyer.
-// This function takes the current position of the camera and reorient it facing
-// a given axis, as per the formula:
-// P' = P + radius * viewAxis.
+/** Originally implemented as a contribution to F3D with the help of
+ * Michael Migliore, Mathieu Westphal and Snoyer.
+ * Copyright Michael Migliore, Mathieu Westphal. \n
+ * This function takes the current position of the camera and reorient it facing
+ * a given axis, as per the formula:
+ * P' = P + radius * viewAxis. **/
 glm::vec3 OttCamera::SetViewOrbit(ViewType view)
 {
     glm::vec3 foc = getCenterPosition();

@@ -13,7 +13,12 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 #pragma once
+
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+
 #include <vector>
 
 #include "device.h"
@@ -38,9 +43,6 @@ namespace VkHelpers
                                  std::vector<VkImage>& textureImages, VkDeviceMemory& textureImageMemory);
     
     VkShaderModule          createShaderModule      (const std::vector<char>& code, VkDevice device);
-    VkSurfaceFormatKHR      chooseSwapSurfaceFormat (const std::vector<VkSurfaceFormatKHR>& availableFormats);
-    VkPresentModeKHR        chooseSwapPresentMode   (const std::vector<VkPresentModeKHR>& availablePresentModes);
-    VkExtent2D              chooseSwapExtent        (const VkSurfaceCapabilitiesKHR& capabilities, OttWindow* appwindow);
     
 } //namespace VkHelpers
 

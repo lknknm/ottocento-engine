@@ -15,6 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <volk.h>
 #include <GLFW/glfw3.h>
 #include <functional>
@@ -69,7 +73,7 @@ public:
         if (action == GLFW_RELEASE)
         {
             std::cout << "Key released: " << key << std::endl;
-            //Take action here
+            /** TODO **/
         }
     }
 

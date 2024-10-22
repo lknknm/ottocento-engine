@@ -14,12 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include "helpers.h"
 #include <algorithm>
 #include <fstream>
-#include <iostream>
-#include <set>
 #include <stdexcept>
+
+#include "macros.h"
 
 
 //----------------------------------------------------------------------------
@@ -230,10 +234,10 @@ void VkHelpers::createImage(uint32_t width, uint32_t height, uint32_t mipLevels,
 }
 
 //----------------------------------------------------------------------------
-// Creates a 1x1 blank image to populate the 0 index of the textureImages array.
+/** Creates a 1x1 blank image to populate the 0 index of the textureImages array. **/
 void VkHelpers::create1x1BlankImage(VkImage& blankImage, uint32_t mipLevels, OttDevice& appDevice,
                                     std::vector<VkImage>& textureImages, VkDeviceMemory& textureImageMemory)
-{    
+{
     const VkImageCreateInfo imageInfo {
                 .sType         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
                 .imageType     = VK_IMAGE_TYPE_2D,
@@ -264,11 +268,11 @@ void VkHelpers::create1x1BlankImage(VkImage& blankImage, uint32_t mipLevels, Ott
         throw std::runtime_error("failed to allocate image memory!");
     vkBindImageMemory(appDevice.getDevice(), blankImage, textureImageMemory, 0);
     textureImages.push_back(blankImage);
-    appDevice.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)textureImageMemory, "application::VkDeviceMemory:1x1blankImageMemory");
+    appDevice.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)textureImageMemory, CSTR_CYAN(" application::VkDeviceMemory:1x1blankImageMemory "));
 }
 
 //-----------------------------------------------------------------------------
-// Helper function will take a buffer with the bytecode as parameter and create a VkShaderModule from it.
+/** Helper function will take a buffer with the bytecode as parameter and create a VkShaderModule from it. **/
 VkShaderModule VkHelpers::createShaderModule(const std::vector<char>& code, VkDevice device)
 {
     VkShaderModuleCreateInfo createInfo{};
@@ -279,61 +283,7 @@ VkShaderModule VkHelpers::createShaderModule(const std::vector<char>& code, VkDe
     VkShaderModule shaderModule;
     if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
         throw std::runtime_error("failed to create shader module!");
-    else
-        std::cout << "Shader Module Created" << std::endl;
+    LOG_INFO("Shader Module Created");
     
     return shaderModule;
-}
-
-//----------------------------------------------------------------------------
-// Surface Format will be the specification of the window surface colour depth.
-VkSurfaceFormatKHR VkHelpers::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
-{
-    for (const auto& availableFormat : availableFormats)
-    {
-        if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB
-            && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-            return availableFormat;
-    }
-    return availableFormats[0];
-}
-
-//----------------------------------------------------------------------------
-// "VK_PRESENT_MODE_MAILBOX_KHR is a very nice trade-off if energy usage is not a concern.
-// On mobile devices, where energy usage is more important,
-// you will probably want to use VK_PRESENT_MODE_FIFO_KHR instead"
-VkPresentModeKHR VkHelpers::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
-{
-    for (const auto& availablePresentMode : availablePresentModes)
-    {
-        if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
-            return availablePresentMode;
-    }
-    return VK_PRESENT_MODE_FIFO_KHR;
-}
-
-//----------------------------------------------------------------------------
-// "The swap extent is the resolution of the swap chain images and
-// it's almost always exactly equal to the resolution of the window that we're drawing to in pixels"
-VkExtent2D VkHelpers::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, OttWindow* appwindow)
-{
-    if (capabilities.currentExtent.width != (std::numeric_limits<uint32_t>::max)())
-    {
-        return capabilities.currentExtent;
-    }
-    else
-    {
-        const int width  = appwindow->getFrameBufferSize().x;
-        const int height = appwindow->getFrameBufferSize().y;
-
-        VkExtent2D actualExtent = {
-            static_cast<uint32_t>(width),
-            static_cast<uint32_t>(height)
-        };
-
-        actualExtent.width  = std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-        actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
-
-        return actualExtent;
-    }
 }
