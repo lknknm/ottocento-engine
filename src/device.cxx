@@ -331,10 +331,10 @@ void OttDevice::pickPhysicalDevice()
         
     std::multimap<int, VkPhysicalDevice> candidates;
 
-    for (const auto& device : devices)
+    for (const auto& physical_device : devices)
     {
-        int score = rateDeviceSuitability(device);
-        candidates.insert(std::make_pair(score, device));
+        int score = rateDeviceSuitability(physical_device);
+        candidates.insert(std::make_pair(score, physical_device));
     }
         
     if (candidates.rbegin()->first > 0 && isDeviceSuitable(candidates.rbegin()->second, deviceExtensions))
@@ -343,6 +343,7 @@ void OttDevice::pickPhysicalDevice()
         {
             msaaSamples = getMaxUsableSampleCount();
             LOG_INFO("GPU is properly scored and suitable for usage.");
+            
             std::cout << C_GREEN << "[INFO] " << "Max Usable Sample Count: " << msaaSamples << "xMSAA" << C_RESET << std::endl;
         }
     }
@@ -373,7 +374,7 @@ void OttDevice::createLogicalDevice()
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
-    VkPhysicalDeviceVulkan12Features physicalDeviceDVulkan12Features {
+    VkPhysicalDeviceVulkan12Features physicalDeviceVulkan12Features {
                                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
                                 .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
                                 .descriptorBindingPartiallyBound           = VK_TRUE,
@@ -383,7 +384,7 @@ void OttDevice::createLogicalDevice()
     
     VkPhysicalDeviceFeatures2 deviceFeatures {
                                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-                                .pNext = &physicalDeviceDVulkan12Features,
+                                .pNext = &physicalDeviceVulkan12Features,
                                 .features = {.sampleRateShading = VK_TRUE,
                                                 .samplerAnisotropy = VK_TRUE, }
     };
@@ -397,9 +398,9 @@ void OttDevice::createLogicalDevice()
                                 .ppEnabledExtensionNames = deviceExtensions.data(),
     };
 
-    // "Previous implementations of Vulkan made a distinction between instance and device specific
-    // validation layers, but this is no longer the case.
-    // However, it is still a good idea to set them anyway to be compatible with older implementations:"
+    /** "Previous implementations of Vulkan made a distinction between instance and device specific
+     *  validation layers, but this is no longer the case.
+     *  However, it is still a good idea to set them anyway to be compatible with older implementations:" **/
     if (enableValidationLayers)
     {
         createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
