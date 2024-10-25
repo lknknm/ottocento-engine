@@ -24,34 +24,17 @@
 #include <gtc/matrix_transform.hpp>
 #include <gtx/hash.hpp>
 
-#include <algorithm>
-#include <array>
 #include <chrono>
-#include <cstring>
 #include <cstdint>
-#include <iostream>
-#include <fstream>
-#include <limits>
-#include <map>
-#include <set>
-#include <stdexcept>
-#include <unordered_map>
-#include <optional>
 #include <vector>
 
 #include "camera.h"
 #include "device.h"
-#include "helpers.h"
 #include "swapchain.h"
 #include "model.h"
 #include "renderer.h"
 #include "window.h"
-#include "utils.hxx"
 
-#include "../stb/stb_image.h"
-
-#include <ext/scalar_common.hpp>
-#include "../external/tinyobjloader/tiny_obj_loader.h"
 
 const int TEXTURE_ARRAY_SIZE = 1000;
 
