@@ -6,7 +6,10 @@ obj/
 riderModule.iml
 /_ReSharper.Caches/
 *.sln
+*.sln.DotSettings.user
 *.vcxproj
 *.vcxproj.filters
 Makefile
 ottocento-engine.make
+external/ifcopenshell
+external/boost_1_86
