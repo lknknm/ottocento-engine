@@ -18,8 +18,23 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
 
+#include <algorithm>
+#include <array>
+#include <cstring>
+#include <iostream>
+#include <fstream>
+#include <stdexcept>
+#include <unordered_map>
+#include <optional>
+
+#include "../stb/stb_image.h"
+
+#include "../external/tinyobjloader/tiny_obj_loader.h"
+
 #include "application.h"
+#include "helpers.h"
 #include "macros.h"
+#include "utils.hxx"
 
 //----------------------------------------------------------------------------
 /** Initiates Window and Vulkan related resources to get to the mainLoop.
@@ -87,6 +102,14 @@ void OttApplication::initWindow()
             createUniformBuffers();
             createDescriptorPool();
             createDescriptorSets();
+        }
+    };
+    appwindow.keyCallback = [&](int key, int scancode, int action, int mods)
+    {
+        if (action == GLFW_RELEASE)
+        {
+            std::cout << "Key released: " << key << std::endl;
+            /** TODO **/
         }
     };
     #ifdef _WIN32

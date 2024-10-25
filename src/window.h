@@ -60,22 +60,13 @@ public:
     std::function<void()> OnWindowRefreshed;
     std::function<void(glm::vec2)> OnFramebufferResized;
     std::function<void(int count, const char** paths)> OnFileDropped;
+    std::function<void(int key, int scancode, int action, int mods)> keyCallback;
 
     // Soon to be transferred to the Window Manager.
     bool windowShouldClose() const { return glfwWindowShouldClose(m_window); }
     static void waitEvents()       { return glfwWaitEvents(); }
     static void update()           { return glfwPollEvents(); }
     void ThemeRefreshDarkMode(GLFWwindow* WIN32_window) const;
-    
-    //----------------------------------------------------------------------------
-    static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
-    {
-        if (action == GLFW_RELEASE)
-        {
-            std::cout << "Key released: " << key << std::endl;
-            /** TODO **/
-        }
-    }
 
 //----------------------------------------------------------------------------
 private:
