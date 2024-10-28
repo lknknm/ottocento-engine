@@ -20,6 +20,7 @@
 
 #include "device.h"
 #include "macros.h"
+#include <cstring>
 #include <set>
 #include <map>
 

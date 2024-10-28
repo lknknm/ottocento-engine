@@ -90,8 +90,8 @@ inline std::string formatString(const char* format, ...)
 
 //----------------------------------------------------------------------------
 /** Colored strings as char* for object naming. Colors can be assigned to each object arbitrarily. **/
-#define CSTR_GREEN(fmt, ...)  (std::string(C_GREEN) + formatString(fmt, __VA_ARGS__) + C_RESET).c_str()
-#define CSTR_YELLOW(fmt, ...) (std::string(C_YELLOW) + formatString(fmt, __VA_ARGS__) + C_RESET).c_str()
-#define CSTR_RED(fmt, ...)    (std::string(C_RED) + formatString(fmt, __VA_ARGS__) + C_RESET).c_str()
-#define CSTR_BLUE(fmt, ...)   (std::string(C_BLUE) + formatString(fmt, __VA_ARGS__) + C_RESET).c_str()
+#define CSTR_GREEN(fmt, ...)  (std::string(C_GREEN) + formatString(fmt, ##__VA_ARGS__) + C_RESET).c_str()
+#define CSTR_YELLOW(fmt, ...) (std::string(C_YELLOW) + formatString(fmt, ##__VA_ARGS__) + C_RESET).c_str()
+#define CSTR_RED(fmt, ...)    (std::string(C_RED) + formatString(fmt, ##__VA_ARGS__) + C_RESET).c_str()
+#define CSTR_BLUE(fmt, ...)   (std::string(C_BLUE) + formatString(fmt, ##__VA_ARGS__) + C_RESET).c_str()
 #define CSTR_CYAN(fmt, ...)   (std::string(C_CYAN) + formatString(fmt, __VA_ARGS__) + C_RESET).c_str()
