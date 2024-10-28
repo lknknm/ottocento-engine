@@ -1,10 +1,27 @@
-﻿#pragma once
+﻿// Ottocento Engine. Architectural BIM Engine.
+// Copyright (C) 2024  Lucas M. Faria.
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+#pragma once
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <glm/glm.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/hash.hpp>
+
+#include <glm.hpp>
+#include <gtx/hash.hpp>
 
 #include <array>
 #include <vector>
@@ -19,39 +36,43 @@ namespace OttModel
         glm::vec3 color;
         glm::vec2 texCoord;
 
-        constexpr static auto getBindingDescription() -> VkVertexInputBindingDescription
+        static VkVertexInputBindingDescription getBindingDescription()
         {
-            return
+            constexpr VkVertexInputBindingDescription bindingDescription
             {
                 .binding   = 0,
                 .stride    = sizeof(Vertex),
                 .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
             };
+            return bindingDescription;
         }
+    
+        static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions()
+        {
+            std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
+        
+            attributeDescriptions[0].binding = 0;
+            attributeDescriptions[0].location = 0;
+            attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+            attributeDescriptions[0].offset = offsetof(Vertex, pos);
+        
+            attributeDescriptions[1].binding = 0;
+            attributeDescriptions[1].location = 1;
+            attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+            attributeDescriptions[1].offset = offsetof(Vertex, color);
 
-		constexpr static auto getAttributeDescriptions()
-				-> std::array<VkVertexInputAttributeDescription, 3> {
-			return {
-					VkVertexInputAttributeDescription{
-													  .location = 0,
-													  .binding  = 0,
-													  .format   = VK_FORMAT_R32G32B32_SFLOAT,
-													  .offset   = offsetof(Vertex,      pos)},
-
-					VkVertexInputAttributeDescription{
-													  .location = 1,
-													  .binding  = 0,
-													  .format   = VK_FORMAT_R32G32B32_SFLOAT,
-													  .offset   = offsetof(Vertex,    color)},
-					VkVertexInputAttributeDescription{
-													  .location = 2,
-													  .binding  = 0,
-													  .format   = VK_FORMAT_R32G32_SFLOAT,
-													  .offset   = offsetof(Vertex, texCoord)}
-            };
-		}
-
-		bool operator==(const Vertex& other) const = default;
+            attributeDescriptions[2].binding = 0;
+            attributeDescriptions[2].location = 2;
+            attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+            attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
+        
+            return attributeDescriptions;
+        }
+    
+        bool operator==(const Vertex& other) const
+        {
+            return pos == other.pos && color == other.color && texCoord == other.texCoord;
+        }
     };
 
     //----------------------------------------------------------------------------
@@ -62,6 +83,7 @@ namespace OttModel
         uint32_t  indexCount;
         uint32_t  textureID;
         glm::vec3 pushColorID;
+        glm::vec3 offset{0.0f, 0.0f, 0.0f};
     };
 
     
