@@ -294,7 +294,7 @@ void OttApplication::createObjectDescriptorSetLayout()
     VkDescriptorSetLayoutBinding samplerLayoutBinding {
         .binding            = 1,
         .descriptorType     = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        .descriptorCount    = TEXTURE_ARRAY_SIZE,
+        .descriptorCount    = TEXTURE_ARRAY_SIZE * MAX_FRAMES_IN_FLIGHT,
         .stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT,
     };
     std::array<VkDescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
@@ -598,7 +598,10 @@ void OttApplication::loadModel(std::string modelPath)
     std::string baseDir = Utils::GetBaseDir(modelPath) + "\\";
             
     if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath.c_str(), Utils::GetBaseDir(modelPath).c_str()))
-        throw std::runtime_error(warn + err);
+    {
+        LOG_ERROR(warn + err);
+        return;
+    }
 
     LOG(DASHED_SEPARATOR);
     std::cout << "Loading Wavefront " << modelPath << std::endl;
@@ -841,15 +844,11 @@ void OttApplication::createUniformBuffers()
 //----------------------------------------------------------------------------
 void OttApplication::createDescriptorPool()
 {
-    std::array<VkDescriptorPoolSize, 4> poolSizes{};
+    std::array<VkDescriptorPoolSize, 2> poolSizes{};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; 
     poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
     poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-    poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[2].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-    poolSizes[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[3].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    poolSizes[1].descriptorCount = static_cast<uint32_t>(TEXTURE_ARRAY_SIZE * MAX_FRAMES_IN_FLIGHT * 2);
 
     VkDescriptorPoolCreateInfo scenePoolInfo {
         .sType          = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
@@ -877,8 +876,13 @@ void OttApplication::createDescriptorSets()
     };
 
     descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-    if (vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data()) != VK_SUCCESS)
+
+    const VkResult allocateDescriptorSets = vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data());
+    if (allocateDescriptorSets != VK_SUCCESS)
+    {
+        LOG_ERROR("vkAllocateDescriptorSets returned: %i", static_cast<int>(allocateDescriptorSets));
         throw std::runtime_error("failed to allocate descriptor sets!");
+    }
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
