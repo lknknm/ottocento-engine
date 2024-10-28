@@ -1,7 +1,6 @@
 .idea
 x64
-bin/
-obj/
+build
 /packages/
 riderModule.iml
 /_ReSharper.Caches/
@@ -12,3 +11,4 @@ external/ifcopenshell
 *.vcxproj.filters
 Makefile
 ottocento-engine.make
+/.vs
