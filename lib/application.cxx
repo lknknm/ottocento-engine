@@ -27,9 +27,9 @@
 #include <unordered_map>
 #include <optional>
 
-#include "../stb/stb_image.h"
+#include "stb_image.h"
 
-#include "../external/tinyobjloader/tiny_obj_loader.h"
+#include "tiny_obj_loader.h"
 
 #include "application.h"
 #include "helpers.h"
@@ -354,10 +354,10 @@ void OttApplication::createGridDescriptorSetLayout()
  *  Rasterization (f) > Fragment Shader (p) > Colour Blending (f) > Framebuffer **/
 void OttApplication::createGraphicsPipeline()
 {
-    auto vertShaderCode     = Utils::readFile("src/shaders/vert.spv");
-    auto fragShaderCode     = Utils::readFile("src/shaders/frag.spv");
-    auto gridVertShaderCode = Utils::readFile("src/shaders/gridVert.spv");
-    auto gridFragShaderCode = Utils::readFile("src/shaders/gridFrag.spv");
+    auto vertShaderCode     = Utils::readFile("resource/shaders/vert.spv");
+    auto fragShaderCode     = Utils::readFile("resource/shaders/frag.spv");
+    auto gridVertShaderCode = Utils::readFile("resource/shaders/gridVert.spv");
+    auto gridFragShaderCode = Utils::readFile("resource/shaders/gridFrag.spv");
 
     VkShaderModule vertShaderModule     = VkHelpers::createShaderModule(vertShaderCode,     device);
     VkShaderModule fragShaderModule     = VkHelpers::createShaderModule(fragShaderCode,     device);

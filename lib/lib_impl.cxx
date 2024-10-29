@@ -6,7 +6,7 @@
 #include "stb_image.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
-#include <scalar_common.hpp>
+#include <glm/simd/common.h>
 #include "tiny_obj_loader.h"
 
 #define VOLK_IMPLEMENTATION

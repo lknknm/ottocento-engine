@@ -21,6 +21,7 @@ namespace Utils {
             return filepath.substr(0, filepath.find_last_of("/\\"));
         return "";
     }
+    
     //----------------------------------------------------------------------------
     /** Helper function to load the binary data from the shader files
      *  std::ios::ate will start reading the file at the end.

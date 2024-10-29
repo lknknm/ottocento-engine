@@ -23,6 +23,7 @@
 #include <cstring>
 #include <set>
 #include <map>
+#include <volk.h>
 
 namespace
 {
