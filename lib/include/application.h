@@ -26,6 +26,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <filesystem>
 #include <vector>
 
 #include "camera.h"
@@ -141,13 +142,13 @@ private:
     void createGridDescriptorSetLayout();
     void createGraphicsPipeline();
     void OttCreatePipelineLayout();
-    void loadModel(std::string modelPath);
+    void loadModel(std::filesystem::path const& modelPath);
     
     void createVertexBuffer();
     void createIndexBuffer();
 
     // TODO: Pass these functions to a proper texel class.
-    void createTextureImage(std::string imagePath);
+    void createTextureImage(const std::filesystem::path& imagePath);
     void createTextureImageView();
     void createTextureSampler();
     

@@ -23,10 +23,8 @@
 #include <cstring>
 #include <iostream>
 #include <fstream>
-#include <filesystem>
 #include <stdexcept>
 #include <unordered_map>
-#include <optional>
 
 #include "stb_image.h"
 
@@ -590,23 +588,23 @@ void OttApplication::OttCreatePipelineLayout()
 }
 
 //----------------------------------------------------------------------------
-void OttApplication::loadModel(std::string modelPath)
+void OttApplication::loadModel(std::filesystem::path const& modelPath)
 {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
     std::string warn, err;
-    std::string baseDir = Utils::GetBaseDir(modelPath) + "\\";
+    auto baseDir = modelPath.parent_path();
             
-    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath.c_str(), Utils::GetBaseDir(modelPath).c_str()))
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath.string().c_str(), baseDir.string().c_str()))
     {
-        LOG_ERROR(warn + err);
+        LOG_ERROR(warn.c_str() + err);
         return;
     }
 
     LOG(DASHED_SEPARATOR);
     std::cout << "Loading Wavefront " << modelPath << std::endl;
-    std::cout << "BaseDir " << Utils::GetBaseDir(modelPath).c_str() << std::endl;
+    std::cout << "BaseDir " << baseDir << std::endl;
 
     std::unordered_map<OttModel::Vertex, uint32_t> uniqueVertices{};
     
@@ -614,10 +612,10 @@ void OttApplication::loadModel(std::string modelPath)
     
     for (size_t i = 0; i < materials.size() - 1; i++)
     {
-        printf("material[%d].diffuse_texname = %s\n", int(i),
-               materials[i].diffuse_texname.c_str());
+        LOG_INFO("material[%d].diffuse_texname = %s\n", int(i), materials[i].diffuse_texname.c_str());
         sceneMaterials.imageTexture_path.clear();
-        sceneMaterials.imageTexture_path.push_back(baseDir + materials[i].diffuse_texname);
+        auto material_path = baseDir.append(materials[i].diffuse_texname);
+        sceneMaterials.imageTexture_path.push_back(material_path.string().c_str());
     }
     
     OttModel::modelObject model
@@ -736,12 +734,12 @@ void OttApplication::createIndexBuffer()
 }
     
 //----------------------------------------------------------------------------
-void OttApplication::createTextureImage(std::string imagePath)
+void OttApplication::createTextureImage(const std::filesystem::path& imagePath)
 {
     int texWidth, texHeight, texChannels;
     LOG(DASHED_SEPARATOR);
-    LOG_INFO("Image path: %s", imagePath.c_str());
-    stbi_uc* pixels = stbi_load(imagePath.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    LOG_INFO("Image path: %s", imagePath.string().c_str());
+    stbi_uc* pixels = stbi_load(imagePath.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = texWidth * texHeight * 4;
     mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
 

@@ -48,29 +48,29 @@ namespace OttModel
     
         constexpr static auto getAttributeDescriptions() -> std::array<VkVertexInputAttributeDescription, 3>
         {
-            return
-            {
+            std::array attributeDescriptions = {
                 VkVertexInputAttributeDescription {
-                    .binding  = 0,
                     .location = 0,
+                    .binding  = 0,
                     .format   = VK_FORMAT_R32G32B32_SFLOAT,
                     .offset   = offsetof(Vertex,      pos)
                 },
 
                 VkVertexInputAttributeDescription {
-                    .binding  = 0,
                     .location = 1,
+                    .binding  = 0,
                     .format   = VK_FORMAT_R32G32B32_SFLOAT,
                     .offset   = offsetof(Vertex,    color)
                 },
                 
                 VkVertexInputAttributeDescription {
-                    .binding  = 0,
                     .location = 2,
+                    .binding  = 0,
                     .format   = VK_FORMAT_R32G32_SFLOAT,
                     .offset   = offsetof(Vertex, texCoord)
                 }
             };
+            return attributeDescriptions;
         }
         bool operator==(const Vertex& other) const = default;
     };
