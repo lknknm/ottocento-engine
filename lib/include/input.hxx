@@ -3,7 +3,7 @@
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 
-#include "window.h"
+#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
 class Camera;
@@ -61,15 +61,5 @@ namespace Input
     {
         yoffsetCallback += yoffset;
     }
-
-    // //----------------------------------------------------------------------------
-    // void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
-    // {
-    //     if (action == GLFW_RELEASE)
-    //     {
-    //         std::cout << "Key released: " << key << std::endl;
-    //         // Take action here
-    //     }
-    // }
     
 } // namespace Input

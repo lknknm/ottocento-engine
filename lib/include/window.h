@@ -30,9 +30,9 @@ using VkInstance   = struct VkInstance_T*;
 using VkSurfaceKHR = struct VkSurfaceKHR_T*;
 
 #ifdef NDEBUG
-const bool enableValidationLayers = false;
+constexpr inline bool enableValidationLayers = false;
 #else
-const bool enableValidationLayers = true;
+constexpr inline bool enableValidationLayers = true;
 #endif
 
 // OttWindow Class is a wrapper around the GLFWwindow.
