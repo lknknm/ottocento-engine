@@ -598,8 +598,8 @@ void OttApplication::loadModel(std::filesystem::path const& modelPath)
             
     if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath.string().c_str(), baseDir.string().c_str()))
     {
-        LOG_ERROR(warn.c_str() + err);
-        return;
+		LOG_ERROR((warn + err).c_str());
+		return;
     }
 
     LOG(DASHED_SEPARATOR);
