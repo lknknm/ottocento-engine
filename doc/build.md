@@ -1,32 +1,28 @@
 ## How to build Ottocento Engine
-Ottocento Engine is available to build on Windows, Linux and MacOS. It uses cmake to either build a solution on windows
-or a makefile for Linux and MacOS. Generating the build is pretty straightforward.
-<!-- A makefile is one option, but cmake can generate other build-system files as well. Like Ninja. Maybe the instructions should reflect this. -->
+Ottocento Engine is available to build on Windows, Linux and MacOS. It uses premake5 to either build a solution on windows
+or a makefile for Linux and MacOS X. Generating the build is pretty straightforward.
 
 #### Download the Source
 ```
-git clone https://github.com/lknknm/ottocento-engine.git
+git clone https://github.com/lknknm/vulkan-tutorial.git
 ```
 ## Dependencies:
-- VulkanSDK
-Download and Install the [VulkanSDK](https://vulkan.lunarg.com/#new_tab) package.
-<!-- Should we tell people about environment variables? -->
+- GLFW.
+- VulkanSDK.
+- GLM (OpenGL Mathematics).
+- GLSLC shader compiler.
 
 ## How to build:
-- Download and Install [cmake](https://cmake.org/download/) for either Linux, Windows or MacOS.
-- From the project source directory run:
-```shell
-cmake -B build && cmake --build build
-```
-(Linux and Mac only)
-Alternatively you can generate the release build with:
-```shell
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-```
-
+- Download and Install [Premake5](https://premake.github.io/download/) for either Linux, Windows or MacOS.
 ## Windows
 - Download and Install [VisualStudio 2022](https://visualstudio.microsoft.com/pt-br/vs/) (Community), [JetBrains Rider](https://www.jetbrains.com/rider/), or any IDE that supports opening solution files for C++ projects.
+- Download and Install the [VulkanSDK](https://vulkan.lunarg.com/#new_tab) package.
+- Ottocento includes the binaries for the glfw-3.4.Win.64 version of [GLFW](https://www.glfw.org/). 
+  But if you want to link it with your own installation/binaries, you can check the latest version [here](https://www.glfw.org/).
 - In the project's root folder, run:
+```shell
+premake5 vs2022 --os=windows
+```
 - Open the generated `*.sln` file with your IDE of choice to run it. 
 ## Linux
 ### VulkanSDK
@@ -56,6 +52,41 @@ sudo dnf install mesa-vulkan-devel
 ```
 
 Alternatively, you can run `sudo pacman -S vulkan-devel` on Arch-Linux to install all the aforementioned Vulkan packages at once.
+### GLFW
+##### Install [GLFW](https://www.glfw.org/) by running either:
+```shell
+sudo apt install libglfw3-dev
+```
+or
+```shell
+sudo dnf install glfw-devel
+```
+or
+```shell
+sudo pacman -S glfw-wayland # glfw-x11 for X11 users
+```
+### GLM (Optional — This repository already contains the glm library linked in the project)
+##### Install [GLM](https://glm.g-truc.net/) by running either:
+```shell
+sudo apt install libglm-dev
+```
+or
+```shell
+sudo dnf install glm-devel
+```
+or
+```shell
+sudo pacman -S glm
+```
+### Makefile
+Finally, to generate the Makefile using `premake5`, in the project's root directory, run:
+```shell
+premake5 gmake --os=linux && make
+```
+Alternatively you can also generate the release build with:
+```shell
+make config=release
+```
 
 ## All set!
 Now you are all set to Build, Run and Contribute to the Ottocento Engine!
