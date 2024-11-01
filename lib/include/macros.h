@@ -16,8 +16,11 @@
 
 #pragma once
 
-#include <iostream>
 #include <cstdarg>
+
+#include <fmt/base.h>
+#include <fmt/color.h>
+#include <fmt/format.h>
 
 //----------------------------------------------------------------------------
 /** Output constants to color values: **/
@@ -38,32 +41,6 @@
 #define DASHED_SEPARATOR "-------------------------------------"
 
 //----------------------------------------------------------------------------
-/** Function for formatted logging. **/
-inline void log(const char* color, const char* format, ...)
-{
-    std::cout << color;
-    va_list args;
-    va_start(args, format);
-    vprintf(format, args);
-    va_end(args);
-    std::cout << C_RESET << std::endl;
-}
-
-//----------------------------------------------------------------------------
-/** Function for formatted logging with level output. **/
-inline void log(const char* color, const char* level, const char* format, ...)
-{
-    std::cout << color << "[" << level << "] ";
-
-    va_list args;
-    va_start(args, format);
-    vprintf(format, args);
-    va_end(args);
-
-    std::cout << C_RESET << std::endl;
-}
-
-//----------------------------------------------------------------------------
 /** Formats the std::string to receive arguments that can be output to the console. **/
 inline std::string formatString(const char* format, ...)
 {
@@ -76,13 +53,32 @@ inline std::string formatString(const char* format, ...)
 }
 
 //----------------------------------------------------------------------------
+/** Function for formatted logging. **/
+
+inline void vlog(fmt::color color, fmt::string_view fmt, fmt::format_args args)
+{
+	fmt::print(fg(color), "{}\n", fmt::vformat(fmt, args));
+}
+
+inline void log(fmt::color color, fmt::string_view s)
+{
+	vlog(color, s, fmt::format_args{});
+}
+
+template <typename... Ts>
+void log(fmt::color color, fmt::format_string<Ts...> fmt, Ts&&... args)
+{
+	vlog(color, fmt, fmt::make_format_args(args...));
+}
+
+//----------------------------------------------------------------------------
 /** LOG macros **/
-#define LOG(format, ...)            log(C_GREEN, format, ##__VA_ARGS__)
-#define LOG_INFO(format, ...)       log(C_GREEN,   "INFO",      format, ##__VA_ARGS__)
-#define LOG_DEBUG(format, ...)      log(C_ORANGE,  "DEBUG",     format, ##__VA_ARGS__)
-#define LOG_WARNING(format, ...)    log(C_YELLOW,  "WARNING",   format, ##__VA_ARGS__)
-#define LOG_ERROR(format, ...)      log(C_RED,     "ERROR",     format, ##__VA_ARGS__)
-#define LOG_CRITICAL(format, ...)   log(C_RED,     "CRITICAL",  format, ##__VA_ARGS__)
+#define LOG(format, ...)            log(fmt::color::green,                  format, ##__VA_ARGS__)
+#define LOG_INFO(format, ...)       log(fmt::color::green,   "[INFO] "      format, ##__VA_ARGS__)
+#define LOG_DEBUG(format, ...)      log(fmt::color::orange,  "[DEBUG] "     format, ##__VA_ARGS__)
+#define LOG_WARNING(format, ...)    log(fmt::color::yellow,  "[WARNING] "   format, ##__VA_ARGS__)
+#define LOG_ERROR(format, ...)      log(fmt::color::red,     "[ERROR] "     format, ##__VA_ARGS__)
+#define LOG_CRITICAL(format, ...)   log(fmt::color::red,     "[CRITICAL] "  format, ##__VA_ARGS__)
 
 //----------------------------------------------------------------------------
 /** Function to concatenate colored strings. **/
