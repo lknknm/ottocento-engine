@@ -55,14 +55,9 @@ inline std::string formatString(const char* format, ...)
 //----------------------------------------------------------------------------
 /** Function for formatted logging. **/
 
-inline void vlog(fmt::color color, fmt::string_view fmt, fmt::format_args args)
+inline void vlog(fmt::color color, fmt::string_view fmt, fmt::format_args args = {})
 {
 	fmt::print(fg(color), "{}\n", fmt::vformat(fmt, args));
-}
-
-inline void log(fmt::color color, fmt::string_view s)
-{
-	vlog(color, s, fmt::format_args{});
 }
 
 template <typename... Ts>
