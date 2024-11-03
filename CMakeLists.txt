@@ -19,6 +19,7 @@ set_default_buildtype()
 
 add_subdirectory(lib)
 add_subdirectory(src)
+add_subdirectory(resource)
 
 include(CTest)
 
