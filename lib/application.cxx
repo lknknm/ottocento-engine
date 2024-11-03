@@ -353,10 +353,10 @@ void OttApplication::createGridDescriptorSetLayout()
  *  Rasterization (f) > Fragment Shader (p) > Colour Blending (f) > Framebuffer **/
 void OttApplication::createGraphicsPipeline()
 {
-    auto vertShaderCode     = Utils::readFile("resource/shaders/vert.spv");
-    auto fragShaderCode     = Utils::readFile("resource/shaders/frag.spv");
-    auto gridVertShaderCode = Utils::readFile("resource/shaders/gridVert.spv");
-    auto gridFragShaderCode = Utils::readFile("resource/shaders/gridFrag.spv");
+    auto vertShaderCode     = Utils::readFile("resource/shaders/shader_vertex.spv");
+    auto fragShaderCode     = Utils::readFile("resource/shaders/shader_fragment.spv");
+    auto gridVertShaderCode = Utils::readFile("resource/shaders/grid_vertex.spv");
+    auto gridFragShaderCode = Utils::readFile("resource/shaders/grid_fragment.spv");
 
     VkShaderModule vertShaderModule     = VkHelpers::createShaderModule(vertShaderCode,     device);
     VkShaderModule fragShaderModule     = VkHelpers::createShaderModule(fragShaderCode,     device);
@@ -598,8 +598,8 @@ void OttApplication::loadModel(std::filesystem::path const& modelPath)
             
     if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath.string().c_str(), baseDir.string().c_str()))
     {
-        LOG_ERROR(warn.c_str() + err);
-        return;
+		LOG_ERROR((warn + err).c_str());
+		return;
     }
 
     LOG(DASHED_SEPARATOR);
