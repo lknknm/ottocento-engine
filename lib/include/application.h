@@ -31,29 +31,15 @@
 
 #include "camera.h"
 #include "device.h"
+#include "descriptor.h"
 #include "swapchain.h"
 #include "model.h"
+#include "pipeline.h"
 #include "renderer.h"
 #include "window.h"
 
-constexpr int TEXTURE_ARRAY_SIZE = 1000;
-
 const std::vector<const char*> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 const std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME };
-
-struct UniformBufferObject {
-    alignas(16) glm::mat4 model;
-    alignas(16) glm::mat4 view;
-    alignas(16) glm::mat4 proj;
-    alignas(16) glm::mat4 viewProjectionInverse;
-    alignas(16) glm::vec3 cameraPos;
-};
-
-struct PushConstantData {
-    alignas(16) glm::vec3 offset;
-    alignas(16) glm::vec3 color;
-    alignas(4)  uint32_t  textureID;
-};
 
 //----------------------------------------------------------------------------
 class OttApplication
@@ -73,15 +59,17 @@ private:
     OttDevice appDevice = OttDevice(appwindow);
     VkDevice  device    = appDevice.getDevice();
     VkPhysicalDevice physicalDevice = appDevice.getPhysicalDevice();
-    OttSwapChain appSwapChain = OttSwapChain(&appDevice, &appwindow);
-    OttRenderer  ottRenderer  = OttRenderer(&appDevice, &appSwapChain);
+    OttSwapChain appSwapChain = OttSwapChain (&appDevice, &appwindow);
+    OttRenderer  ottRenderer  = OttRenderer  (&appDevice, &appSwapChain);
+    OttPipeline  appPipeline  = OttPipeline(&appDevice, &appSwapChain);
 
     PushConstantData push;
     std::vector<OttModel::modelObject> models;
     
-    VkPipelineLayout                    pipelineLayout;
     VkDescriptorSetLayout               descriptorSetLayout;
     std::vector<VkDescriptorSetLayout>  descriptorSetLayouts;
+    VkDescriptorPool                    descriptorPool;
+    std::vector<VkDescriptorSet>        descriptorSets;
 
     std::vector<VkCommandBuffer>    commandBuffers;
     uint32_t                        mipLevels;
@@ -102,16 +90,7 @@ private:
     std::vector<VkBuffer>           uniformBuffers;
     std::vector<VkDeviceMemory>     uniformBuffersMemory;
     std::vector<void*>              uniformBuffersMapped;
-
-    VkDescriptorPool                descriptorPool;
-    std::vector<VkDescriptorSet>    descriptorSets;
     
-    struct
-    {
-        VkPipeline grid;
-        VkPipeline object;
-    } graphicsPipelines;
-
     struct
     {
         std::vector<std::string> imageTexture_path;
@@ -138,10 +117,6 @@ private:
     
     VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
     
-    void createObjectDescriptorSetLayout();
-    void createGridDescriptorSetLayout();
-    void createGraphicsPipeline();
-    void OttCreatePipelineLayout();
     void loadModel(std::filesystem::path const& modelPath);
     
     void createVertexBuffer();
@@ -153,8 +128,5 @@ private:
     void createTextureSampler();
     
     void createUniformBuffers();
-    void createDescriptorPool();
-    void createDescriptorSets();
-
     void updateUniformBufferCamera(uint32_t currentImage, float deltaTime, int width, int height);
 };

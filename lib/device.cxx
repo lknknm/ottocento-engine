@@ -289,9 +289,13 @@ void OttDevice::createInstance()
         createInfo.enabledLayerCount = 0;
         createInfo.pNext = nullptr;
     }
-
-    if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
+    
+    const VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
+    if (result != VK_SUCCESS)
+    {
+        LOG_ERROR("vkCreateInstance returned: %i", static_cast<int>(result));
         throw std::runtime_error("failed to create instance!");
+    }
     LOG_INFO("Vulkan Instance Created");
 }
 
@@ -416,6 +420,8 @@ void OttDevice::createLogicalDevice()
     
     debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_PHYSICAL_DEVICE, (uint64_t) physicalDevice, CSTR_RED(" OttDevice::physicalDevice "));
     debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE, (uint64_t) device, CSTR_RED(" OttDevice::device "));
+    debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_INSTANCE, (uint64_t) instance, CSTR_RED(" OttDevice::VkInstance::instance "));
+    
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
     vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
     

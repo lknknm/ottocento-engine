@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include "macros.h"
 #include "utils.hxx"
 
 namespace Utils {
@@ -26,7 +27,10 @@ namespace Utils {
     {
         std::ifstream file(filename, std::ios::ate | std::ios::binary);
         if (!file.is_open())
-            throw std::runtime_error("failed to open file!");
+        {
+            LOG_ERROR("Cannot read %s", filename.c_str());
+            throw std::runtime_error("Failed to open file!");
+        }
 
         size_t fileSize = (size_t) file.tellg();
         std::vector<char> buffer(fileSize);
