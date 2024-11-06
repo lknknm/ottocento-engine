@@ -184,7 +184,6 @@ void OttApplication::drawScene(VkCommandBuffer command_buffer)
     
     if (!vertices.empty() && !indices.empty())
     {
-        LOG_DEBUG("Calling vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelines.object)");
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, appPipeline.graphicsPipelines.object);
         const VkBuffer vertexBuffers[] = { vertexBuffer };
         const VkDeviceSize offsets[] = {0};
@@ -540,9 +539,9 @@ void OttApplication::updateUniformBufferCamera(uint32_t currentImage, float delt
     UniformBufferObject ubo {
         .model                 = glm::rotate(glm::mat4(1.0f), glm::radians(270.f), glm::vec3(0.0f, 0.0f, 1.0f)),
         .view                  = viewportCamera->recalculateView(deltaTime),
-        .proj                  = viewportCamera->perspectiveProjection(width / (float)height),
+        .proj                  = viewportCamera->projection((float)height, (float)width),
         .viewProjectionInverse = viewportCamera->inverseProjection (
-                                                viewportCamera->perspectiveProjection(width / (float)height),
+                                                viewportCamera->projection((float)height, (float)width),
                                                 viewportCamera->recalculateView(deltaTime)
                                                  ),
         .cameraPos             = viewportCamera->getEyePosition(),

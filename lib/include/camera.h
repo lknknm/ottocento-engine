@@ -18,10 +18,12 @@
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
+#define GLM_ENABLE_EXPERIMENTAL
 
 #include "window.h"
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 class OttCamera
 {
@@ -35,7 +37,7 @@ public:
 // Projection and Direction functions
 //----------------------------------------------------------------------------
     
-    glm::mat4 perspectiveProjection(float aspectRatio);
+    glm::mat4 projection(float height, float width) const;
     glm::mat4 inverseProjection(glm::mat4 perspectiveProjection, glm::mat4 view);
 
 //----------------------------------------------------------------------------
@@ -62,8 +64,10 @@ private:
     float NearClip = 0.1f;
     float FarClip = 1000.0f;
     float speed = 2.0f;
+    float orthoZoomFactor = 10.f;
     float rotationSpeed = 0.3f;
     bool  walkNavigation = false;
+    bool  perspective = true;
     
     glm::vec2 lastMousePosition{ 0.0f, 0.0f };
     
