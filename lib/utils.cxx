@@ -1,9 +1,10 @@
+#include "utils.hxx"
+
 #include <randutils.hpp>
 #include <random>
-#include <iostream>
 #include <fstream>
 #include <vector>
-#include "utils.hxx"
+#include <fmt/os.h>
 
 namespace Utils {
     
@@ -25,8 +26,8 @@ namespace Utils {
     std::vector<char> readFile(const std::string& filename)
     {
         std::ifstream file(filename, std::ios::ate | std::ios::binary);
-        if (!file.is_open())
-            throw std::runtime_error("failed to open file!");
+        if (!file)
+            throw fmt::system_error(errno, "cannot open file '{}'", filename);
 
         size_t fileSize = (size_t) file.tellg();
         std::vector<char> buffer(fileSize);
@@ -34,12 +35,11 @@ namespace Utils {
         file.seekg(0);
         file.read(buffer.data(), fileSize);
 
-        std::cout << std::endl;
-        std::cout << "---- Loaded: " << filename << std::endl;
-        std::cout << "FileSize:" << fileSize << std::endl;
-        std::cout << "BufferSize:" << buffer.size() << std::endl;
+		fmt::print("\n ---- Loaded: {}\n", filename);
+		fmt::print("FileSize: {}\n", fileSize);
+		fmt::print("BufferSize: {}\n", buffer.size());
         if (buffer.size() == fileSize)
-            std::cout << "ASSERT: file/shader loaded correctly" << std::endl;
+             fmt::print("ASSERT: file/shader loaded correctly\n");
 
         file.close();
         return buffer;
