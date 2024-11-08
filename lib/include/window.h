@@ -23,6 +23,7 @@
 #include <GLFW/glfw3.h>
 #include <functional>
 #include <iostream>
+#include <utility>
 #include <glm/vec2.hpp>
 
 struct GLFWwindow;
@@ -51,7 +52,7 @@ public:
     GLFWwindow* getWindowhandle() const { return this->m_window; }
     glm::ivec2 getFrameBufferSize() const;
     
-    void getCursorPos(double* xpos, double* ypos) const;
+    [[nodiscard]] auto getCursorPos() const -> std::pair<double, double>;
     void setCursorPos(double xpos, double ypos) const;
 
 //----------------------------------------------------------------------------
