@@ -20,13 +20,15 @@
 
 #include "application.h"
 
+#include <fmt/core.h>
+
 int main()
 {
     OttApplication app;
 
     try { app.run(); }
     catch (const std::exception& e) {
-        std::cerr << e.what() << std::endl;
+        fmt::println(stderr, "{}", e.what());
         return EXIT_FAILURE;
     }
 

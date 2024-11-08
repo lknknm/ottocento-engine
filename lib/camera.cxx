@@ -20,6 +20,10 @@
 
 #include "camera.h"
 #include "input.hxx"
+
+#include <stdexcept>
+
+#include <fmt/core.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
@@ -37,8 +41,8 @@ glm::mat4 OttCamera::recalculateView(float deltaTime)
     {
         // walkNavigation = !walkNavigation;
         glfwWaitEventsTimeout(1.0);
-        std::cout << "walkNavigation: " << walkNavigation << std::endl;
-        std::cout << "----------------" << std::endl;
+        fmt::print("walkNavigation: {}\n", walkNavigation);
+        fmt::print("----------------\n");
     }
     if (!walkNavigation)
         viewportInputHandle(deltaTime);
