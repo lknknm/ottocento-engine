@@ -24,7 +24,6 @@
 
 #include "utils.hxx"
 
-
 OttPipeline::OttPipeline(OttDevice* device_reference, OttSwapChain* swapchain_reference)
 {
     pDevice         = device_reference;
@@ -36,6 +35,7 @@ OttPipeline::~OttPipeline()
 {
     vkDestroyPipeline       (device, graphicsPipelines.object, nullptr);
     vkDestroyPipeline       (device, graphicsPipelines.grid, nullptr);
+    vkDestroyPipeline       (device, graphicsPipelines.wireframe, nullptr);
     vkDestroyPipelineLayout (device, pipelineLayout, nullptr);
     LOG_DEBUG("OttPipeline object destroyed");
 }
@@ -43,127 +43,34 @@ OttPipeline::~OttPipeline()
 //----------------------------------------------------------------------------
 /** f = fixed-function stage; p = programmable stage.
  *  Input Assembler (f) > Vertex Shader (p) > Tessellation (p) > Geometry Shader >
- *  Rasterization (f) > Fragment Shader (p) > Colour Blending (f) > Framebuffer **/
-void OttPipeline::createGraphicsPipeline(std::vector<VkDescriptorSetLayout>& descriptor_set_layouts)
+ *  Rasterization (f) > Fragment Shader (p) > Color Blending (f) > Framebuffer. \n
+ *  - Bindings: spacing between data and whether the data is per-vertex or per-instance
+ *  - Attribute descriptions: type of the attributes passed to the vertex shader, which binding to land which offset. **/
+void OttPipeline::createGraphicsPipeline(
+    std::vector<VkDescriptorSetLayout>& descriptor_set_layouts,
+    std::string vertex_shader_path, std::string fragment_shader_path,
+    VkPipeline&  pipeline, VkPipelineVertexInputStateCreateInfo vertex_input_info,
+    VkPolygonMode polygon_mode
+    )
 {
-    auto vertShaderCode     = Utils::readFile("resource/shaders/object_vertex.spv");
-    auto fragShaderCode     = Utils::readFile("resource/shaders/object_fragment.spv");
-    auto gridVertShaderCode = Utils::readFile("resource/shaders/grid_vertex.spv");
-    auto gridFragShaderCode = Utils::readFile("resource/shaders/grid_fragment.spv");
+    auto vertexShaderCode   = Utils::readFile(vertex_shader_path);
+    auto fragShaderCode     = Utils::readFile(fragment_shader_path);
 
-    VkShaderModule vertShaderModule     = createShaderModule(vertShaderCode);
-    VkShaderModule fragShaderModule     = createShaderModule(fragShaderCode);
-    VkShaderModule gridVertShaderModule = createShaderModule(gridVertShaderCode);
-    VkShaderModule gridFragShaderModule = createShaderModule(gridFragShaderCode);
-
-    VkPipelineShaderStageCreateInfo vertShaderStageInfo {
-        .sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-        .stage   = VK_SHADER_STAGE_VERTEX_BIT,
-        .module  = vertShaderModule,
-        .pName   = "main",
-    };
-
-    VkPipelineShaderStageCreateInfo fragShaderStageInfo {
-        .sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-        .stage   = VK_SHADER_STAGE_FRAGMENT_BIT,
-        .module  = fragShaderModule,
-        .pName   = "main",
-    };
+    VkShaderModule vertShaderModule    = createShaderModule(vertexShaderCode);
+    VkShaderModule fragShaderModule    = createShaderModule(fragShaderCode);
+    std::array     shaderStages        = {
+    VkPipelineShaderStageCreateInfo { initShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vertShaderModule) },
+    VkPipelineShaderStageCreateInfo { initShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule) }};
     
-    std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages{};
-    shaderStages[0] = vertShaderStageInfo;
-    shaderStages[1] = fragShaderStageInfo;
+    VkPipelineInputAssemblyStateCreateInfo inputAssembly        = initInputAssembly();
+    VkPipelineViewportStateCreateInfo      viewportState        = initViewportState(1, 1);
+    VkPipelineRasterizationStateCreateInfo rasterState          = initRasterizer(polygon_mode, 1.0f);
+    VkPipelineMultisampleStateCreateInfo   multisampling        = initMultisamplingState(pDevice->getMSAASamples());
+    VkPipelineDepthStencilStateCreateInfo  depthStencil         = initDepthStencilInfo();
+    VkPipelineColorBlendAttachmentState    colorBlendAttachment = initColorBlendAttachment();
+    VkPipelineColorBlendStateCreateInfo    colorBlending        = initColorBlendCreateInfo(&colorBlendAttachment);
+    VkPipelineDynamicStateCreateInfo       dynamicState         = initDynamicState();
 
-    // Bindings: spacing between data and whether the data is per-vertex or per-instance.
-    // Attribute descriptions: type of the attributes passed to the vertex shader, which binding to load
-    // and which offset.
-    auto bindingDescription                         = OttModel::Vertex::getBindingDescription();
-    auto attributeDescriptions                      = OttModel::Vertex::getAttributeDescriptions();
-    VkPipelineVertexInputStateCreateInfo vertexInputInfo {
-        .sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .vertexBindingDescriptionCount   = 1,
-        .pVertexBindingDescriptions      = &bindingDescription,
-        .vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size()),
-        .pVertexAttributeDescriptions    = attributeDescriptions.data(),
-    };
-
-    VkPipelineInputAssemblyStateCreateInfo inputAssembly {
-        .sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-        .topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-        .primitiveRestartEnable = VK_FALSE,
-    };
-
-    VkPipelineViewportStateCreateInfo viewportState {
-        .sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-        .viewportCount = 1,
-        .scissorCount  = 1,
-    };
-
-    VkPipelineRasterizationStateCreateInfo rasterizer {
-        .sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-        .depthClampEnable        = VK_FALSE,
-        .rasterizerDiscardEnable = VK_FALSE,
-        .polygonMode             = VK_POLYGON_MODE_FILL,
-        .cullMode                = VK_CULL_MODE_NONE,
-        .frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE,
-        .depthBiasEnable         = VK_FALSE,
-        .lineWidth               = 1.0f, // if using any other mode than fill.
-    };
-
-    VkPipelineMultisampleStateCreateInfo multisampling {
-        .sType                 = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-        .rasterizationSamples  = pDevice->getMSAASamples(),
-        .sampleShadingEnable   = VK_TRUE,
-        .minSampleShading      = 0.2f, 
-        .pSampleMask           = nullptr, 
-        .alphaToCoverageEnable = VK_FALSE, 
-        .alphaToOneEnable      = VK_FALSE, 
-    };
-
-    VkPipelineDepthStencilStateCreateInfo depthStencil {
-        .sType                  = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-        .depthTestEnable        = VK_TRUE,
-        .depthWriteEnable       = VK_TRUE,
-        .depthCompareOp         = VK_COMPARE_OP_LESS,
-        .depthBoundsTestEnable  = VK_FALSE,
-        .minDepthBounds = 0.0f,
-        .maxDepthBounds = 1.0f,
-    };
-    
-    VkPipelineColorBlendAttachmentState colorBlendAttachment {
-        .blendEnable            = VK_TRUE,
-        .srcColorBlendFactor    = VK_BLEND_FACTOR_ONE, // Optional
-        .dstColorBlendFactor    = VK_BLEND_FACTOR_ZERO, // Optional
-        .colorBlendOp           = VK_BLEND_OP_ADD, // Optional
-        .srcAlphaBlendFactor    = VK_BLEND_FACTOR_ONE, // Optional
-        .dstAlphaBlendFactor    = VK_BLEND_FACTOR_ZERO, // Optional
-        .alphaBlendOp           = VK_BLEND_OP_ADD, // Optional
-        .colorWriteMask         = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-    };
-
-    VkPipelineColorBlendStateCreateInfo colorBlending {
-        .sType             = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
-        .logicOpEnable     = VK_FALSE,
-        .logicOp           = VK_LOGIC_OP_COPY, // Optional
-        .attachmentCount   = 1,
-        .pAttachments      = &colorBlendAttachment,
-    };
-        colorBlending.blendConstants[0] = 0.0f;
-        colorBlending.blendConstants[1] = 0.0f;
-        colorBlending.blendConstants[2] = 0.0f;
-        colorBlending.blendConstants[3] = 0.0f;
-
-    std::vector<VkDynamicState> dynamicStates = {
-        VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR,
-    };
-
-    VkPipelineDynamicStateCreateInfo dynamicState {
-        .sType              = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-        .dynamicStateCount  = static_cast<uint32_t>(dynamicStates.size()),
-        .pDynamicStates     = dynamicStates.data(),
-    };
-    
     createPipelineLayout(descriptor_set_layouts);
     
     // Populate the Graphics Pipeline Info struct.
@@ -172,10 +79,10 @@ void OttPipeline::createGraphicsPipeline(std::vector<VkDescriptorSetLayout>& des
         .sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
         .stageCount          = 2,
         .pStages             = shaderStages.data(),
-        .pVertexInputState   = &vertexInputInfo,
+        .pVertexInputState   = &vertex_input_info,
         .pInputAssemblyState = &inputAssembly,
         .pViewportState      = &viewportState,
-        .pRasterizationState = &rasterizer,
+        .pRasterizationState = &rasterState,
         .pMultisampleState   = &multisampling,
         .pDepthStencilState  = &depthStencil,
         .pColorBlendState    = &colorBlending,
@@ -185,78 +92,13 @@ void OttPipeline::createGraphicsPipeline(std::vector<VkDescriptorSetLayout>& des
         .subpass             = 0,
         .basePipelineHandle  = VK_NULL_HANDLE,
     };
-    
-    if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE,
-                                1,
-                                &pipelineInfo,
-                                nullptr,
-                                &graphicsPipelines.object) != VK_SUCCESS)
-                                    throw std::runtime_error("failed to create graphics pipeline!");
-    LOG_INFO("Object Pipeline Created");
 
-    //----------------------------------------------------------------------------
-    // Grid Pipeline Creation ----------------------------------------------------
-    
-    VkPipelineShaderStageCreateInfo gridVertShaderStageInfo {
-        .sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-        .stage   = VK_SHADER_STAGE_VERTEX_BIT,
-        .module  = gridVertShaderModule,
-        .pName   = "main",
-    };
-    
-    VkPipelineShaderStageCreateInfo gridFragShaderStageInfo{};
-    gridFragShaderStageInfo.sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    gridFragShaderStageInfo.stage   = VK_SHADER_STAGE_FRAGMENT_BIT;
-    gridFragShaderStageInfo.module  = gridFragShaderModule;
-    gridFragShaderStageInfo.pName   = "main";
-
-    shaderStages[0] = gridVertShaderStageInfo;
-    shaderStages[1] = gridFragShaderStageInfo;
-
-    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    colorBlendAttachment.blendEnable = VK_TRUE;
-    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
-    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
-
-    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlending.logicOpEnable = VK_FALSE;
-    colorBlending.logicOp = VK_LOGIC_OP_COPY;
-    colorBlending.attachmentCount = 1;
-    colorBlending.pAttachments = &colorBlendAttachment;
-    colorBlending.blendConstants[0] = 0.0f;
-    colorBlending.blendConstants[1] = 0.0f;
-    colorBlending.blendConstants[2] = 0.0f;
-    colorBlending.blendConstants[3] = 0.0f;
-
-    pipelineInfo.pStages = shaderStages.data();
-
-    vertexInputInfo.vertexBindingDescriptionCount   = 0;
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    vertexInputInfo.pVertexBindingDescriptions      = VK_NULL_HANDLE;
-    vertexInputInfo.pVertexAttributeDescriptions    = VK_NULL_HANDLE;
-    
-    if (vkCreateGraphicsPipelines  (device, VK_NULL_HANDLE,
-                                   1,
-                                   &pipelineInfo,
-                                   nullptr,
-                                   &graphicsPipelines.grid) != VK_SUCCESS )
-    {
-        throw std::runtime_error("failed to create graphics pipeline!");
-    }
-    LOG_INFO("Grid Pipeline Created");
-    
-    /** Shader modules are just a thin wrapper around the shader
-     *  bytecode that we've previously loaded from a file and the functions defined in it.
-     *  That means that we're allowed to destroy the shader modules again
-     *  as soon as pipeline creation is finished **/
+    VkResult result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo,nullptr, &pipeline);
+    if (result != VK_SUCCESS)
+        LOG_ERROR("vkCreateGraphicsPipelines returned: %i", static_cast<int>(result));
+    LOG_INFO("Pipeline Created");
     vkDestroyShaderModule(device, fragShaderModule, nullptr);
     vkDestroyShaderModule(device, vertShaderModule, nullptr);
-    vkDestroyShaderModule(device, gridVertShaderModule, nullptr);
-    vkDestroyShaderModule(device, gridFragShaderModule, nullptr);
 }
 
 //----------------------------------------------------------------------------
@@ -307,3 +149,149 @@ VkShaderModule OttPipeline::createShaderModule(const std::vector<char>& code)
     return shaderModule;
 }
 
+//----------------------------------------------------------------------------
+// Struct initialization Helper functions ------------------------------------
+//----------------------------------------------------------------------------
+/** Helper function to initialize a VkPipelineShaderStageCreateInfo struct. **/
+constexpr VkPipelineShaderStageCreateInfo OttPipeline::initShaderStageCreateInfo(VkShaderStageFlagBits stage, VkShaderModule module)
+{
+    return VkPipelineShaderStageCreateInfo  {
+        .sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+        .stage   = stage,
+        .module  = module,
+        .pName   = "main",
+    };
+}
+
+//-----------------------------------------------------------------------------
+/** Helper function to initialize a VkPipelineVertexInputStateCreateInfo struct. **/
+VkPipelineVertexInputStateCreateInfo OttPipeline::initVertexInputInfo   (uint32_t vertex_binding_desc_count,
+                                                                        VkVertexInputBindingDescription* binding_description,
+                                                                        uint32_t att_desc_count,
+                                                                        VkVertexInputAttributeDescription* vertex_att_desc)
+{
+    return VkPipelineVertexInputStateCreateInfo {
+        .sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+        .vertexBindingDescriptionCount   = vertex_binding_desc_count,
+        .pVertexBindingDescriptions      = binding_description,
+        .vertexAttributeDescriptionCount = att_desc_count,
+        .pVertexAttributeDescriptions    = vertex_att_desc
+    };
+}
+
+
+//-----------------------------------------------------------------------------
+/** Helper function to initialize a VkPipelineInputAssemblyStateCreateInfo struct. **/
+constexpr VkPipelineInputAssemblyStateCreateInfo OttPipeline::initInputAssembly()
+{
+    return VkPipelineInputAssemblyStateCreateInfo {
+        .sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+        .topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+        .primitiveRestartEnable = VK_FALSE,
+    };
+}
+
+//-----------------------------------------------------------------------------
+/** Helper function to initialize a VkPipelineViewportStateCreateInfo struct. **/
+constexpr VkPipelineViewportStateCreateInfo OttPipeline::initViewportState(uint32_t viewport_count,uint32_t scissor_count)
+{
+    return VkPipelineViewportStateCreateInfo {
+        .sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+        .viewportCount = viewport_count,
+        .scissorCount  = scissor_count,
+    };
+}
+
+//-----------------------------------------------------------------------------
+/** Helper function to initialize a VkPipelineRasterizationStateCreateInfo struct. **/
+constexpr VkPipelineRasterizationStateCreateInfo OttPipeline::initRasterizer(VkPolygonMode polygon_mode, float line_width)
+{
+    return VkPipelineRasterizationStateCreateInfo {
+        .sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+        .depthClampEnable        = VK_FALSE,
+        .rasterizerDiscardEnable = VK_FALSE,
+        .polygonMode             = polygon_mode,
+        .cullMode                = VK_CULL_MODE_NONE,
+        .frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+        .depthBiasEnable         = VK_FALSE,
+        .lineWidth               = line_width,
+    };
+}
+
+//-----------------------------------------------------------------------------
+/** Helper function to initialize a VkPipelineMultisampleStateCreateInfo struct. **/
+constexpr VkPipelineMultisampleStateCreateInfo OttPipeline::initMultisamplingState(VkSampleCountFlagBits rasterization_samples)
+{
+    return VkPipelineMultisampleStateCreateInfo {
+        .sType                 = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+        .rasterizationSamples  = rasterization_samples,
+        .sampleShadingEnable   = VK_TRUE,
+        .minSampleShading      = 0.2f, 
+        .pSampleMask           = nullptr, 
+        .alphaToCoverageEnable = VK_FALSE, 
+        .alphaToOneEnable      = VK_FALSE, 
+    };
+}
+
+//-----------------------------------------------------------------------------
+/** Helper function to initialize a VkPipelineDepthStencilStateCreateInfo struct. **/
+constexpr VkPipelineDepthStencilStateCreateInfo OttPipeline::initDepthStencilInfo()
+{
+    return VkPipelineDepthStencilStateCreateInfo  {
+        .sType                  = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+        .depthTestEnable        = VK_TRUE,
+        .depthWriteEnable       = VK_TRUE,
+        .depthCompareOp         = VK_COMPARE_OP_LESS,
+        .depthBoundsTestEnable  = VK_FALSE,
+        .minDepthBounds = 0.0f,
+        .maxDepthBounds = 1.0f,
+    };
+}
+
+//-----------------------------------------------------------------------------
+/** Helper function to initialize a VkPipelineColorBlendAttachmentState struct. **/
+constexpr VkPipelineColorBlendAttachmentState OttPipeline::initColorBlendAttachment()
+{
+    return VkPipelineColorBlendAttachmentState {
+        .blendEnable            = VK_TRUE,
+        .srcColorBlendFactor    = VK_BLEND_FACTOR_SRC_ALPHA,
+        .dstColorBlendFactor    = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+        .colorBlendOp           = VK_BLEND_OP_ADD, 
+        .srcAlphaBlendFactor    = VK_BLEND_FACTOR_ONE, 
+        .dstAlphaBlendFactor    = VK_BLEND_FACTOR_ZERO, 
+        .alphaBlendOp           = VK_BLEND_OP_ADD, 
+        .colorWriteMask         = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+    };
+}
+
+//-----------------------------------------------------------------------------
+/** Helper function to initialize a VkPipelineColorBlendStateCreateInfo struct. **/
+constexpr VkPipelineColorBlendStateCreateInfo OttPipeline::initColorBlendCreateInfo(VkPipelineColorBlendAttachmentState* color_blend_attachment)
+{
+    return VkPipelineColorBlendStateCreateInfo {
+        .sType             = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+        .logicOpEnable     = VK_FALSE,
+        .logicOp           = VK_LOGIC_OP_COPY, 
+        .attachmentCount   = 1,
+        .pAttachments      = color_blend_attachment,
+        .blendConstants = {
+            float { 0.0f },
+            float { 0.0f },
+            float { 0.0f },
+            float { 0.0f }
+        }
+    };
+}
+
+//-----------------------------------------------------------------------------
+/** Helper function to initialize a VkPipelineDynamicStateCreateInfo struct. **/
+constexpr VkPipelineDynamicStateCreateInfo OttPipeline::initDynamicState()
+{
+    return VkPipelineDynamicStateCreateInfo {
+        .sType              = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+        .dynamicStateCount  = static_cast<uint32_t>(dynamicStates.size()),
+        .pDynamicStates     = dynamicStates.data(),
+    };
+}
+
+// End of helper functions --------------------------------------------------

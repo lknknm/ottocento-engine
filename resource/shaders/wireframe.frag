@@ -1,6 +1,4 @@
 #version 450
-#extension GL_ARB_separate_shader_objects : enable
-#extension GL_EXT_nonuniform_qualifier : enable
 
 layout(binding = 1) uniform sampler2D texSampler[1000];
 
@@ -17,5 +15,5 @@ layout(push_constant) uniform PushConstantData {
 } push;
 
 void main() {
-        outColor = texture(texSampler[push.textureID], fragTexCoord);
+    outColor = vec4(0.0, 0.0, 0.0, 1.0);
 }

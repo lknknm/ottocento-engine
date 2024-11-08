@@ -122,10 +122,26 @@ void OttApplication::initWindow()
 //----------------------------------------------------------------------------
 /** Initiates and creates Vulkan related resources. **/
 void OttApplication::initVulkan()
-{        
+{
+    //--------------- Pipeline initialization.
+    
     OttDescriptor::createObjectDescriptorSetLayout(device, descriptorSetLayouts);
     OttDescriptor::createGridDescriptorSetLayout(device, descriptorSetLayouts);
-    appPipeline.createGraphicsPipeline(descriptorSetLayouts);
+    auto bindingDescription     = OttModel::Vertex::getBindingDescription();
+    auto attributeDescriptions  = OttModel::Vertex::getAttributeDescriptions();
+    VkPipelineVertexInputStateCreateInfo modelVertexInputInfo = appPipeline.initVertexInputInfo(1, &bindingDescription, static_cast<uint32_t>(attributeDescriptions.size()), attributeDescriptions.data());
+    VkPipelineVertexInputStateCreateInfo gridVertexInputInfo  = appPipeline.initVertexInputInfo(0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE);
+    
+    appPipeline.createGraphicsPipeline  (descriptorSetLayouts,"resource/shaders/object_vertex.spv", "resource/shaders/object_fragment.spv",
+                                        appPipeline.graphicsPipelines.object, modelVertexInputInfo, VK_POLYGON_MODE_FILL);
+
+    appPipeline.createGraphicsPipeline  (descriptorSetLayouts, "resource/shaders/object_vertex.spv", "resource/shaders/wireframe_fragment.spv",
+                                        appPipeline.graphicsPipelines.wireframe, modelVertexInputInfo, VK_POLYGON_MODE_LINE);
+    
+    appPipeline.createGraphicsPipeline  (descriptorSetLayouts, "resource/shaders/grid_vertex.spv", "resource/shaders/grid_fragment.spv",
+                                        appPipeline.graphicsPipelines.grid, gridVertexInputInfo, VK_POLYGON_MODE_FILL);
+
+    //--------------- Pipeline initialization.
     
     mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(1, 1)))) + 1;
     const VkDeviceMemory blankImage = VK_NULL_HANDLE;
@@ -195,6 +211,12 @@ void OttApplication::drawScene(VkCommandBuffer command_buffer)
             push.color      = m.pushColorID;
             push.textureID  = m.textureID;
             vkCmdPushConstants(command_buffer, appPipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstantData), &push);
+            //vkCmdDrawIndexed(command_buffer, m.indexCount, 1, m.startIndex, 0, 0);
+        }
+        
+        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, appPipeline.graphicsPipelines.wireframe);
+        for (auto& m : models)
+        {
             vkCmdDrawIndexed(command_buffer, m.indexCount, 1, m.startIndex, 0, 0);
         }
     }

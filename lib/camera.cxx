@@ -31,15 +31,14 @@
 glm::mat4 OttCamera::recalculateView(float deltaTime)
 {
     if (windowHandle == nullptr)
-    {
-        throw std::runtime_error("windowHandle is a nullptr!");
-    }
+        LOG_ERROR("windowHandle is a nullptr!");
 
     if (!walkNavigation)
+    {
         viewportInputHandle(deltaTime);
-    else
-        walkNavigationInputHandle(deltaTime);
-
+        return glm::lookAt(EyePosition, CenterPosition, upVector);
+    }
+    walkNavigationInputHandle(deltaTime);
     return glm::lookAt(EyePosition, CenterPosition, upVector);
 }
 
