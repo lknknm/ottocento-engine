@@ -606,10 +606,10 @@ int OttDevice::rateDeviceSuitability(VkPhysicalDevice physical_device)
     //Debug Log to detect the GPU.
     LOG(DASHED_SEPARATOR);
     LOG_INFO("GPU found.");
-    LOG_INFO("Name: %s", deviceProperties.deviceName);
-    LOG_INFO("Score: %i", score);
-    LOG_INFO("API Version: %u", deviceProperties.apiVersion);
-    LOG_INFO("Driver Version: %u", deviceProperties.driverVersion);
+    LOG_INFO("Name: {}", deviceProperties.deviceName);
+    LOG_INFO("Score: {}", score);
+    LOG_INFO("API Version: {}", deviceProperties.apiVersion);
+    LOG_INFO("Driver Version: {}", deviceProperties.driverVersion);
     LOG(DASHED_SEPARATOR);
     
     return score;

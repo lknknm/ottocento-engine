@@ -1,4 +1,4 @@
-﻿// Ottocento Engine. Architectural BIM Engine.
+// Ottocento Engine. Architectural BIM Engine.
 // Copyright (C) 2024  Lucas M. Faria.
 //
 // This program is free software: you can redistribute it and/or modify
@@ -612,7 +612,7 @@ void OttApplication::loadModel(std::filesystem::path const& modelPath)
     
     for (size_t i = 0; i < materials.size() - 1; i++)
     {
-        LOG_INFO("material[%d].diffuse_texname = %s\n", int(i), materials[i].diffuse_texname.c_str());
+        LOG_INFO("material[{}].diffuse_texname = {}\n", i, materials[i].diffuse_texname);
         sceneMaterials.imageTexture_path.clear();
         auto material_path = baseDir.append(materials[i].diffuse_texname);
         sceneMaterials.imageTexture_path.push_back(material_path.string().c_str());
@@ -738,7 +738,7 @@ void OttApplication::createTextureImage(const std::filesystem::path& imagePath)
 {
     int texWidth, texHeight, texChannels;
     LOG(DASHED_SEPARATOR);
-    LOG_INFO("Image path: %s", imagePath.string().c_str());
+    LOG_INFO("Image path: {}", imagePath.string());
     stbi_uc* pixels = stbi_load(imagePath.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize = texWidth * texHeight * 4;
     mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
@@ -879,7 +879,7 @@ void OttApplication::createDescriptorSets()
     const VkResult allocateDescriptorSets = vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data());
     if (allocateDescriptorSets != VK_SUCCESS)
     {
-        LOG_ERROR("vkAllocateDescriptorSets returned: %i", static_cast<int>(allocateDescriptorSets));
+        LOG_ERROR("vkAllocateDescriptorSets returned: {}", static_cast<int>(allocateDescriptorSets));
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
 
