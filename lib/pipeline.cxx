@@ -46,8 +46,7 @@ OttPipeline::~OttPipeline()
  *  Rasterization (f) > Fragment Shader (p) > Color Blending (f) > Framebuffer. \n
  *  - Bindings: spacing between data and whether the data is per-vertex or per-instance
  *  - Attribute descriptions: type of the attributes passed to the vertex shader, which binding to land which offset. **/
-void OttPipeline::createGraphicsPipeline(
-    std::vector<VkDescriptorSetLayout>& descriptor_set_layouts,
+void OttPipeline::createGraphicsPipeline (
     std::string vertex_shader_path, std::string fragment_shader_path,
     VkPipeline&  pipeline, VkPipelineVertexInputStateCreateInfo vertex_input_info,
     VkPolygonMode polygon_mode
@@ -70,9 +69,7 @@ void OttPipeline::createGraphicsPipeline(
     VkPipelineColorBlendAttachmentState    colorBlendAttachment = initColorBlendAttachment();
     VkPipelineColorBlendStateCreateInfo    colorBlending        = initColorBlendCreateInfo(&colorBlendAttachment);
     VkPipelineDynamicStateCreateInfo       dynamicState         = initDynamicState();
-
-    createPipelineLayout(descriptor_set_layouts);
-    
+        
     // Populate the Graphics Pipeline Info struct.
     // First referencing the array of VkPipelineShaderStageCreateInfo structs.
     VkGraphicsPipelineCreateInfo pipelineInfo {
@@ -102,10 +99,12 @@ void OttPipeline::createGraphicsPipeline(
 }
 
 //----------------------------------------------------------------------------
-void OttPipeline::createPipelineLayout(std::vector<VkDescriptorSetLayout>& descriptor_set_layouts)
+/** Wrapper to create a pipeline layout and pass it to our pipeline creation stage
+ * \param push_stage_flags: Specifies for which shader stage the push constants should be passed to.  **/
+void OttPipeline::createPipelineLayout(VkShaderStageFlags push_stage_flags, std::vector<VkDescriptorSetLayout>& descriptor_set_layouts)
 {
     VkPushConstantRange pushConstantRange {
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        .stageFlags = push_stage_flags,
         .offset     = 0,
         .size       = sizeof(PushConstantData),
     };
@@ -120,10 +119,7 @@ void OttPipeline::createPipelineLayout(std::vector<VkDescriptorSetLayout>& descr
 
     const VkResult result = vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout);
     if (result != VK_SUCCESS)
-    {
         LOG_ERROR("vkCreatePipelineLayout returned: %i", static_cast<int>(result));
-        throw std::runtime_error("failed to create pipeline layout!");
-    }
     pDevice->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)pipelineLayout, CSTR_RED("OttPipeline::VkPipelineLayout:pipelineLayout"));
     LOG_INFO("OttPipeline::pipelineLayout created.");
 }

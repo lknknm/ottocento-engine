@@ -165,8 +165,11 @@ void OttDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
                             .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
     };
 
-    if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
-        throw std::runtime_error("failed to create buffer!");
+    VkResult result = vkCreateBuffer(device, &bufferInfo, nullptr, &buffer);
+    if (result != VK_SUCCESS)
+    {
+        LOG_ERROR("failed to create buffer!");
+    }
 
     VkMemoryRequirements memRequirements;
     vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
@@ -392,7 +395,9 @@ void OttDevice::createLogicalDevice()
                                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
                                 .pNext = &physicalDeviceVulkan12Features,
                                 .features = {.sampleRateShading = VK_TRUE,
-                                                .samplerAnisotropy = VK_TRUE, }
+                                             .fillModeNonSolid  = VK_TRUE,
+                                             .samplerAnisotropy = VK_TRUE,
+                                }
     };
 
     VkDeviceCreateInfo createInfo {

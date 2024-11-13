@@ -151,7 +151,7 @@ void OttSwapChain::recreateSwapChain()
     while (width == 0 || height == 0)
     {
         width = appWindowRef->getFrameBufferSize().x; height = appWindowRef->getFrameBufferSize().y;
-        appWindowRef->waitEvents();
+        appWindowRef->waitEvents(); 
     }
     vkDeviceWaitIdle(device);
         

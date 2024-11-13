@@ -61,7 +61,7 @@ private:
     VkPhysicalDevice physicalDevice = appDevice.getPhysicalDevice();
     OttSwapChain appSwapChain = OttSwapChain (&appDevice, &appwindow);
     OttRenderer  ottRenderer  = OttRenderer  (&appDevice, &appSwapChain);
-    OttPipeline  appPipeline  = OttPipeline(&appDevice, &appSwapChain);
+    OttPipeline  appPipeline  = OttPipeline  (&appDevice, &appSwapChain);
 
     PushConstantData push;
     std::vector<OttModel::modelObject> models;

@@ -39,28 +39,19 @@ class OttPipeline
 public:
 //----------------------------------------------------------------------------
 
-    OttPipeline() = default;
     OttPipeline(OttDevice* device_reference, OttSwapChain* swapchain_reference);
     ~OttPipeline();
 
     OttPipeline(const OttPipeline&) = delete;
     void operator=(const OttPipeline&) = delete;
-
-    VkPipelineLayout getPipelineLayout() const { return pipelineLayout; }
     
-    VkPipelineVertexInputStateCreateInfo initVertexInputInfo (
-        uint32_t vertex_binding_desc_count,
-        VkVertexInputBindingDescription* binding_description,
-        uint32_t att_desc_count,
-        VkVertexInputAttributeDescription* vertex_att_desc
-    );
-    
-    void createGraphicsPipeline (
-        std::vector<VkDescriptorSetLayout>& descriptor_set_layouts,
-        std::string vertex_shader_path, std::string fragment_shader_path,
-        VkPipeline& pipeline, VkPipelineVertexInputStateCreateInfo vertex_input_info,
-        VkPolygonMode polygon_mode
-    );
+    typedef enum ViewportDisplayMode
+    {
+        DISPLAY_MODE_WIREFRAME = 000,
+        DISPLAY_MODE_OBJECT    = 001,
+        DISPLAY_MODE_DRAFT     = 002,
+        DISPLAY_MODE_TEXTURE   = 003,
+    };
     
     struct
     {
@@ -69,21 +60,40 @@ public:
         VkPipeline wireframe;
     } graphicsPipelines = nullptr;
     
+    VkPipelineLayout getPipelineLayout() const { return pipelineLayout; }
+    ViewportDisplayMode getDisplayMode() const { return displayMode; }
+    void setDisplayMode(ViewportDisplayMode display_mode) { displayMode = display_mode; }
+    
+    VkPipelineVertexInputStateCreateInfo initVertexInputInfo (
+        uint32_t vertex_binding_desc_count,
+        VkVertexInputBindingDescription* binding_description,
+        uint32_t att_desc_count,
+        VkVertexInputAttributeDescription* vertex_att_desc
+    );
+    
+    void createPipelineLayout   (VkShaderStageFlags push_stage_flags, std::vector<VkDescriptorSetLayout>& descriptor_set_layouts);
+    void createGraphicsPipeline (
+        std::string vertex_shader_path, std::string fragment_shader_path,
+        VkPipeline& pipeline, VkPipelineVertexInputStateCreateInfo vertex_input_info,
+        VkPolygonMode polygon_mode
+    );
+    
 //----------------------------------------------------------------------------
 private:
 //----------------------------------------------------------------------------
-    VkPipelineLayout       pipelineLayout = nullptr;
     OttDevice*             pDevice;
     OttSwapChain*          pSwapchain;
-    std::vector<VkDescriptorSetLayout>* pDescSetLayouts = nullptr;
     VkDevice               device;
     
+    std::vector<VkDescriptorSetLayout>* pDescSetLayouts = nullptr;
+    VkPipelineLayout pipelineLayout = nullptr;
     std::array<VkDynamicState, 2> dynamicStates = {
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR,
     };
     
-    void createPipelineLayout(std::vector<VkDescriptorSetLayout>& descriptor_set_layouts);
+    ViewportDisplayMode displayMode = DISPLAY_MODE_TEXTURE; 
+    
 
 //----------------------------------------------------------------------------
 // Struct initialization Helper functions ------------------------------------

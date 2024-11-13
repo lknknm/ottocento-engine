@@ -56,7 +56,7 @@ void OttCamera::viewportInputHandle(float deltaTime)
     glm::vec2 delta = (mousePos - lastMousePosition) * 0.002f;
     lastMousePosition = mousePos;
 
-    appwindow->keyCallback = [&](int key, int scancode, int action, int mods)
+    appwindow->cameraKeyCallback = [&](int key, int scancode, int action, int mods)
     {
         if (action == GLFW_RELEASE)
         {

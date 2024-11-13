@@ -17,5 +17,8 @@ layout(push_constant) uniform PushConstantData {
 } push;
 
 void main() {
+    if (texture(texSampler[push.textureID], fragTexCoord).a == 0.0)
+        outColor = vec4(0.7, 0.7, 0.7, 1.0);
+    else  
         outColor = texture(texSampler[push.textureID], fragTexCoord);
 }
