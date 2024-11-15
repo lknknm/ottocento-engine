@@ -21,6 +21,8 @@
 #include "window.h"
 #include "input.hxx"
 
+#include <stdexcept>
+#include <utility>
 #include "stb_image.h"
 
 #ifdef _WIN32
@@ -93,9 +95,11 @@ glm::ivec2 OttWindow::getFrameBufferSize() const
 }
 
 //----------------------------------------------------------------------------
-void OttWindow::getCursorPos(double* xpos, double* ypos) const
+auto OttWindow::getCursorPos() const -> std::pair<double, double>
 {
-    glfwGetCursorPos(m_window, xpos, ypos);
+    double xpos, ypos;
+    glfwGetCursorPos(m_window, &xpos, &ypos);
+    return {xpos, ypos};
 }
 
 //----------------------------------------------------------------------------

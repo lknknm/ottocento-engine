@@ -152,8 +152,8 @@ void OttCamera::viewportInputHandle(float deltaTime)
  *  while rotating or panning the camera. **/
 void OttCamera::wrapAroundMousePos(glm::vec2& mousePos)
 {
-    double mxpos, mypos; // Get mouse position, relative to window
-    appwindow->getCursorPos(&mxpos, &mypos);
+    // Get mouse position, relative to window
+    auto [mxpos, mypos] = appwindow->getCursorPos();
     const glm::ivec2 framebufferSize = appwindow->getFrameBufferSize();
 
     if(mxpos > framebufferSize.x - 5)
