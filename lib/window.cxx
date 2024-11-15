@@ -76,7 +76,8 @@ OttWindow::OttWindow(const char* title, int winWidth, int winHeight, bool show)
         [](GLFWwindow* window, int key, int scancode, int action, int mods) -> void
         {
             auto* windowPtr = reinterpret_cast<OttWindow*>(glfwGetWindowUserPointer(window));
-            windowPtr->keyCallback(key, scancode, action, mods);
+            windowPtr->cameraKeyCallback(key, scancode, action, mods);
+            windowPtr->interactorKeyCallback(key, scancode, action, mods);
         });
 
         m_icon.pixels = stbi_load("resource/icon.png", &m_icon.width, &m_icon.height, 0, 4);
