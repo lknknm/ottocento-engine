@@ -70,7 +70,6 @@ void OttApplication::initWindow()
     appwindow.OnWindowRefreshed = [&]()
     {
         vkDeviceWaitIdle(device);
-        //Recreate the swap chain with the new extent
         appSwapChain.refreshSwapChain();
         drawFrame();
     };
@@ -99,16 +98,27 @@ void OttApplication::initWindow()
             createVertexBuffer();
             createIndexBuffer();
             createUniformBuffers();
-            createDescriptorPool();
-            createDescriptorSets();
+
+            OttDescriptor::createDescriptorPool (device, descriptorPool);
+            OttDescriptor::createDescriptorSets (descriptorSetLayouts, descriptorSets,
+                                                device, descriptorPool, appDevice, uniformBuffers,
+                                                textureImages, textureSampler, textureImageViews);
         }
     };
-    appwindow.keyCallback = [&](int key, int scancode, int action, int mods)
+    appwindow.interactorKeyCallback = [&](int key, int scancode, int action, int mods)
     {
-        if (action == GLFW_RELEASE)
+        vkDeviceWaitIdle(device);
+        if (action == GLFW_PRESS)
         {
-            std::cout << "Key released: " << key << std::endl;
-            /** TODO **/
+            switch (key)
+            {
+            case GLFW_KEY_1:
+                appPipeline.setDisplayMode(OttPipeline::DISPLAY_MODE_WIREFRAME);
+                break;
+            case GLFW_KEY_3:
+                appPipeline.setDisplayMode(OttPipeline::DISPLAY_MODE_TEXTURE);
+                break;
+            }
         }
     };
     #ifdef _WIN32
@@ -119,10 +129,27 @@ void OttApplication::initWindow()
 //----------------------------------------------------------------------------
 /** Initiates and creates Vulkan related resources. **/
 void OttApplication::initVulkan()
-{        
-    createObjectDescriptorSetLayout();
-    createGridDescriptorSetLayout();
-    createGraphicsPipeline();
+{
+    //--------------- Pipeline initialization.
+    
+    OttDescriptor::createObjectDescriptorSetLayout(device, descriptorSetLayouts);
+    OttDescriptor::createGridDescriptorSetLayout(device, descriptorSetLayouts);
+    auto bindingDescription     = OttModel::Vertex::getBindingDescription();
+    auto attributeDescriptions  = OttModel::Vertex::getAttributeDescriptions();
+    VkPipelineVertexInputStateCreateInfo modelVertexInputInfo = appPipeline.initVertexInputInfo(1, &bindingDescription, static_cast<uint32_t>(attributeDescriptions.size()), attributeDescriptions.data());
+    VkPipelineVertexInputStateCreateInfo gridVertexInputInfo  = appPipeline.initVertexInputInfo(0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE);
+    
+    appPipeline.createPipelineLayout    (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, descriptorSetLayouts);
+    appPipeline.createGraphicsPipeline  ("resource/shaders/object_vertex.spv", "resource/shaders/object_fragment.spv",
+                                        appPipeline.graphicsPipelines.object, modelVertexInputInfo, VK_POLYGON_MODE_FILL);
+
+    appPipeline.createGraphicsPipeline  ("resource/shaders/object_vertex.spv", "resource/shaders/wireframe_fragment.spv",
+                                        appPipeline.graphicsPipelines.wireframe, modelVertexInputInfo, VK_POLYGON_MODE_LINE);
+    
+    appPipeline.createGraphicsPipeline  ("resource/shaders/grid_vertex.spv", "resource/shaders/grid_fragment.spv",
+                                        appPipeline.graphicsPipelines.grid, gridVertexInputInfo, VK_POLYGON_MODE_FILL);
+
+    //--------------- Pipeline initialization.
     
     mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(1, 1)))) + 1;
     const VkDeviceMemory blankImage = VK_NULL_HANDLE;
@@ -132,8 +159,11 @@ void OttApplication::initVulkan()
     createTextureSampler();
     
     createUniformBuffers();
-    createDescriptorPool();
-    createDescriptorSets();
+    
+    OttDescriptor::createDescriptorPool(device, descriptorPool);
+    OttDescriptor::createDescriptorSets(descriptorSetLayouts, descriptorSets,
+                                        device, descriptorPool, appDevice, uniformBuffers,
+                                        textureImages, textureSampler, textureImageViews);
 }
     
 //----------------------------------------------------------------------------
@@ -173,26 +203,35 @@ void OttApplication::drawScene(VkCommandBuffer command_buffer)
     assert(command_buffer == ottRenderer.getCurrentCommandBuffer() &&
           "Can't begin render pass on command buffer from a different frame");
     
-    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, appPipeline.getPipelineLayout(),
                         0, 1, &descriptorSets[ottRenderer.getCurrentFrameIndex()], 0, nullptr);
     
     if (!vertices.empty() && !indices.empty())
     {
-        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelines.object);
         const VkBuffer vertexBuffers[] = { vertexBuffer };
         const VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(command_buffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+        switch (appPipeline.getDisplayMode())
+        {
+            case OttPipeline::DISPLAY_MODE_WIREFRAME:
+                vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, appPipeline.graphicsPipelines.wireframe);
+                break;
+            case OttPipeline::DISPLAY_MODE_TEXTURE:
+                vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, appPipeline.graphicsPipelines.object);
+                break;
+        }
         for (auto& m : models)
         {
             push.offset     = m.offset;
             push.color      = m.pushColorID;
             push.textureID  = m.textureID;
-            vkCmdPushConstants(command_buffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstantData), &push);
+            vkCmdPushConstants(command_buffer, appPipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstantData), &push);
             vkCmdDrawIndexed(command_buffer, m.indexCount, 1, m.startIndex, 0, 0);
         }
     }
-    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelines.grid);
+    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, appPipeline.graphicsPipelines.grid);
     vkCmdDraw(command_buffer, 6, 1, 0, 0);
 }
 
@@ -249,10 +288,6 @@ void OttApplication::cleanupVulkanResources()
     if (textureSampler != VK_NULL_HANDLE)   { vkDestroySampler   (device, textureSampler,   nullptr); }
     cleanupUBO();
     cleanupModelObjects();
-
-    vkDestroyPipeline(device, graphicsPipelines.object, nullptr);
-    vkDestroyPipeline(device, graphicsPipelines.grid, nullptr);
-    vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 }
     
 //----------------------------------------------------------------------------
@@ -279,315 +314,6 @@ VkImageView OttApplication::createImageView(VkImage image, VkFormat format, VkIm
 }
 
 //----------------------------------------------------------------------------
-/** A descriptor set specifies the actual buffer or image resources that will be bound to the descriptors,
- *  just like a framebuffer specifies the actual image views to bind to render pass attachments. **/
-void OttApplication::createObjectDescriptorSetLayout()
-{
-    VkDescriptorSetLayoutBinding uboLayoutBinding {
-        .binding         = 0,
-        .descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .descriptorCount = 1,
-        .stageFlags      = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-    };
-    
-    VkDescriptorSetLayoutBinding samplerLayoutBinding {
-        .binding            = 1,
-        .descriptorType     = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        .descriptorCount    = TEXTURE_ARRAY_SIZE * MAX_FRAMES_IN_FLIGHT,
-        .stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT,
-    };
-    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {uboLayoutBinding, samplerLayoutBinding};
-    std::array<VkDescriptorBindingFlags,  bindings.size()> bindingFlags = {};
-    
-    bindingFlags[1]  = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
-    
-    VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo {
-        .sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
-        .bindingCount  = static_cast<uint32_t>(bindings.size()),
-        .pBindingFlags = bindingFlags.data()
-    };
-    
-    VkDescriptorSetLayoutCreateInfo objectLayoutInfo {
-        .sType          = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-        .pNext          = &bindingFlagsInfo,
-        .bindingCount   = static_cast<uint32_t>(bindings.size()),
-        .pBindings      = bindings.data(),
-    };
-    
-    VkDescriptorSetLayout objectDescriptorSetLayout;
-    
-    if(vkCreateDescriptorSetLayout(device, &objectLayoutInfo, nullptr, &objectDescriptorSetLayout) != VK_SUCCESS)
-        throw std::runtime_error("Failed to create descriptor set layout!");
-    descriptorSetLayouts.push_back(objectDescriptorSetLayout);
-}
-
-//----------------------------------------------------------------------------
-/** Separate Grid DescriptorSetLayout to render the grid with a procedural shader. **/
-void OttApplication::createGridDescriptorSetLayout()
-{
-    VkDescriptorSetLayoutBinding gridBinding {
-        .binding         = 0,
-        .descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .descriptorCount = 1,
-        .stageFlags      = VK_SHADER_STAGE_VERTEX_BIT,
-    };
-    
-    const std::array<VkDescriptorSetLayoutBinding, 1> bindings = {gridBinding};
-    
-    VkDescriptorSetLayoutCreateInfo gridLayoutInfo {
-        .sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-        .bindingCount = static_cast<uint32_t>(bindings.size()),
-        .pBindings    = bindings.data(),
-    };
-
-    VkDescriptorSetLayout gridDescriptorSetLayout;
-    
-    if(vkCreateDescriptorSetLayout(device, &gridLayoutInfo, nullptr, &gridDescriptorSetLayout) != VK_SUCCESS)
-        throw std::runtime_error("Failed to create descriptor set layout!");
-    descriptorSetLayouts.push_back(gridDescriptorSetLayout);
-}
-    
-//----------------------------------------------------------------------------
-/** f = fixed-function stage; p = programmable stage.
- *  Input Assembler (f) > Vertex Shader (p) > Tessellation (p) > Geometry Shader >
- *  Rasterization (f) > Fragment Shader (p) > Colour Blending (f) > Framebuffer **/
-void OttApplication::createGraphicsPipeline()
-{
-    auto vertShaderCode     = Utils::readFile("resource/shaders/shader_vertex.spv");
-    auto fragShaderCode     = Utils::readFile("resource/shaders/shader_fragment.spv");
-    auto gridVertShaderCode = Utils::readFile("resource/shaders/grid_vertex.spv");
-    auto gridFragShaderCode = Utils::readFile("resource/shaders/grid_fragment.spv");
-
-    VkShaderModule vertShaderModule     = VkHelpers::createShaderModule(vertShaderCode,     device);
-    VkShaderModule fragShaderModule     = VkHelpers::createShaderModule(fragShaderCode,     device);
-    VkShaderModule gridVertShaderModule = VkHelpers::createShaderModule(gridVertShaderCode, device);
-    VkShaderModule gridFragShaderModule = VkHelpers::createShaderModule(gridFragShaderCode, device);
-
-    VkPipelineShaderStageCreateInfo vertShaderStageInfo {
-        .sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-        .stage   = VK_SHADER_STAGE_VERTEX_BIT,
-        .module  = vertShaderModule,
-        .pName   = "main",
-    };
-
-    VkPipelineShaderStageCreateInfo fragShaderStageInfo {
-        .sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-        .stage   = VK_SHADER_STAGE_FRAGMENT_BIT,
-        .module  = fragShaderModule,
-        .pName   = "main",
-    };
-    
-    std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages{};
-    shaderStages[0] = vertShaderStageInfo;
-    shaderStages[1] = fragShaderStageInfo;
-
-    // Bindings: spacing between data and whether the data is per-vertex or per-instance.
-    // Attribute descriptions: type of the attributes passed to the vertex shader, which binding to load
-    // and which offset.
-    auto bindingDescription                         = OttModel::Vertex::getBindingDescription();
-    auto attributeDescriptions                      = OttModel::Vertex::getAttributeDescriptions();
-    VkPipelineVertexInputStateCreateInfo vertexInputInfo {
-        .sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .vertexBindingDescriptionCount   = 1,
-        .pVertexBindingDescriptions      = &bindingDescription,
-        .vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size()),
-        .pVertexAttributeDescriptions    = attributeDescriptions.data(),
-    };
-
-    VkPipelineInputAssemblyStateCreateInfo inputAssembly {
-        .sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-        .topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-        .primitiveRestartEnable = VK_FALSE,
-    };
-
-    VkPipelineViewportStateCreateInfo viewportState {
-        .sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-        .viewportCount = 1,
-        .scissorCount  = 1,
-    };
-
-    VkPipelineRasterizationStateCreateInfo rasterizer {
-        .sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-        .depthClampEnable        = VK_FALSE,
-        .rasterizerDiscardEnable = VK_FALSE,
-        .polygonMode             = VK_POLYGON_MODE_FILL,
-        .cullMode                = VK_CULL_MODE_NONE,
-        .frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE,
-        .depthBiasEnable         = VK_FALSE,
-        .lineWidth               = 1.0f, // if using any other mode than fill.
-    };
-
-    VkPipelineMultisampleStateCreateInfo multisampling {
-        .sType                 = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-        .rasterizationSamples  = appDevice.getMSAASamples(),
-        .sampleShadingEnable   = VK_TRUE,
-        .minSampleShading      = 0.2f, 
-        .pSampleMask           = nullptr, 
-        .alphaToCoverageEnable = VK_FALSE, 
-        .alphaToOneEnable      = VK_FALSE, 
-    };
-
-    VkPipelineDepthStencilStateCreateInfo depthStencil {
-        .sType                  = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-        .depthTestEnable        = VK_TRUE,
-        .depthWriteEnable       = VK_TRUE,
-        .depthCompareOp         = VK_COMPARE_OP_LESS,
-        .depthBoundsTestEnable  = VK_FALSE,
-        .minDepthBounds = 0.0f,
-        .maxDepthBounds = 1.0f,
-    };
-    
-    VkPipelineColorBlendAttachmentState colorBlendAttachment {
-        .blendEnable            = VK_TRUE,
-        .srcColorBlendFactor    = VK_BLEND_FACTOR_ONE, // Optional
-        .dstColorBlendFactor    = VK_BLEND_FACTOR_ZERO, // Optional
-        .colorBlendOp           = VK_BLEND_OP_ADD, // Optional
-        .srcAlphaBlendFactor    = VK_BLEND_FACTOR_ONE, // Optional
-        .dstAlphaBlendFactor    = VK_BLEND_FACTOR_ZERO, // Optional
-        .alphaBlendOp           = VK_BLEND_OP_ADD, // Optional
-        .colorWriteMask         = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-    };
-
-    VkPipelineColorBlendStateCreateInfo colorBlending {
-        .sType             = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
-        .logicOpEnable     = VK_FALSE,
-        .logicOp           = VK_LOGIC_OP_COPY, // Optional
-        .attachmentCount   = 1,
-        .pAttachments      = &colorBlendAttachment,
-    };
-        colorBlending.blendConstants[0] = 0.0f;
-        colorBlending.blendConstants[1] = 0.0f;
-        colorBlending.blendConstants[2] = 0.0f;
-        colorBlending.blendConstants[3] = 0.0f;
-
-    std::vector<VkDynamicState> dynamicStates = {
-        VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_SCISSOR,
-    };
-
-    VkPipelineDynamicStateCreateInfo dynamicState {
-        .sType              = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-        .dynamicStateCount  = static_cast<uint32_t>(dynamicStates.size()),
-        .pDynamicStates     = dynamicStates.data(),
-    };
-    
-    OttCreatePipelineLayout();
-    
-    // Populate the Graphics Pipeline Info struct.
-    // First referencing the array of VkPipelineShaderStageCreateInfo structs.
-    VkGraphicsPipelineCreateInfo pipelineInfo {
-        .sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-        .stageCount          = 2,
-        .pStages             = shaderStages.data(),
-        .pVertexInputState   = &vertexInputInfo,
-        .pInputAssemblyState = &inputAssembly,
-        .pViewportState      = &viewportState,
-        .pRasterizationState = &rasterizer,
-        .pMultisampleState   = &multisampling,
-        .pDepthStencilState  = &depthStencil,
-        .pColorBlendState    = &colorBlending,
-        .pDynamicState       = &dynamicState,
-        .layout              = pipelineLayout,
-        .renderPass          = appSwapChain.getRenderPass(),
-        .subpass             = 0,
-        .basePipelineHandle  = VK_NULL_HANDLE,
-    };
-    
-    if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE,
-                                1,
-                                &pipelineInfo,
-                                nullptr,
-                                &graphicsPipelines.object) != VK_SUCCESS)
-                                    throw std::runtime_error("failed to create graphics pipeline!");
-    LOG_INFO("Object Pipeline Created");
-
-    //----------------------------------------------------------------------------
-    // Grid Pipeline Creation ----------------------------------------------------
-    
-    VkPipelineShaderStageCreateInfo gridVertShaderStageInfo {
-        .sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-        .stage   = VK_SHADER_STAGE_VERTEX_BIT,
-        .module  = gridVertShaderModule,
-        .pName   = "main",
-    };
-    
-    VkPipelineShaderStageCreateInfo gridFragShaderStageInfo{};
-    gridFragShaderStageInfo.sType   = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    gridFragShaderStageInfo.stage   = VK_SHADER_STAGE_FRAGMENT_BIT;
-    gridFragShaderStageInfo.module  = gridFragShaderModule;
-    gridFragShaderStageInfo.pName   = "main";
-
-    shaderStages[0] = gridVertShaderStageInfo;
-    shaderStages[1] = gridFragShaderStageInfo;
-
-    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    colorBlendAttachment.blendEnable = VK_TRUE;
-    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
-    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
-
-    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlending.logicOpEnable = VK_FALSE;
-    colorBlending.logicOp = VK_LOGIC_OP_COPY;
-    colorBlending.attachmentCount = 1;
-    colorBlending.pAttachments = &colorBlendAttachment;
-    colorBlending.blendConstants[0] = 0.0f;
-    colorBlending.blendConstants[1] = 0.0f;
-    colorBlending.blendConstants[2] = 0.0f;
-    colorBlending.blendConstants[3] = 0.0f;
-
-    pipelineInfo.pStages = shaderStages.data();
-
-    vertexInputInfo.vertexBindingDescriptionCount   = 0;
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    vertexInputInfo.pVertexBindingDescriptions      = VK_NULL_HANDLE;
-    vertexInputInfo.pVertexAttributeDescriptions    = VK_NULL_HANDLE;
-    
-    if (vkCreateGraphicsPipelines  (device, VK_NULL_HANDLE,
-                                   1,
-                                   &pipelineInfo,
-                                   nullptr,
-                                   &graphicsPipelines.grid) != VK_SUCCESS )
-    {
-        throw std::runtime_error("failed to create graphics pipeline!");
-    }
-    LOG_INFO("Grid Pipeline Created");
-    
-    /** Shader modules are just a thin wrapper around the shader
-     *  bytecode that we've previously loaded from a file and the functions defined in it.
-     *  That means that we're allowed to destroy the shader modules again
-     *  as soon as pipeline creation is finished **/
-    vkDestroyShaderModule(device, fragShaderModule, nullptr);
-    vkDestroyShaderModule(device, vertShaderModule, nullptr);
-    vkDestroyShaderModule(device, gridVertShaderModule, nullptr);
-    vkDestroyShaderModule(device, gridFragShaderModule, nullptr);
-}
-    
-//----------------------------------------------------------------------------
-void OttApplication::OttCreatePipelineLayout()
-{
-    VkPushConstantRange pushConstantRange {
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-        .offset     = 0,
-        .size       = sizeof(PushConstantData),
-    };
-    
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo {
-        .sType          = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-        .setLayoutCount = static_cast<uint32_t>(descriptorSetLayouts.size()),
-        .pSetLayouts    = descriptorSetLayouts.data(),
-        .pushConstantRangeCount = 1,
-        .pPushConstantRanges = &pushConstantRange,
-    };
-    
-    if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
-        throw std::runtime_error("failed to create pipeline layout!");
-}
-
-//----------------------------------------------------------------------------
 void OttApplication::loadModel(std::filesystem::path const& modelPath)
 {
     tinyobj::attrib_t attrib;
@@ -607,15 +333,17 @@ void OttApplication::loadModel(std::filesystem::path const& modelPath)
     std::cout << "BaseDir " << baseDir << std::endl;
 
     std::unordered_map<OttModel::Vertex, uint32_t> uniqueVertices{};
-    
-    materials.push_back(tinyobj::material_t());
-    
-    for (size_t i = 0; i < materials.size() - 1; i++)
+
+    if (!materials.empty())
     {
-        LOG_INFO("material[%d].diffuse_texname = %s\n", int(i), materials[i].diffuse_texname.c_str());
-        sceneMaterials.imageTexture_path.clear();
-        auto material_path = baseDir.append(materials[i].diffuse_texname);
-        sceneMaterials.imageTexture_path.push_back(material_path.string().c_str());
+        materials.push_back(tinyobj::material_t());
+        for (size_t i = 0; i < materials.size() - 1; i++)
+        {
+            LOG_INFO("material[%d].diffuse_texname = %s\n", int(i), materials[i].diffuse_texname.c_str());
+            sceneMaterials.imageTexture_path.clear();
+            auto material_path = baseDir.append(materials[i].diffuse_texname);
+            sceneMaterials.imageTexture_path.push_back(material_path.string().c_str());
+        }
     }
     
     OttModel::modelObject model
@@ -629,22 +357,40 @@ void OttApplication::loadModel(std::filesystem::path const& modelPath)
         for (const auto& index : shape.mesh.indices)
         {
             OttModel::Vertex vertex{};
-            
-            vertex.pos =
+
+            if (index.vertex_index >= 0)
             {
-                attrib.vertices[3 * index.vertex_index + 0],
-                attrib.vertices[3 * index.vertex_index + 1],
-                attrib.vertices[3 * index.vertex_index + 2]
-            };
-            
-            vertex.texCoord =
+                vertex.pos =
+                {
+                    attrib.vertices[3 * index.vertex_index + 0],
+                    attrib.vertices[3 * index.vertex_index + 1],
+                    attrib.vertices[3 * index.vertex_index + 2]
+                };
+
+                vertex.color =
+                {
+                    attrib.colors[3 * index.vertex_index + 0],
+                    attrib.colors[3 * index.vertex_index + 1],
+                    attrib.colors[3 * index.vertex_index + 2]
+                };
+            }
+            if (index.texcoord_index >= 0)
             {
-                attrib.texcoords[2 * index.texcoord_index + 0],
-                1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
-            };
-            
-            vertex.color = {1.0f, 1.0f, 1.0f};
-            
+                vertex.texCoord =
+                {
+                    attrib.texcoords[2 * index.texcoord_index + 0],
+                    1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
+                };
+            }
+            if (index.normal_index >= 0)
+            {
+                vertex.normal =
+                {
+                    attrib.normals[3 * index.normal_index + 0],
+                    attrib.normals[3 * index.normal_index + 1],
+                    attrib.normals[3 * index.normal_index + 2],
+                };
+            }
             if (uniqueVertices.count(vertex) == 0)
             {
                 uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
@@ -656,7 +402,9 @@ void OttApplication::loadModel(std::filesystem::path const& modelPath)
 
     model.indexCount  = static_cast<uint32_t>(indices.size()) - model.startIndex;
     model.pushColorID = {Utils::random_nr(0, 1),  Utils::random_nr(0, 1), Utils::random_nr(0, 1)};
-    model.textureID   = static_cast<uint32_t>(textureImages.size());
+    model.textureID   = 0;
+    if (!materials.empty())
+        model.textureID   = static_cast<uint32_t>(textureImages.size());
     models.push_back(model);
     
     LOG(DASHED_SEPARATOR);
@@ -841,99 +589,14 @@ void OttApplication::createUniformBuffers()
 }
 
 //----------------------------------------------------------------------------
-void OttApplication::createDescriptorPool()
-{
-    std::array<VkDescriptorPoolSize, 2> poolSizes{};
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; 
-    poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = static_cast<uint32_t>(TEXTURE_ARRAY_SIZE * MAX_FRAMES_IN_FLIGHT * 2);
-
-    VkDescriptorPoolCreateInfo scenePoolInfo {
-        .sType          = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-        .maxSets        = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT),
-        .poolSizeCount  = static_cast<uint32_t>(poolSizes.size()),
-        .pPoolSizes     = poolSizes.data(),
-    };
-
-    if(vkCreateDescriptorPool(device, &scenePoolInfo, nullptr, &descriptorPool) != VK_SUCCESS)
-        throw std::runtime_error("Failed to Create Descriptor Pool!");
-}
-
-//----------------------------------------------------------------------------
-/** imageInfos array: Local scope only. It will take the created textureImageViews
- + the current sampler and provide them to the descriptor writes. **/
-void OttApplication::createDescriptorSets()
-{
-    std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayouts[0]);
-    layouts.push_back(descriptorSetLayouts[1]);
-    VkDescriptorSetAllocateInfo allocInfo {
-        .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-        .descriptorPool     = descriptorPool,
-        .descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT),
-        .pSetLayouts        = layouts.data()
-    };
-
-    descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-
-    const VkResult allocateDescriptorSets = vkAllocateDescriptorSets(device, &allocInfo, descriptorSets.data());
-    if (allocateDescriptorSets != VK_SUCCESS)
-    {
-        LOG_ERROR("vkAllocateDescriptorSets returned: %i", static_cast<int>(allocateDescriptorSets));
-        throw std::runtime_error("failed to allocate descriptor sets!");
-    }
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-    {
-        VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = uniformBuffers[i];
-        bufferInfo.offset = 0;
-        bufferInfo.range = sizeof(UniformBufferObject);
-        
-        VkDescriptorImageInfo imageInfos[TEXTURE_ARRAY_SIZE] = {};
-        
-        for (uint32_t j = 0; j < textureImages.size(); j++)
-        {
-            imageInfos[j].sampler       = textureSampler;
-            imageInfos[j].imageView     = textureImageViews[j];
-            imageInfos[j].imageLayout   = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        }
-        
-        const std::array descriptorWrites  = {
-            VkWriteDescriptorSet {
-                .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                .dstSet          = descriptorSets[i],
-                .dstBinding      = 0,
-                .dstArrayElement = 0,
-                .descriptorCount = 1,
-                .descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                .pBufferInfo     = &bufferInfo
-                },
-                        
-            VkWriteDescriptorSet {
-                .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                .dstSet          = descriptorSets[i],
-                .dstBinding      = 1,
-                .dstArrayElement = 0,
-                .descriptorCount = static_cast<uint32_t>(textureImages.size()),
-                .descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                .pImageInfo      = imageInfos
-                }
-        };
-        vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-        appDevice.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t) descriptorSets[i], CSTR_RED(" application::descriptorSet[%i] ", i));
-    }
-}
-
-//----------------------------------------------------------------------------
 void OttApplication::updateUniformBufferCamera(uint32_t currentImage, float deltaTime, int width, int height)
 {        
     UniformBufferObject ubo {
         .model                 = glm::rotate(glm::mat4(1.0f), glm::radians(270.f), glm::vec3(0.0f, 0.0f, 1.0f)),
         .view                  = viewportCamera->recalculateView(deltaTime),
-        .proj                  = viewportCamera->perspectiveProjection(width / (float)height),
+        .proj                  = viewportCamera->projection((float)height, (float)width),
         .viewProjectionInverse = viewportCamera->inverseProjection (
-                                                viewportCamera->perspectiveProjection(width / (float)height),
+                                                viewportCamera->projection((float)height, (float)width),
                                                 viewportCamera->recalculateView(deltaTime)
                                                  ),
         .cameraPos             = viewportCamera->getEyePosition(),

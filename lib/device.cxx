@@ -165,8 +165,12 @@ void OttDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
                             .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
     };
 
-    if (vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS)
-        throw std::runtime_error("failed to create buffer!");
+    VkResult result = vkCreateBuffer(device, &bufferInfo, nullptr, &buffer);
+    if (result != VK_SUCCESS)
+    {
+        LOG_ERROR("vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) returned %i", result);
+        throw std::runtime_error("Failed to create buffer.");
+    }
 
     VkMemoryRequirements memRequirements;
     vkGetBufferMemoryRequirements(device, buffer, &memRequirements);
@@ -289,9 +293,13 @@ void OttDevice::createInstance()
         createInfo.enabledLayerCount = 0;
         createInfo.pNext = nullptr;
     }
-
-    if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
+    
+    const VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
+    if (result != VK_SUCCESS)
+    {
+        LOG_ERROR("vkCreateInstance returned: %i", static_cast<int>(result));
         throw std::runtime_error("failed to create instance!");
+    }
     LOG_INFO("Vulkan Instance Created");
 }
 
@@ -388,7 +396,9 @@ void OttDevice::createLogicalDevice()
                                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
                                 .pNext = &physicalDeviceVulkan12Features,
                                 .features = {.sampleRateShading = VK_TRUE,
-                                                .samplerAnisotropy = VK_TRUE, }
+                                             .fillModeNonSolid  = VK_TRUE,
+                                             .samplerAnisotropy = VK_TRUE,
+                                }
     };
 
     VkDeviceCreateInfo createInfo {
@@ -416,6 +426,8 @@ void OttDevice::createLogicalDevice()
     
     debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_PHYSICAL_DEVICE, (uint64_t) physicalDevice, CSTR_RED(" OttDevice::physicalDevice "));
     debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE, (uint64_t) device, CSTR_RED(" OttDevice::device "));
+    debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_INSTANCE, (uint64_t) instance, CSTR_RED(" OttDevice::VkInstance::instance "));
+    
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
     vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
     

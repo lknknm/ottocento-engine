@@ -60,7 +60,8 @@ public:
     std::function<void()> OnWindowRefreshed;
     std::function<void(glm::vec2)> OnFramebufferResized;
     std::function<void(int count, const char** paths)> OnFileDropped;
-    std::function<void(int key, int scancode, int action, int mods)> keyCallback;
+    std::function<void(int key, int scancode, int action, int mods)> cameraKeyCallback;
+    std::function<void(int key, int scancode, int action, int mods)> interactorKeyCallback;
 
     // Soon to be transferred to the Window Manager.
     bool windowShouldClose() const { return glfwWindowShouldClose(m_window); }
