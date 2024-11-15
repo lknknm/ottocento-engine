@@ -422,7 +422,7 @@ VkResult OttSwapChain::submitCommandBuffer(const VkCommandBuffer* command_buffer
     VkResult submitResult = vkQueueSubmit(appDeviceRef->getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]);
     if (submitResult != VK_SUCCESS)
     {
-        LOG_ERROR("vkQueueSubmit(appDeviceRef->getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) returned %i", submitResult);
+        LOG_ERROR("vkQueueSubmit(appDeviceRef->getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) returned {}", static_cast<int>(submitResult));
         throw std::runtime_error("failed to submit draw command buffer!");
     }
     
