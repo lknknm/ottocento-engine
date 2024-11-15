@@ -1,4 +1,4 @@
-// Ottocento Engine. Architectural BIM Engine.
+﻿// Ottocento Engine. Architectural BIM Engine.
 // Copyright (C) 2024  Lucas M. Faria.
 //
 // This program is free software: you can redistribute it and/or modify
@@ -24,6 +24,7 @@
 #include "swapchain.h"
 #include <volk.h>
 #include <vector>
+#include <glm/vec3.hpp>
 
 struct PushConstantData {
     alignas(16) glm::vec3 offset;
