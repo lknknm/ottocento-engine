@@ -28,7 +28,7 @@ void main() {
     gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition + push.offset, 1.0);
     vec3 normalWorldSpace = normalize((ubo.model * vec4(normal, 0.0f)).xyz);
     lightIntensity = AMBIENT + max(dot(normalWorldSpace, DIRECTION_TO_LIGHT), 0);
-    
+
     fragColor    = lightIntensity * inColor;
     fragTexCoord = inTexCoord;
     fragPosition = inPosition;

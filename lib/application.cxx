@@ -333,15 +333,17 @@ void OttApplication::loadModel(std::filesystem::path const& modelPath)
     std::cout << "BaseDir " << baseDir << std::endl;
 
     std::unordered_map<OttModel::Vertex, uint32_t> uniqueVertices{};
-    
-    materials.push_back(tinyobj::material_t());
-    
-    for (size_t i = 0; i < materials.size() - 1; i++)
+
+    if (!materials.empty())
     {
-        LOG_INFO("material[%d].diffuse_texname = %s\n", int(i), materials[i].diffuse_texname.c_str());
-        sceneMaterials.imageTexture_path.clear();
-        auto material_path = baseDir.append(materials[i].diffuse_texname);
-        sceneMaterials.imageTexture_path.push_back(material_path.string().c_str());
+        materials.push_back(tinyobj::material_t());
+        for (size_t i = 0; i < materials.size() - 1; i++)
+        {
+            LOG_INFO("material[%d].diffuse_texname = %s\n", int(i), materials[i].diffuse_texname.c_str());
+            sceneMaterials.imageTexture_path.clear();
+            auto material_path = baseDir.append(materials[i].diffuse_texname);
+            sceneMaterials.imageTexture_path.push_back(material_path.string().c_str());
+        }
     }
     
     OttModel::modelObject model
@@ -400,7 +402,9 @@ void OttApplication::loadModel(std::filesystem::path const& modelPath)
 
     model.indexCount  = static_cast<uint32_t>(indices.size()) - model.startIndex;
     model.pushColorID = {Utils::random_nr(0, 1),  Utils::random_nr(0, 1), Utils::random_nr(0, 1)};
-    model.textureID   = static_cast<uint32_t>(textureImages.size());
+    model.textureID   = 0;
+    if (!materials.empty())
+        model.textureID   = static_cast<uint32_t>(textureImages.size());
     models.push_back(model);
     
     LOG(DASHED_SEPARATOR);

@@ -168,7 +168,8 @@ void OttDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
     VkResult result = vkCreateBuffer(device, &bufferInfo, nullptr, &buffer);
     if (result != VK_SUCCESS)
     {
-        LOG_ERROR("failed to create buffer!");
+        LOG_ERROR("vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) returned %i", result);
+        throw std::runtime_error("Failed to create buffer.");
     }
 
     VkMemoryRequirements memRequirements;
