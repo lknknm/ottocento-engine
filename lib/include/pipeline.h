@@ -1,4 +1,4 @@
-﻿// Ottocento Engine. Architectural BIM Engine.
+// Ottocento Engine. Architectural BIM Engine.
 // Copyright (C) 2024  Lucas M. Faria.
 //
 // This program is free software: you can redistribute it and/or modify
@@ -58,7 +58,7 @@ public:
         VkPipeline grid;
         VkPipeline object;
         VkPipeline wireframe;
-    } graphicsPipelines = nullptr;
+    } graphicsPipelines;
     
     VkPipelineLayout getPipelineLayout() const { return pipelineLayout; }
     ViewportDisplayMode getDisplayMode() const { return displayMode; }
