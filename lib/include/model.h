@@ -35,6 +35,7 @@ namespace OttModel
         glm::vec3 pos;
         glm::vec3 color;
         glm::vec2 texCoord;
+        glm::vec3 normal;
 
         constexpr static auto getBindingDescription() -> VkVertexInputBindingDescription
         {
@@ -46,21 +47,21 @@ namespace OttModel
             };
         }
     
-        constexpr static auto getAttributeDescriptions() -> std::array<VkVertexInputAttributeDescription, 3>
+        constexpr static auto getAttributeDescriptions() -> std::array<VkVertexInputAttributeDescription, 4>
         {
             std::array attributeDescriptions = {
                 VkVertexInputAttributeDescription {
                     .location = 0,
                     .binding  = 0,
                     .format   = VK_FORMAT_R32G32B32_SFLOAT,
-                    .offset   = offsetof(Vertex,      pos)
+                    .offset   = offsetof(Vertex, pos)
                 },
 
                 VkVertexInputAttributeDescription {
                     .location = 1,
                     .binding  = 0,
                     .format   = VK_FORMAT_R32G32B32_SFLOAT,
-                    .offset   = offsetof(Vertex,    color)
+                    .offset   = offsetof(Vertex, color)
                 },
                 
                 VkVertexInputAttributeDescription {
@@ -68,6 +69,13 @@ namespace OttModel
                     .binding  = 0,
                     .format   = VK_FORMAT_R32G32_SFLOAT,
                     .offset   = offsetof(Vertex, texCoord)
+                },
+                
+                VkVertexInputAttributeDescription {
+                    .location = 3,
+                    .binding  = 0,
+                    .format   = VK_FORMAT_R32G32B32_SFLOAT,
+                    .offset   = offsetof(Vertex, normal)
                 }
             };
             return attributeDescriptions;

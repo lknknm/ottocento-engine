@@ -20,6 +20,7 @@
 
 #include "camera.h"
 #include "input.hxx"
+#include "macros.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
@@ -30,21 +31,14 @@
 glm::mat4 OttCamera::recalculateView(float deltaTime)
 {
     if (windowHandle == nullptr)
-    {
-        throw std::runtime_error("windowHandle is a nullptr!");
-    }
-    if (Input::isKeyDown(windowHandle, GLFW_KEY_F3))
-    {
-        // walkNavigation = !walkNavigation;
-        glfwWaitEventsTimeout(1.0);
-        std::cout << "walkNavigation: " << walkNavigation << std::endl;
-        std::cout << "----------------" << std::endl;
-    }
+        LOG_ERROR("windowHandle is a nullptr!");
+
     if (!walkNavigation)
+    {
         viewportInputHandle(deltaTime);
-    else
-        walkNavigationInputHandle(deltaTime);
-    
+        return glm::lookAt(EyePosition, CenterPosition, upVector);
+    }
+    walkNavigationInputHandle(deltaTime);
     return glm::lookAt(EyePosition, CenterPosition, upVector);
 }
 
@@ -53,13 +47,28 @@ glm::mat4 OttCamera::recalculateView(float deltaTime)
 //----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
-// This function handles all the hotkeys for the viewport camera implementation.
-// It uses the Input namespace abstraction to handle GLFW interaction.
+/** This function handles all the hotkeys for the viewport camera implementation.
+ *  It uses the Input namespace abstraction to handle GLFW interaction.
+ *  TODO: refactor to only use the appwindow->keyCallback. **/
 void OttCamera::viewportInputHandle(float deltaTime)
 {
     glm::vec2 mousePos = Input::getMousePosition(windowHandle);
     glm::vec2 delta = (mousePos - lastMousePosition) * 0.002f;
     lastMousePosition = mousePos;
+
+    appwindow->cameraKeyCallback = [&](int key, int scancode, int action, int mods)
+    {
+        if (action == GLFW_RELEASE)
+        {
+            if (key == GLFW_KEY_KP_5)
+                perspective = !perspective;
+            if (key == GLFW_KEY_F1)
+            {
+                walkNavigation = !walkNavigation;
+                LOG_DEBUG("Walk Navigation: %i", walkNavigation);
+            }
+        }
+    };
     
     forwardDirection = CenterPosition - EyePosition;
     rightVector = glm::cross(forwardDirection, upVector);
@@ -143,8 +152,8 @@ void OttCamera::viewportInputHandle(float deltaTime)
  *  while rotating or panning the camera. **/
 void OttCamera::wrapAroundMousePos(glm::vec2& mousePos)
 {
-    double mxpos, mypos; // Get mouse position, relative to window
-    appwindow->getCursorPos(&mxpos, &mypos);
+    // Get mouse position, relative to window
+    auto [mxpos, mypos] = appwindow->getCursorPos();
     const glm::ivec2 framebufferSize = appwindow->getFrameBufferSize();
 
     if(mxpos > framebufferSize.x - 5)
@@ -222,10 +231,13 @@ void OttCamera::walkNavigationInputHandle(float deltaTime)
     
 //----------------------------------------------------------------------------
 /** Wrapper for the glm::perspective function
- * \param aspectRatio: camera aspect ratio height / width. **/
-glm::mat4 OttCamera::perspectiveProjection(float aspectRatio)
+ * \param height: framebuffer height. 
+ * \param width: framebuffer width. **/
+glm::mat4 OttCamera::projection(float height, float width) const
 {
-    return glm::perspective(glm::radians(VerticalFOV), aspectRatio, NearClip, FarClip);
+    if (perspective == true)
+        return glm::perspective(glm::radians(VerticalFOV), width / height, NearClip, FarClip);
+    return glm::ortho(-width * orthoZoomFactor / height , width * orthoZoomFactor/ height, -orthoZoomFactor, orthoZoomFactor, -FarClip, FarClip * 2);;
 }
 
 //----------------------------------------------------------------------------
@@ -418,10 +430,14 @@ void OttCamera::moveLeftDirection(float deltaTime)
 void OttCamera::zoomIn(double yoffset)
 {
     EyePosition += forwardDirection * 0.2f;
+    if (!perspective)
+        orthoZoomFactor -= yoffset;
 }
 
 //----------------------------------------------------------------------------
 void OttCamera::zoomOut(double yoffset)
 {
     EyePosition -= forwardDirection * 0.2f;
+    if (!perspective)
+        orthoZoomFactor -= yoffset;
 }

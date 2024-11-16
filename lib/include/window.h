@@ -23,6 +23,7 @@
 #include <GLFW/glfw3.h>
 #include <functional>
 #include <iostream>
+#include <utility>
 #include <glm/vec2.hpp>
 
 struct GLFWwindow;
@@ -51,7 +52,7 @@ public:
     GLFWwindow* getWindowhandle() const { return this->m_window; }
     glm::ivec2 getFrameBufferSize() const;
     
-    void getCursorPos(double* xpos, double* ypos) const;
+    [[nodiscard]] auto getCursorPos() const -> std::pair<double, double>;
     void setCursorPos(double xpos, double ypos) const;
 
 //----------------------------------------------------------------------------
@@ -60,7 +61,8 @@ public:
     std::function<void()> OnWindowRefreshed;
     std::function<void(glm::vec2)> OnFramebufferResized;
     std::function<void(int count, const char** paths)> OnFileDropped;
-    std::function<void(int key, int scancode, int action, int mods)> keyCallback;
+    std::function<void(int key, int scancode, int action, int mods)> cameraKeyCallback;
+    std::function<void(int key, int scancode, int action, int mods)> interactorKeyCallback;
 
     // Soon to be transferred to the Window Manager.
     bool windowShouldClose() const { return glfwWindowShouldClose(m_window); }
