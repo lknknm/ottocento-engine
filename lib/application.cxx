@@ -22,7 +22,6 @@
 #include <array>
 #include <cstring>
 #include <iostream>
-#include <fstream>
 #include <stdexcept>
 #include <unordered_map>
 
@@ -30,6 +29,7 @@
 
 #include "tiny_obj_loader.h"
 
+#include "fmtfs.hxx"
 #include "application.h"
 #include "helpers.h"
 #include "macros.h"
@@ -329,8 +329,8 @@ void OttApplication::loadModel(std::filesystem::path const& modelPath)
     }
 
     LOG(DASHED_SEPARATOR);
-    std::cout << "Loading Wavefront " << modelPath << std::endl;
-    std::cout << "BaseDir " << baseDir << std::endl;
+    fmt::print("Loading Wavefront {}\n", modelPath);
+    fmt::print("BaseDir {}\n", baseDir);
 
     std::unordered_map<OttModel::Vertex, uint32_t> uniqueVertices{};
 

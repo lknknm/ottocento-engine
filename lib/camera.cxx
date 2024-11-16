@@ -20,7 +20,10 @@
 
 #include "camera.h"
 #include "input.hxx"
+#include <stdexcept>
+#include <fmt/core.h>
 #include "macros.h"
+
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>

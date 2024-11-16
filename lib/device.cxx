@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <fmt/base.h>
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
@@ -35,7 +36,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBits
                                             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
                                             void* pUserData)
 {
-    std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+    fmt::println(stderr, "validation layer: {}", pCallbackData->pMessage);
     return VK_FALSE;
 }
 } // anonymous namespace
@@ -349,12 +350,11 @@ void OttDevice::pickPhysicalDevice()
         
     if (candidates.rbegin()->first > 0 && isDeviceSuitable(candidates.rbegin()->second, deviceExtensions))
     {
-        if (physicalDevice = candidates.rbegin()->second)
+        if ((physicalDevice = candidates.rbegin()->second))
         {
             msaaSamples = getMaxUsableSampleCount();
             LOG_INFO("GPU is properly scored and suitable for usage.");
-            
-            std::cout << C_GREEN << "[INFO] " << "Max Usable Sample Count: " << msaaSamples << "xMSAA" << C_RESET << std::endl;
+            LOG_INFO("Max Usable Sample Count: {} xMSAA", unsigned(msaaSamples));
         }
     }
         
