@@ -1,7 +1,7 @@
 function(enable_sanitizers)
-	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
 
-		set(SANITIZERS "")
+	set(SANITIZERS "")
+	if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
 
 		# UBSAN
 		option(ENABLE_SANITIZER_UNDEFINED_BEHAVIOR "Enable undefined behavior sanitizer" TRUE)
@@ -28,15 +28,34 @@ function(enable_sanitizers)
 		endif()
 
 		list(JOIN SANITIZERS "," LIST_OF_SANITIZERS)
+
+	# Windows
+	elseif(WIN32)
+
+		# ASAN
+		option(ENABLE_SANITIZER_ADDRESS "Enable address sanitizer" TRUE)
+		if(ENABLE_SANITIZER_ADDRESS)
+			message(STATUS "${CMAKE_PROJECT_NAME}: Enabling address sanitizer")
+			list(APPEND SANITIZERS "address")
+		endif()
+
+		# FUZZER
+		option(ENABLE_SANITIZER_FUZZER "Enable fuzzer sanitizer" TRUE)
+		if(ENABLE_SANITIZER_FUZZER)
+			message(STATUS "${CMAKE_PROJECT_NAME}: Enabling fuzzer sanitizer")
+			list(APPEND SANITIZERS "fuzzer")
+		endif()
 	endif()
 
 	if(LIST_OF_SANITIZERS)
 		if(NOT "${LIST_OF_SANITIZERS}" STREQUAL "")
-			add_compile_options("$<$<CONFIG:DEBUG>:-fsanitize=${LIST_OF_SANITIZERS}>")
-			add_link_options("$<$<CONFIG:DEBUG>:-fsanitize=${LIST_OF_SANITIZERS}>")
-
 			if(WIN32)
 				set_property(GLOBAL PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+				add_compile_options("$<$<CONFIG:DEBUG>:/fsanitize=${LIST_OF_SANITIZERS}>")
+			else()
+
+				add_compile_options("$<$<CONFIG:DEBUG>:-fsanitize=${LIST_OF_SANITIZERS}>")
+				add_link_options("$<$<CONFIG:DEBUG>:-fsanitize=${LIST_OF_SANITIZERS}>")
 			endif()
 		endif()
 	endif()

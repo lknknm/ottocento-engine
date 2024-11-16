@@ -151,7 +151,7 @@ void OttSwapChain::recreateSwapChain()
     while (width == 0 || height == 0)
     {
         width = appWindowRef->getFrameBufferSize().x; height = appWindowRef->getFrameBufferSize().y;
-        appWindowRef->waitEvents();
+        appWindowRef->waitEvents(); 
     }
     vkDeviceWaitIdle(device);
         
@@ -418,9 +418,13 @@ VkResult OttSwapChain::submitCommandBuffer(const VkCommandBuffer* command_buffer
         .signalSemaphoreCount = 1,
         .pSignalSemaphores    = signalSemaphores,
     };
-    
-    if (vkQueueSubmit(appDeviceRef->getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) 
+
+    VkResult submitResult = vkQueueSubmit(appDeviceRef->getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]);
+    if (submitResult != VK_SUCCESS)
+    {
+        LOG_ERROR("vkQueueSubmit(appDeviceRef->getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) returned %i", submitResult);
         throw std::runtime_error("failed to submit draw command buffer!");
+    }
     
     VkSwapchainKHR swapChains[] = { swapChain };
     const VkPresentInfoKHR presentInfo {
