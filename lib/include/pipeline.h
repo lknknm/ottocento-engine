@@ -24,6 +24,7 @@
 #include "swapchain.h"
 #include <volk.h>
 #include <vector>
+#include <glm/vec3.hpp>
 
 struct PushConstantData {
     alignas(16) glm::vec3 offset;
@@ -58,7 +59,7 @@ public:
         VkPipeline grid;
         VkPipeline object;
         VkPipeline wireframe;
-    } graphicsPipelines = nullptr;
+    } graphicsPipelines;
     
     VkPipelineLayout getPipelineLayout() const { return pipelineLayout; }
     ViewportDisplayMode getDisplayMode() const { return displayMode; }
