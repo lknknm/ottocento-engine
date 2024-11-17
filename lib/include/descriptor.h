@@ -23,9 +23,9 @@ struct UniformBufferObject {
 
 namespace OttDescriptor
 {
-    void createObjectDescriptorSetLayout    (VkDevice& device, std::vector<VkDescriptorSetLayout>& descriptor_set_layouts);
-    void createGridDescriptorSetLayout      (VkDevice& device, std::vector<VkDescriptorSetLayout>& descriptor_set_layouts);
-    void createDescriptorPool               (VkDevice& device, VkDescriptorPool& descriptor_pool);
+    void createObjectDescriptorSetLayout    (VkDevice device, std::vector<VkDescriptorSetLayout>& descriptor_set_layouts);
+    void createGridDescriptorSetLayout      (VkDevice device, std::vector<VkDescriptorSetLayout>& descriptor_set_layouts);
+    void createDescriptorPool               (VkDevice device, VkDescriptorPool& descriptor_pool);
     
     void createDescriptorSets               (const std::vector<VkDescriptorSetLayout>& descriptor_set_layouts,
                                             std::vector<VkDescriptorSet>& descriptor_sets,
