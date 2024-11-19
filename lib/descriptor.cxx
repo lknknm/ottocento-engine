@@ -11,7 +11,7 @@
  * - uboLayoutBinding: Binds the uniform buffer to the vertex and fragment shader.
  * - samplerLayoutBinding: Binds the image sampler to the fragment shader. This binding is set as
  * VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT. **/
-void OttDescriptor::createObjectDescriptorSetLayout(VkDevice& device, std::vector<VkDescriptorSetLayout>& descriptor_set_layouts)
+VkDescriptorSetLayout OttDescriptor::createObjectDescriptorSetLayout(VkDevice device)
 {
     constexpr VkDescriptorSetLayoutBinding uboLayoutBinding {
                                             .binding         = 0,
@@ -52,14 +52,14 @@ void OttDescriptor::createObjectDescriptorSetLayout(VkDevice& device, std::vecto
         LOG_ERROR("vkCreateDescriptorSetLayout returned: %i", static_cast<int>(result));
         throw std::runtime_error("Failed to create descriptor set layout!");
     }
-    descriptor_set_layouts.push_back(objectDescriptorSetLayout);
+    return objectDescriptorSetLayout;
 }
 
 //----------------------------------------------------------------------------
 /** Creates a descriptor set for the Grid rendering pipeline.
- *  - gridBinding: We need an Uniform Buffer to pass the camera position to the shader
+ *  - gridBinding: We need a Uniform Buffer to pass the camera position to the shader
  *  for the grid falloff. Vertex buffer and Fragment shader are dealt internally. **/
-void OttDescriptor::createGridDescriptorSetLayout(VkDevice& device, std::vector<VkDescriptorSetLayout>& descriptor_set_layouts)
+VkDescriptorSetLayout OttDescriptor::createGridDescriptorSetLayout(VkDevice device)
 {
     constexpr VkDescriptorSetLayoutBinding gridBinding {
         .binding         = 0,
@@ -84,13 +84,13 @@ void OttDescriptor::createGridDescriptorSetLayout(VkDevice& device, std::vector<
         LOG_ERROR("vkCreateDescriptorSetLayout returned: %i", static_cast<int>(result));
         throw std::runtime_error("Failed to create descriptor set layout!");
     }
-    descriptor_set_layouts.push_back(gridDescriptorSetLayout);
+    return gridDescriptorSetLayout;
 }
 
 //----------------------------------------------------------------------------
 /** \param device: Application side instantiated device.
  *  \param descriptor_pool: Application side instantiated descriptor pool handle. **/
-void OttDescriptor::createDescriptorPool(VkDevice& device, VkDescriptorPool& descriptor_pool)
+void OttDescriptor::createDescriptorPool(VkDevice device, VkDescriptorPool& descriptor_pool)
 {
     std::array poolSizes   = {
         VkDescriptorPoolSize {

@@ -66,8 +66,11 @@ private:
     PushConstantData push;
     std::vector<OttModel::modelObject> models;
     
-    VkDescriptorSetLayout               descriptorSetLayout;
-    std::vector<VkDescriptorSetLayout>  descriptorSetLayouts;
+    std::vector<VkDescriptorSetLayout>  descriptorSetLayouts = {
+        OttDescriptor::createObjectDescriptorSetLayout(device),
+        OttDescriptor::createGridDescriptorSetLayout(device)
+    };
+    
     VkDescriptorPool                    descriptorPool;
     std::vector<VkDescriptorSet>        descriptorSets;
 

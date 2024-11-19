@@ -130,10 +130,7 @@ void OttApplication::initWindow()
 /** Initiates and creates Vulkan related resources. **/
 void OttApplication::initVulkan()
 {
-    //--------------- Pipeline initialization.
-    
-    OttDescriptor::createObjectDescriptorSetLayout(device, descriptorSetLayouts);
-    OttDescriptor::createGridDescriptorSetLayout(device, descriptorSetLayouts);
+    //--------------- Pipeline initialization.    
     auto bindingDescription     = OttModel::Vertex::getBindingDescription();
     auto attributeDescriptions  = OttModel::Vertex::getAttributeDescriptions();
     VkPipelineVertexInputStateCreateInfo modelVertexInputInfo = appPipeline.initVertexInputInfo(1, &bindingDescription, static_cast<uint32_t>(attributeDescriptions.size()), attributeDescriptions.data());
