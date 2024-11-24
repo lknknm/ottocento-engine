@@ -104,7 +104,7 @@ void OttPipeline::createGraphicsPipeline (
 //----------------------------------------------------------------------------
 /** Wrapper to create a pipeline layout and pass it to our pipeline creation stage
  * \param push_stage_flags: Specifies for which shader stage the push constants should be passed to.  **/
-void OttPipeline::createPipelineLayout(VkShaderStageFlags push_stage_flags, std::vector<VkDescriptorSetLayout>& descriptor_set_layouts)
+void OttPipeline::createPipelineLayout(VkShaderStageFlags push_stage_flags, VkDescriptorSetLayout* descriptor_set_layout)
 {
     VkPushConstantRange pushConstantRange {
         .stageFlags = push_stage_flags,
@@ -114,8 +114,8 @@ void OttPipeline::createPipelineLayout(VkShaderStageFlags push_stage_flags, std:
     
     const VkPipelineLayoutCreateInfo pipelineLayoutInfo {
         .sType          = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-        .setLayoutCount = static_cast<uint32_t>(descriptor_set_layouts.size()),
-        .pSetLayouts    = descriptor_set_layouts.data(),
+        .setLayoutCount = 1,
+        .pSetLayouts    = descriptor_set_layout,
         .pushConstantRangeCount = 1,
         .pPushConstantRanges = &pushConstantRange,
     };
@@ -126,7 +126,7 @@ void OttPipeline::createPipelineLayout(VkShaderStageFlags push_stage_flags, std:
         LOG_ERROR("vkCreatePipelineLayout returned: %i", static_cast<int>(result));
         throw std::runtime_error("Failed to create pipeline layout");
     }
-    pDevice->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)pipelineLayout, CSTR_RED("OttPipeline::VkPipelineLayout:pipelineLayout"));
+    pDevice->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)pipelineLayout, CSTR_RED(" OttPipeline::VkPipelineLayout:pipelineLayout "));
     LOG_INFO("OttPipeline::pipelineLayout created.");
 }
 

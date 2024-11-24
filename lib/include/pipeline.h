@@ -72,7 +72,7 @@ public:
         VkVertexInputAttributeDescription* vertex_att_desc
     );
     
-    void createPipelineLayout   (VkShaderStageFlags push_stage_flags, std::vector<VkDescriptorSetLayout>& descriptor_set_layouts);
+    void createPipelineLayout   (VkShaderStageFlags push_stage_flags, VkDescriptorSetLayout* descriptor_set_layout);
     void createGraphicsPipeline (
         std::string vertex_shader_path, std::string fragment_shader_path,
         VkPipeline& pipeline, VkPipelineVertexInputStateCreateInfo vertex_input_info,

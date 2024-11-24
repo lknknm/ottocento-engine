@@ -32,6 +32,7 @@
 #include "camera.h"
 #include "device.h"
 #include "descriptor.h"
+#include "helpers.h"
 #include "swapchain.h"
 #include "model.h"
 #include "pipeline.h"
@@ -66,18 +67,15 @@ private:
     PushConstantData push;
     std::vector<OttModel::modelObject> models;
     
-    std::vector<VkDescriptorSetLayout>  descriptorSetLayouts = {
-        OttDescriptor::createObjectDescriptorSetLayout(device),
-        OttDescriptor::createGridDescriptorSetLayout(device)
-    };
+    VkDescriptorSetLayout bindlessDescSetLayout = OttDescriptor::createBindlessDescriptorSetLayout(device, appDevice);
+    VkDescriptorSet  bindlessDescriptorSet;
+    VkDescriptorPool descriptorPool;
+    std::unordered_map<std::string, VkDescriptorSet> descriptorSets;
     
-    VkDescriptorPool                    descriptorPool;
-    std::vector<VkDescriptorSet>        descriptorSets;
-
     std::vector<VkCommandBuffer>    commandBuffers;
-    uint32_t                        mipLevels;
+    uint32_t                        mipLevels           = static_cast<uint32_t>(std::floor(std::log2(std::max(1, 1)))) + 1;
     VkImage                         textureImage        = VK_NULL_HANDLE;
-    std::vector<VkDeviceMemory>     textureImageMemory;
+    std::vector<VkDeviceMemory>     textureImageMemory  = { VK_NULL_HANDLE };
     VkImageView                     textureImageView    = VK_NULL_HANDLE;
     VkSampler                       textureSampler      = VK_NULL_HANDLE;
     std::vector<VkImage>            textureImages;

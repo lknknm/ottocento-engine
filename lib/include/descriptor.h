@@ -9,7 +9,7 @@
 #include <volk.h>
 #include <vector>
 #include <glm/glm.hpp>
-constexpr int TEXTURE_ARRAY_SIZE = 1000;
+constexpr int TEXTURE_ARRAY_SIZE = 1024;
 
 /** UBO for the main object pipeline. **/
 struct UniformBufferObject {
@@ -20,21 +20,27 @@ struct UniformBufferObject {
     alignas(16) glm::vec3 cameraPos;
 };
 
-/** Namespace as a wrapper for helper functions related to Vulkan Descriptors **/
+/** Wrapper for helper functions related to Vulkan Descriptors. **/
 namespace OttDescriptor
 {
-    VkDescriptorSetLayout createObjectDescriptorSetLayout    (VkDevice device);
-    VkDescriptorSetLayout createGridDescriptorSetLayout      (VkDevice device);
-    void createDescriptorPool               (VkDevice device, VkDescriptorPool& descriptor_pool);
+    VkDescriptorSetLayout createObjectDescriptorSetLayout (VkDevice device, OttDevice& app_device);
+    VkDescriptorSetLayout createGridDescriptorSetLayout   (VkDevice device, OttDevice& app_device);
+    VkDescriptorSetLayout createBindlessDescriptorSetLayout (VkDevice device, OttDevice& app_device);
+    void                  createDescriptorPool              (VkDevice device, VkDescriptorPool& descriptor_pool);
     
-    void createDescriptorSets               (const std::vector<VkDescriptorSetLayout>& descriptor_set_layouts,
-                                            std::vector<VkDescriptorSet>& descriptor_sets,
-                                            const VkDevice device,
-                                            const VkDescriptorPool descriptor_pool,
-                                            const OttDevice& app_device,
-                                            const std::vector<VkBuffer>& uniform_buffers,
-                                            const std::vector<VkImage>& texture_images,
-                                            const VkSampler texture_sampler,
-                                            const std::vector<VkImageView>& texture_image_views
-                                            );
+    VkDescriptorSet createDescriptorSet (
+        VkDevice device,
+        int count,
+        VkDescriptorSetLayout descriptor_set_layout,
+        VkDescriptorPool descriptor_pool
+    );
+    void updateDescriptorSet (
+        const VkDevice device,
+        const OttDevice& app_device,
+        const VkDescriptorSet descriptor_set,
+        const VkBuffer& uniform_buffer,
+        const std::vector<VkImage>& texture_images,
+        const VkSampler texture_sampler,
+        const std::vector<VkImageView>& texture_image_views
+    );
 }

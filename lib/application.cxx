@@ -26,7 +26,6 @@
 #include <unordered_map>
 
 #include "stb_image.h"
-
 #include "tiny_obj_loader.h"
 
 #include "fmtfs.hxx"
@@ -98,11 +97,17 @@ void OttApplication::initWindow()
             createVertexBuffer();
             createIndexBuffer();
             createUniformBuffers();
-
-            OttDescriptor::createDescriptorPool (device, descriptorPool);
-            OttDescriptor::createDescriptorSets (descriptorSetLayouts, descriptorSets,
-                                                device, descriptorPool, appDevice, uniformBuffers,
-                                                textureImages, textureSampler, textureImageViews);
+            
+            OttDescriptor::createDescriptorPool(device, descriptorPool);
+            bindlessDescriptorSet = OttDescriptor::createDescriptorSet(device, 1, bindlessDescSetLayout, descriptorPool);
+            OttDescriptor::updateDescriptorSet (
+                device, appDevice,
+                bindlessDescriptorSet,
+                uniformBuffers[0],
+                textureImages,
+                textureSampler,
+                textureImageViews
+             );
         }
     };
     appwindow.interactorKeyCallback = [&](int key, int scancode, int action, int mods)
@@ -130,37 +135,42 @@ void OttApplication::initWindow()
 /** Initiates and creates Vulkan related resources. **/
 void OttApplication::initVulkan()
 {
-    //--------------- Pipeline initialization.    
-    auto bindingDescription     = OttModel::Vertex::getBindingDescription();
-    auto attributeDescriptions  = OttModel::Vertex::getAttributeDescriptions();
-    VkPipelineVertexInputStateCreateInfo modelVertexInputInfo = appPipeline.initVertexInputInfo(1, &bindingDescription, static_cast<uint32_t>(attributeDescriptions.size()), attributeDescriptions.data());
-    VkPipelineVertexInputStateCreateInfo gridVertexInputInfo  = appPipeline.initVertexInputInfo(0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE);
-    
-    appPipeline.createPipelineLayout    (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, descriptorSetLayouts);
-    appPipeline.createGraphicsPipeline  ("resource/shaders/object_vertex.spv", "resource/shaders/object_fragment.spv",
-                                        appPipeline.graphicsPipelines.object, modelVertexInputInfo, VK_POLYGON_MODE_FILL);
+    // Pipeline Initilization.    
+        auto bindingDescription     = OttModel::Vertex::getBindingDescription();
+        auto attributeDescriptions  = OttModel::Vertex::getAttributeDescriptions();
+        VkPipelineVertexInputStateCreateInfo modelVertexInputInfo = appPipeline.initVertexInputInfo(1, &bindingDescription, static_cast<uint32_t>(attributeDescriptions.size()), attributeDescriptions.data());
+        VkPipelineVertexInputStateCreateInfo gridVertexInputInfo  = appPipeline.initVertexInputInfo(0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE);
+        
+        appPipeline.createPipelineLayout    (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, &bindlessDescSetLayout);
+        appPipeline.createGraphicsPipeline  ("resource/shaders/object_vertex.spv", "resource/shaders/object_fragment.spv",
+                                            appPipeline.graphicsPipelines.object, modelVertexInputInfo, VK_POLYGON_MODE_FILL);
 
-    appPipeline.createGraphicsPipeline  ("resource/shaders/object_vertex.spv", "resource/shaders/wireframe_fragment.spv",
-                                        appPipeline.graphicsPipelines.wireframe, modelVertexInputInfo, VK_POLYGON_MODE_LINE);
-    
-    appPipeline.createGraphicsPipeline  ("resource/shaders/grid_vertex.spv", "resource/shaders/grid_fragment.spv",
-                                        appPipeline.graphicsPipelines.grid, gridVertexInputInfo, VK_POLYGON_MODE_FILL);
+        appPipeline.createGraphicsPipeline  ("resource/shaders/object_vertex.spv", "resource/shaders/wireframe_fragment.spv",
+                                            appPipeline.graphicsPipelines.wireframe, modelVertexInputInfo, VK_POLYGON_MODE_LINE);
+        
+        appPipeline.createGraphicsPipeline  ("resource/shaders/grid_vertex.spv", "resource/shaders/grid_fragment.spv",
+                                            appPipeline.graphicsPipelines.grid, gridVertexInputInfo, VK_POLYGON_MODE_FILL);
+    // endof Pipeline initialization.
 
-    //--------------- Pipeline initialization.
-    
-    mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(1, 1)))) + 1;
-    const VkDeviceMemory blankImage = VK_NULL_HANDLE;
-    textureImageMemory.push_back(blankImage);
-    VkHelpers::create1x1BlankImage(textureImage, mipLevels, appDevice, textureImages, textureImageMemory[0]);
-    createTextureImageView();
-    createTextureSampler();
-    
-    createUniformBuffers();
-    
-    OttDescriptor::createDescriptorPool(device, descriptorPool);
-    OttDescriptor::createDescriptorSets(descriptorSetLayouts, descriptorSets,
-                                        device, descriptorPool, appDevice, uniformBuffers,
-                                        textureImages, textureSampler, textureImageViews);
+    // Textures initilization.
+        VkHelpers::create1x1BlankImage(textureImage, mipLevels, appDevice, textureImages, textureImageMemory[0]);
+        createTextureImageView();
+        createTextureSampler();
+        createUniformBuffers();
+    // endof Textures initilization.
+
+    // Descriptor Initilization.
+        OttDescriptor::createDescriptorPool(device, descriptorPool);
+        bindlessDescriptorSet = OttDescriptor::createDescriptorSet(device, 1, bindlessDescSetLayout, descriptorPool);
+        OttDescriptor::updateDescriptorSet (
+            device, appDevice,
+            bindlessDescriptorSet,
+            uniformBuffers[0],
+            textureImages,
+            textureSampler,
+            textureImageViews
+        );
+    // endof Descriptor Initilization.
 }
     
 //----------------------------------------------------------------------------
@@ -199,9 +209,12 @@ void OttApplication::drawScene(VkCommandBuffer command_buffer)
 {
     assert(command_buffer == ottRenderer.getCurrentCommandBuffer() &&
           "Can't begin render pass on command buffer from a different frame");
-    
-    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, appPipeline.getPipelineLayout(),
-                        0, 1, &descriptorSets[ottRenderer.getCurrentFrameIndex()], 0, nullptr);
+
+    vkCmdBindDescriptorSets (
+        command_buffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS, appPipeline.getPipelineLayout(),
+        0, 1, &bindlessDescriptorSet, 0, nullptr
+    );
     
     if (!vertices.empty() && !indices.empty())
     {
@@ -261,10 +274,7 @@ void OttApplication::cleanupUBO() const
         }
     }
     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
-    for (const auto& descSet : descriptorSetLayouts)
-    {
-        vkDestroyDescriptorSetLayout(device, descSet, nullptr);
-    }
+    vkDestroyDescriptorSetLayout(device, bindlessDescSetLayout, nullptr);
 }
 
 //-----------------------------------------------------------------------------
