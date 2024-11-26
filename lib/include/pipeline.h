@@ -49,7 +49,7 @@ public:
     typedef enum ViewportDisplayMode
     {
         DISPLAY_MODE_WIREFRAME = 000,
-        DISPLAY_MODE_OBJECT    = 001,
+        DISPLAY_MODE_SOLID     = 001,
         DISPLAY_MODE_DRAFT     = 002,
         DISPLAY_MODE_TEXTURE   = 003,
     };
@@ -57,7 +57,8 @@ public:
     struct
     {
         VkPipeline grid;
-        VkPipeline object;
+        VkPipeline solid;
+        VkPipeline texture;
         VkPipeline wireframe;
     } graphicsPipelines;
     

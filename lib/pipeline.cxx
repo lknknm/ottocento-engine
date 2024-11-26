@@ -33,7 +33,8 @@ OttPipeline::OttPipeline(OttDevice* device_reference, OttSwapChain* swapchain_re
 
 OttPipeline::~OttPipeline()
 {
-    vkDestroyPipeline       (device, graphicsPipelines.object, nullptr);
+    vkDestroyPipeline       (device, graphicsPipelines.texture, nullptr);
+    vkDestroyPipeline       (device, graphicsPipelines.solid, nullptr);
     vkDestroyPipeline       (device, graphicsPipelines.grid, nullptr);
     vkDestroyPipeline       (device, graphicsPipelines.wireframe, nullptr);
     vkDestroyPipelineLayout (device, pipelineLayout, nullptr);
