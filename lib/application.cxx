@@ -120,6 +120,9 @@ void OttApplication::initWindow()
             case GLFW_KEY_1:
                 appPipeline.setDisplayMode(OttPipeline::DISPLAY_MODE_WIREFRAME);
                 break;
+            case GLFW_KEY_2:
+                appPipeline.setDisplayMode(OttPipeline::DISPLAY_MODE_SOLID);
+                break;
             case GLFW_KEY_3:
                 appPipeline.setDisplayMode(OttPipeline::DISPLAY_MODE_TEXTURE);
                 break;
@@ -142,8 +145,11 @@ void OttApplication::initVulkan()
         VkPipelineVertexInputStateCreateInfo gridVertexInputInfo  = appPipeline.initVertexInputInfo(0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE);
         
         appPipeline.createPipelineLayout    (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, &bindlessDescSetLayout);
-        appPipeline.createGraphicsPipeline  ("resource/shaders/object_vertex.spv", "resource/shaders/object_fragment.spv",
-                                            appPipeline.graphicsPipelines.object, modelVertexInputInfo, VK_POLYGON_MODE_FILL);
+        appPipeline.createGraphicsPipeline  ("resource/shaders/object_vertex.spv", "resource/shaders/solid_shading_fragment.spv",
+                                            appPipeline.graphicsPipelines.solid, modelVertexInputInfo, VK_POLYGON_MODE_FILL);
+    
+        appPipeline.createGraphicsPipeline  ("resource/shaders/object_vertex.spv", "resource/shaders/texture_fragment.spv",
+                                            appPipeline.graphicsPipelines.texture, modelVertexInputInfo, VK_POLYGON_MODE_FILL);
 
         appPipeline.createGraphicsPipeline  ("resource/shaders/object_vertex.spv", "resource/shaders/wireframe_fragment.spv",
                                             appPipeline.graphicsPipelines.wireframe, modelVertexInputInfo, VK_POLYGON_MODE_LINE);
@@ -155,6 +161,13 @@ void OttApplication::initVulkan()
     // Textures initilization.
         VkHelpers::create1x1BlankImage(textureImage, mipLevels, appDevice, textureImages, textureImageMemory[0]);
         createTextureImageView();
+    
+        createTextureImage("resource/matcap/clay_brown.png");
+        createTextureImageView();
+    
+        createTextureImage("resource/matcap/ceramic_lightbulb.png");
+        createTextureImageView();
+    
         createTextureSampler();
         createUniformBuffers();
     // endof Textures initilization.
@@ -228,8 +241,11 @@ void OttApplication::drawScene(VkCommandBuffer command_buffer)
             case OttPipeline::DISPLAY_MODE_WIREFRAME:
                 vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, appPipeline.graphicsPipelines.wireframe);
                 break;
+            case OttPipeline::DISPLAY_MODE_SOLID:
+                vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, appPipeline.graphicsPipelines.solid);
+                break;
             case OttPipeline::DISPLAY_MODE_TEXTURE:
-                vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, appPipeline.graphicsPipelines.object);
+                vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, appPipeline.graphicsPipelines.texture);
                 break;
         }
         for (auto& m : models)
@@ -599,7 +615,8 @@ void OttApplication::createUniformBuffers()
 void OttApplication::updateUniformBufferCamera(uint32_t currentImage, float deltaTime, int width, int height)
 {        
     UniformBufferObject ubo {
-        .model                 = glm::rotate(glm::mat4(1.0f), glm::radians(270.f), glm::vec3(0.0f, 0.0f, 1.0f)),
+        .model                 = glm::rotate(glm::mat4(1.0f), glm::radians(0.f), glm::vec3(0.0f, 0.0f, 1.0f)),
+        .normalMatrix          = glm::transpose(glm::inverse(ubo.model)),
         .view                  = viewportCamera->recalculateView(deltaTime),
         .proj                  = viewportCamera->projection((float)height, (float)width),
         .viewProjectionInverse = viewportCamera->inverseProjection (

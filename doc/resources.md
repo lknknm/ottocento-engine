@@ -21,6 +21,10 @@ giving them the deserved credit for helping me through this journey.
 - [Multisampling Primer](https://www.rastergrid.com/blog/gpu-tech/2021/10/multisampling-primer/)
 - [Nvidia Tips and Tricks: Vulkan Dos and Don’ts](https://developer.nvidia.com/blog/vulkan-dos-donts/)
 - [Managing Bindless descriptors in Vulkan](https://dev.to/gasim/implementing-bindless-design-in-vulkan-34no)
+- [COMP238: Raster Graphics  Final Project:
+  Spherical, Cubic, and Parabolic Environment Mappings
+  by Paul Zimmons
+  December 10, 1999.](https://cgvr.cs.uni-bremen.de/teaching/cg_literatur/Spherical,%20Cubic,%20and%20Parabolic%20Environment%20Mappings.pdf)
 
 ## Third-Party Licenses and Attributions within the Ottocento Engine application source:
 
