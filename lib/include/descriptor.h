@@ -19,6 +19,7 @@ struct UniformBufferObject {
     alignas(16) glm::mat4 proj;
     alignas(16) glm::mat4 viewProjectionInverse;
     alignas(16) glm::vec3 cameraPos;
+    alignas(64) VkDeviceAddress edgesBuffer;
 };
 
 /** Wrapper for helper functions related to Vulkan Descriptors. **/

@@ -83,10 +83,18 @@ private:
         
     std::vector<OttModel::Vertex>   vertices;
     std::vector<uint32_t>           indices;
+    std::vector<uint32_t>           edges;
+    
     VkBuffer                        vertexBuffer        = VK_NULL_HANDLE;
     VkDeviceMemory                  vertexBufferMemory  = VK_NULL_HANDLE;
     VkBuffer                        indexBuffer         = VK_NULL_HANDLE;
     VkDeviceMemory                  indexBufferMemory   = VK_NULL_HANDLE;
+    VkBuffer                        edgesBuffer         = VK_NULL_HANDLE;
+    VkDeviceMemory                  edgesBufferMemory   = VK_NULL_HANDLE;
+    VkBufferDeviceAddressInfo       edgesBufferAddressInfo = {
+        .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+        .buffer = edgesBuffer,
+    };
 
     std::vector<VkBuffer>           uniformBuffers;
     std::vector<VkDeviceMemory>     uniformBuffersMemory;
@@ -121,7 +129,7 @@ private:
     void loadModel(std::filesystem::path const& modelPath);
     
     void createVertexBuffer();
-    void createIndexBuffer();
+    void createIndexBuffer(std::vector<uint32_t>& indices, VkBuffer& index_buffer, VkDeviceMemory& index_buffer_memory);
 
     // TODO: Pass these functions to a proper texel class.
     void createTextureImage(const std::filesystem::path& imagePath);

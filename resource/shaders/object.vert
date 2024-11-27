@@ -1,5 +1,8 @@
 #version 450
 
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
+#extension GL_EXT_buffer_reference : require
+
 layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
     mat4 normalMatrix;
@@ -7,6 +10,7 @@ layout(binding = 0) uniform UniformBufferObject {
     mat4 proj;
     mat4 inverseproj;
     vec3 cameraPos;
+    uint64_t edgesBuffer;
 } ubo;
 
 layout(location = 0) in vec3 inPosition;
@@ -36,6 +40,9 @@ void main() {
     
     vec3 normalWorldSpace = normalize((ubo.normalMatrix * vec4(inNormal, 0.0f)).xyz);
     lightIntensity = AMBIENT + max(dot(normalWorldSpace, DIRECTION_TO_LIGHT), 0);
+    
+    glGenBuffers(1, &ubo.edgesBuffer);
+    
     gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);
             
     fragColor    = inColor;

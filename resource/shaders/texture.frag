@@ -1,6 +1,8 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 #extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
+#extension GL_EXT_buffer_reference : require
 
 layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
@@ -9,6 +11,7 @@ layout(binding = 0) uniform UniformBufferObject {
     mat4 proj;
     mat4 inverseproj;
     vec3 cameraPos;
+    uint64_t edgeBuffer;
 } ubo;
 layout(binding = 1) uniform sampler2D texSampler[1024];
 
