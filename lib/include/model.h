@@ -82,13 +82,16 @@ namespace OttModel
         }
         bool operator==(const Vertex& other) const = default;
     };
+    std::vector<uint32_t> extractBoundaryEdges(std::vector<uint32_t>& indices);
 
     //----------------------------------------------------------------------------
     struct modelObject
     {
         uint32_t  startIndex;
         uint32_t  startVertex;
+        uint32_t  startEdge;
         uint32_t  indexCount;
+        uint32_t  edgeCount;
         uint32_t  textureID;
         glm::vec3 pushColorID;
         glm::vec3 offset{0.0f, 0.0f, 0.0f};

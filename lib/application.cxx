@@ -95,7 +95,9 @@ void OttApplication::initWindow()
                 createTextureImageView();
             }
             createVertexBuffer();
-            createIndexBuffer();
+            createIndexBuffer(indices, indexBuffer, indexBufferMemory);
+            createIndexBuffer(edges, edgesBuffer, edgesBufferMemory);
+            edgesBufferAddressInfo.buffer = edgesBuffer;
             createUniformBuffers();
             
             OttDescriptor::createDescriptorPool(device, descriptorPool);
@@ -235,6 +237,7 @@ void OttApplication::drawScene(VkCommandBuffer command_buffer)
         const VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(command_buffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+        //vkCmdBindIndexBuffer(command_buffer, edgesBuffer, 0, VK_INDEX_TYPE_UINT32);
 
         switch (appPipeline.getDisplayMode())
         {
@@ -296,6 +299,9 @@ void OttApplication::cleanupUBO() const
 //-----------------------------------------------------------------------------
 void OttApplication::cleanupModelObjects() const
 {
+    if (edgesBuffer != VK_NULL_HANDLE)       { vkDestroyBuffer  (device, edgesBuffer,       nullptr); }
+    if (edgesBufferMemory != VK_NULL_HANDLE) { vkFreeMemory     (device, edgesBufferMemory, nullptr); }
+    
     if (indexBuffer != VK_NULL_HANDLE)       { vkDestroyBuffer  (device, indexBuffer,       nullptr); }
     if (indexBufferMemory != VK_NULL_HANDLE) { vkFreeMemory     (device, indexBufferMemory, nullptr); }
     
@@ -372,7 +378,8 @@ void OttApplication::loadModel(std::filesystem::path const& modelPath)
     OttModel::modelObject model
     {
         .startIndex  = static_cast<uint32_t>(indices.size()),
-        .startVertex = static_cast<uint32_t>(vertices.size())
+        .startVertex = static_cast<uint32_t>(vertices.size()),
+        .startEdge   = static_cast<uint32_t>(edges.size()),
     };
     
     for (const auto& shape : shapes)
@@ -422,8 +429,9 @@ void OttApplication::loadModel(std::filesystem::path const& modelPath)
             indices.push_back(uniqueVertices[vertex]);
         }
     }
-
+    edges = OttModel::extractBoundaryEdges(indices);
     model.indexCount  = static_cast<uint32_t>(indices.size()) - model.startIndex;
+    model.edgeCount   = static_cast<uint32_t>(edges.size()) - model.startEdge;
     model.pushColorID = {Utils::random_nr(0, 1),  Utils::random_nr(0, 1), Utils::random_nr(0, 1)};
     model.textureID   = 0;
     if (!materials.empty())
@@ -431,11 +439,13 @@ void OttApplication::loadModel(std::filesystem::path const& modelPath)
     models.push_back(model);
     
     LOG(DASHED_SEPARATOR);
-    std::cout << "VERTEX COUNT: "       << vertices.size()    << std::endl;
-    std::cout << "model.startVertex: "  << model.startVertex  << std::endl;
-    std::cout << "model.startIndex: "   << model.startIndex   << std::endl;
-    std::cout << "model.indexCount: "   << model.indexCount   << std::endl;
-    std::cout << "model.textureID "     << model.textureID    << std::endl;
+    LOG("VERTEX COUNT: {}", vertices.size());
+    LOG("model.startVertex: {}", model.startVertex);
+    LOG("model.startIndex: {}",  model.startIndex);
+    LOG("model.startEdges: {}",  model.startEdge);
+    LOG("model.edgeCount: {}",  model.edgeCount);
+    LOG("model.indexCount: {}",  model.indexCount);
+    LOG("model.textureID {}",    model.textureID);
     LOG(DASHED_SEPARATOR);
 }
 
@@ -474,11 +484,11 @@ void OttApplication::createVertexBuffer()
 }
 
 //----------------------------------------------------------------------------
-void OttApplication::createIndexBuffer()
+void OttApplication::createIndexBuffer(std::vector<uint32_t>& index, VkBuffer& index_buffer, VkDeviceMemory& index_buffer_memory)
 {
     if (!vertices.empty())
     {
-        VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+        VkDeviceSize bufferSize = sizeof(index[0]) * index.size();
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
         appDevice.createBuffer (bufferSize,
@@ -488,16 +498,16 @@ void OttApplication::createIndexBuffer()
                                 stagingBufferMemory);
         void* data;
         vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, indices.data(), (size_t) bufferSize);
+        memcpy(data, index.data(), (size_t) bufferSize);
         vkUnmapMemory(device, stagingBufferMemory);
 
         appDevice.createBuffer (bufferSize,
                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-                                indexBuffer,
-                                indexBufferMemory);
-        appDevice.debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)indexBufferMemory, "application::VkDeviceMemory:indexBufferMemory");
-        appDevice.copyBuffer(stagingBuffer, indexBuffer, bufferSize);
+                                index_buffer,
+                                index_buffer_memory);
+        appDevice.debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)index_buffer_memory, "application::VkDeviceMemory:indexBufferMemory");
+        appDevice.copyBuffer(stagingBuffer, index_buffer, bufferSize);
     
         vkDestroyBuffer(device, stagingBuffer, nullptr);
         vkFreeMemory(device, stagingBufferMemory, nullptr);
@@ -625,6 +635,7 @@ void OttApplication::updateUniformBufferCamera(uint32_t currentImage, float delt
                                                  ),
         .cameraPos             = viewportCamera->getEyePosition(),
     };
+    if (!vertices.empty()) { ubo.edgesBuffer = vkGetBufferDeviceAddress(device, &edgesBufferAddressInfo); }
     ubo.proj[1][1] *= -1;
     memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
 }
