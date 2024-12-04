@@ -2,7 +2,7 @@ include(FetchContent)
 FetchContent_Declare(
    vcpkg
    GIT_REPOSITORY https://github.com/microsoft/vcpkg
-   GIT_TAG 3508985146f1b1d248c67ead13f8f54be5b4f5da
+   GIT_TAG 26abb5b33f976246a5f2cdc45cdd073d51caff06
 )
 
 FetchContent_MakeAvailable(vcpkg)
