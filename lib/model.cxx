@@ -6,6 +6,10 @@
 #include <algorithm>
 #include <map>
 
+//----------------------------------------------------------------------------
+/** Computes the boundary edges from a mesh.
+ * Algorithm and function provided by Yaliya on Reddit.
+ * Original thread: https://www.reddit.com/r/opengl/comments/1gpthh9/my_first_mesh_editor/ **/
 std::vector<uint32_t> OttModel::extractBoundaryEdges(std::vector<uint32_t>& indices)
 {
     /* 
@@ -46,7 +50,8 @@ std::vector<uint32_t> OttModel::extractBoundaryEdges(std::vector<uint32_t>& indi
     // Collect edges that appear only once
     for (const auto& [edge, count] : edgeCount)
     {
-        if (count == 1) {
+        if (count == 1)
+        {
             edges.push_back(edge.first);
             edges.push_back(edge.second);
         }

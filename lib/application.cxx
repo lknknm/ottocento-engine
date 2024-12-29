@@ -148,16 +148,21 @@ void OttApplication::initVulkan()
         
         appPipeline.createPipelineLayout    (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, &bindlessDescSetLayout);
         appPipeline.createGraphicsPipeline  ("resource/shaders/object_vertex.spv", "resource/shaders/solid_shading_fragment.spv",
-                                            appPipeline.graphicsPipelines.solid, modelVertexInputInfo, VK_POLYGON_MODE_FILL);
-    
+                                            appPipeline.graphicsPipelines.solid, modelVertexInputInfo, VK_POLYGON_MODE_FILL,
+                                            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+                                            );
         appPipeline.createGraphicsPipeline  ("resource/shaders/object_vertex.spv", "resource/shaders/texture_fragment.spv",
-                                            appPipeline.graphicsPipelines.texture, modelVertexInputInfo, VK_POLYGON_MODE_FILL);
-
+                                            appPipeline.graphicsPipelines.texture, modelVertexInputInfo, VK_POLYGON_MODE_FILL,
+                                            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+                                            );
         appPipeline.createGraphicsPipeline  ("resource/shaders/object_vertex.spv", "resource/shaders/wireframe_fragment.spv",
-                                            appPipeline.graphicsPipelines.wireframe, modelVertexInputInfo, VK_POLYGON_MODE_LINE);
-        
+                                            appPipeline.graphicsPipelines.wireframe, modelVertexInputInfo, VK_POLYGON_MODE_LINE,
+                                            VK_PRIMITIVE_TOPOLOGY_LINE_LIST
+                                            );
         appPipeline.createGraphicsPipeline  ("resource/shaders/grid_vertex.spv", "resource/shaders/grid_fragment.spv",
-                                            appPipeline.graphicsPipelines.grid, gridVertexInputInfo, VK_POLYGON_MODE_FILL);
+                                            appPipeline.graphicsPipelines.grid, gridVertexInputInfo, VK_POLYGON_MODE_FILL,
+                                            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+                                            );
     // endof Pipeline initialization.
 
     // Textures initilization.
@@ -236,21 +241,35 @@ void OttApplication::drawScene(VkCommandBuffer command_buffer)
         const VkBuffer vertexBuffers[] = { vertexBuffer };
         const VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(command_buffer, 0, 1, vertexBuffers, offsets);
-        vkCmdBindIndexBuffer(command_buffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-        //vkCmdBindIndexBuffer(command_buffer, edgesBuffer, 0, VK_INDEX_TYPE_UINT32);
-
+        
+        /** TODO: Eliminate switch case with an unordered_map **/
         switch (appPipeline.getDisplayMode())
         {
             case OttPipeline::DISPLAY_MODE_WIREFRAME:
                 vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, appPipeline.graphicsPipelines.wireframe);
+                vkCmdBindIndexBuffer(command_buffer, edgesBuffer, 0, VK_INDEX_TYPE_UINT32);
                 break;
             case OttPipeline::DISPLAY_MODE_SOLID:
                 vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, appPipeline.graphicsPipelines.solid);
+                vkCmdBindIndexBuffer(command_buffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
                 break;
             case OttPipeline::DISPLAY_MODE_TEXTURE:
                 vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, appPipeline.graphicsPipelines.texture);
+                vkCmdBindIndexBuffer(command_buffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
                 break;
         }
+
+        /** TODO: general cleanup for draft shading **/
+        for (auto& m : models)
+        {
+            push.offset     = m.offset;
+            push.color      = m.pushColorID;
+            push.textureID  = m.textureID;
+            vkCmdPushConstants(command_buffer, appPipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstantData), &push);
+            vkCmdDrawIndexed(command_buffer, m.edgeCount, 1, m.startEdge, 0, 0);
+        }
+        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, appPipeline.graphicsPipelines.texture);
+        vkCmdBindIndexBuffer(command_buffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
         for (auto& m : models)
         {
             push.offset     = m.offset;
@@ -259,6 +278,7 @@ void OttApplication::drawScene(VkCommandBuffer command_buffer)
             vkCmdPushConstants(command_buffer, appPipeline.getPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstantData), &push);
             vkCmdDrawIndexed(command_buffer, m.indexCount, 1, m.startIndex, 0, 0);
         }
+
     }
     vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, appPipeline.graphicsPipelines.grid);
     vkCmdDraw(command_buffer, 6, 1, 0, 0);
@@ -430,19 +450,18 @@ void OttApplication::loadModel(std::filesystem::path const& modelPath)
         }
     }
     edges = OttModel::extractBoundaryEdges(indices);
+    LOG_INFO("Edges Size == {}", edges.size());
     model.indexCount  = static_cast<uint32_t>(indices.size()) - model.startIndex;
-    model.edgeCount   = static_cast<uint32_t>(edges.size()) - model.startEdge;
+    model.edgeCount   = (static_cast<uint32_t>(edges.size()) - model.startEdge);
     model.pushColorID = {Utils::random_nr(0, 1),  Utils::random_nr(0, 1), Utils::random_nr(0, 1)};
-    model.textureID   = 0;
-    if (!materials.empty())
-        model.textureID   = static_cast<uint32_t>(textureImages.size());
+    model.textureID   = (materials.empty()) ?  0 : static_cast<uint32_t>(textureImages.size());
     models.push_back(model);
     
     LOG(DASHED_SEPARATOR);
     LOG("VERTEX COUNT: {}", vertices.size());
     LOG("model.startVertex: {}", model.startVertex);
     LOG("model.startIndex: {}",  model.startIndex);
-    LOG("model.startEdges: {}",  model.startEdge);
+    LOG("model.startEdge: {}",  model.startEdge);
     LOG("model.edgeCount: {}",  model.edgeCount);
     LOG("model.indexCount: {}",  model.indexCount);
     LOG("model.textureID {}",    model.textureID);
@@ -502,7 +521,7 @@ void OttApplication::createIndexBuffer(std::vector<uint32_t>& index, VkBuffer& i
         vkUnmapMemory(device, stagingBufferMemory);
 
         appDevice.createBuffer (bufferSize,
-                                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                 index_buffer,
                                 index_buffer_memory);

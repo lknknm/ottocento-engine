@@ -77,7 +77,7 @@ public:
     void createGraphicsPipeline (
         std::string vertex_shader_path, std::string fragment_shader_path,
         VkPipeline& pipeline, VkPipelineVertexInputStateCreateInfo vertex_input_info,
-        VkPolygonMode polygon_mode
+        VkPolygonMode polygon_mode, VkPrimitiveTopology topology_mode
     );
     
 //----------------------------------------------------------------------------
@@ -102,7 +102,7 @@ private:
 
     [[nodiscard]]           VkShaderModule                         createShaderModule         (const std::vector<char>& code);
     [[nodiscard]] constexpr VkPipelineShaderStageCreateInfo        initShaderStageCreateInfo  (VkShaderStageFlagBits stage, VkShaderModule module);
-    [[nodiscard]] constexpr VkPipelineInputAssemblyStateCreateInfo initInputAssembly          ();
+    [[nodiscard]] constexpr VkPipelineInputAssemblyStateCreateInfo initInputAssembly          (VkPrimitiveTopology topology_mode);
     [[nodiscard]] constexpr VkPipelineViewportStateCreateInfo      initViewportState          (uint32_t viewport_count,uint32_t scissor_count);
     [[nodiscard]] constexpr VkPipelineRasterizationStateCreateInfo initRasterizer             (VkPolygonMode polygon_mode, float line_width);
     [[nodiscard]] constexpr VkPipelineMultisampleStateCreateInfo   initMultisamplingState     (VkSampleCountFlagBits rasterization_samples);

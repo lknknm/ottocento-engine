@@ -41,8 +41,6 @@ void main() {
     vec3 normalWorldSpace = normalize((ubo.normalMatrix * vec4(inNormal, 0.0f)).xyz);
     lightIntensity = AMBIENT + max(dot(normalWorldSpace, DIRECTION_TO_LIGHT), 0);
     
-    glGenBuffers(1, &ubo.edgesBuffer);
-    
     gl_Position = ubo.proj * ubo.view * ubo.model * vec4(inPosition, 1.0);
             
     fragColor    = inColor;
