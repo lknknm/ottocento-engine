@@ -64,7 +64,7 @@ void OttPipeline::createGraphicsPipeline (
     
     VkPipelineInputAssemblyStateCreateInfo inputAssembly        = initInputAssembly(topology_mode);
     VkPipelineViewportStateCreateInfo      viewportState        = initViewportState(1, 1);
-    VkPipelineRasterizationStateCreateInfo rasterState          = initRasterizer(polygon_mode, 1.1f);
+    VkPipelineRasterizationStateCreateInfo rasterState          = initRasterizer(polygon_mode, 1.5f);
     VkPipelineMultisampleStateCreateInfo   multisampling        = initMultisamplingState(pDevice->getMSAASamples());
     VkPipelineDepthStencilStateCreateInfo  depthStencil         = initDepthStencilInfo();
     VkPipelineColorBlendAttachmentState    colorBlendAttachment = initColorBlendAttachment();

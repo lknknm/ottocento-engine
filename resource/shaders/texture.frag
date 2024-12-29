@@ -31,9 +31,13 @@ layout(push_constant) uniform PushConstantData {
     uint textureID;
 } push;
 
+float rand(vec2 co) {
+    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
 void main() {
     if (texture(texSampler[push.textureID], fragTexCoord).a == 0.0)
-        outColor = vec4(vec3(0.9, 0.9, 0.9) * lightIntensity, 1.0);
+        outColor = vec4(vec3(0.7, 0.7, 0.7) * lightIntensity * clamp(rand(fragTexCoord), 0.82f, 1.0f), 1.0);
     else
     {
         vec4 texColor = texture(texSampler[push.textureID], fragTexCoord);
