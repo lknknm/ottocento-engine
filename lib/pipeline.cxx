@@ -33,7 +33,8 @@ OttPipeline::OttPipeline(OttDevice* device_reference, OttSwapChain* swapchain_re
 
 OttPipeline::~OttPipeline()
 {
-    vkDestroyPipeline       (device, graphicsPipelines.object, nullptr);
+    vkDestroyPipeline       (device, graphicsPipelines.texture, nullptr);
+    vkDestroyPipeline       (device, graphicsPipelines.solid, nullptr);
     vkDestroyPipeline       (device, graphicsPipelines.grid, nullptr);
     vkDestroyPipeline       (device, graphicsPipelines.wireframe, nullptr);
     vkDestroyPipelineLayout (device, pipelineLayout, nullptr);
@@ -49,7 +50,7 @@ OttPipeline::~OttPipeline()
 void OttPipeline::createGraphicsPipeline (
     std::string vertex_shader_path, std::string fragment_shader_path,
     VkPipeline&  pipeline, VkPipelineVertexInputStateCreateInfo vertex_input_info,
-    VkPolygonMode polygon_mode
+    VkPolygonMode polygon_mode, VkPrimitiveTopology topology_mode
     )
 {
     auto vertexShaderCode   = Utils::readFile(vertex_shader_path);
@@ -61,9 +62,9 @@ void OttPipeline::createGraphicsPipeline (
     VkPipelineShaderStageCreateInfo { initShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vertShaderModule) },
     VkPipelineShaderStageCreateInfo { initShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule) }};
     
-    VkPipelineInputAssemblyStateCreateInfo inputAssembly        = initInputAssembly();
+    VkPipelineInputAssemblyStateCreateInfo inputAssembly        = initInputAssembly(topology_mode);
     VkPipelineViewportStateCreateInfo      viewportState        = initViewportState(1, 1);
-    VkPipelineRasterizationStateCreateInfo rasterState          = initRasterizer(polygon_mode, 1.0f);
+    VkPipelineRasterizationStateCreateInfo rasterState          = initRasterizer(polygon_mode, 1.5f);
     VkPipelineMultisampleStateCreateInfo   multisampling        = initMultisamplingState(pDevice->getMSAASamples());
     VkPipelineDepthStencilStateCreateInfo  depthStencil         = initDepthStencilInfo();
     VkPipelineColorBlendAttachmentState    colorBlendAttachment = initColorBlendAttachment();
@@ -184,11 +185,11 @@ VkPipelineVertexInputStateCreateInfo OttPipeline::initVertexInputInfo   (uint32_
 
 //-----------------------------------------------------------------------------
 /** Helper function to initialize a VkPipelineInputAssemblyStateCreateInfo struct. **/
-constexpr VkPipelineInputAssemblyStateCreateInfo OttPipeline::initInputAssembly()
+constexpr VkPipelineInputAssemblyStateCreateInfo OttPipeline::initInputAssembly(VkPrimitiveTopology topology_mode)
 {
     return VkPipelineInputAssemblyStateCreateInfo {
         .sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-        .topology               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+        .topology               = topology_mode,
         .primitiveRestartEnable = VK_FALSE,
     };
 }

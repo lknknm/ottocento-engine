@@ -14,17 +14,17 @@ constexpr int TEXTURE_ARRAY_SIZE = 1024;
 /** UBO for the main object pipeline. **/
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
+    alignas(16) glm::mat4 normalMatrix;
     alignas(16) glm::mat4 view;
     alignas(16) glm::mat4 proj;
     alignas(16) glm::mat4 viewProjectionInverse;
     alignas(16) glm::vec3 cameraPos;
+    alignas(8) VkDeviceAddress edgesBuffer;
 };
 
 /** Wrapper for helper functions related to Vulkan Descriptors. **/
 namespace OttDescriptor
 {
-    VkDescriptorSetLayout createObjectDescriptorSetLayout (VkDevice device, OttDevice& app_device);
-    VkDescriptorSetLayout createGridDescriptorSetLayout   (VkDevice device, OttDevice& app_device);
     VkDescriptorSetLayout createBindlessDescriptorSetLayout (VkDevice device, OttDevice& app_device);
     void                  createDescriptorPool              (VkDevice device, VkDescriptorPool& descriptor_pool);
     
