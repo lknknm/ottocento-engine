@@ -22,9 +22,9 @@ foreach(shader IN LISTS shaders)
 	cmake_path(GET shader EXTENSION ext)
 	cmake_path(GET shader STEM basename)
 	if(ext STREQUAL ".vert")
-		set(spv_base "${basename}_vertex")
+		set(spv_base "${basename}.vert")
 	elseif(ext STREQUAL ".frag")
-		set(spv_base "${basename}_fragment")
+		set(spv_base "${basename}.frag")
 	else()
 		set(spv_base "${basename}")
 	endif()
@@ -32,7 +32,7 @@ foreach(shader IN LISTS shaders)
 	add_custom_command(OUTPUT ${SHADER_DIR}/${spv_base}.spv
 		COMMAND ${Vulkan_GLSLC_EXECUTABLE} ${shader} -o ${SHADER_DIR}/${spv_base}.spv
 		DEPENDS ${shader}
-		COMMENT "Compiling ${FILENAME}")
+		COMMENT "Compiling ${spv_base}")
 
 	list(APPEND SPV_SHADERS ${SHADER_DIR}/${spv_base}.spv)
 endForeach()
