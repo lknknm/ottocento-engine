@@ -147,19 +147,19 @@ void OttApplication::initVulkan()
         VkPipelineVertexInputStateCreateInfo gridVertexInputInfo  = appPipeline.initVertexInputInfo(0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE);
         
         appPipeline.createPipelineLayout    (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, &bindlessDescSetLayout);
-        appPipeline.createGraphicsPipeline  ("resource/shaders/object_vertex.spv", "resource/shaders/solid_shading_fragment.spv",
+        appPipeline.createGraphicsPipeline  ("resource/shaders/object.vert.spv", "resource/shaders/solid_shading.frag.spv",
                                             appPipeline.graphicsPipelines.solid, modelVertexInputInfo, VK_POLYGON_MODE_FILL,
                                             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
                                             );
-        appPipeline.createGraphicsPipeline  ("resource/shaders/object_vertex.spv", "resource/shaders/texture_fragment.spv",
+        appPipeline.createGraphicsPipeline  ("resource/shaders/object.vert.spv", "resource/shaders/texture.frag.spv",
                                             appPipeline.graphicsPipelines.texture, modelVertexInputInfo, VK_POLYGON_MODE_FILL,
                                             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
                                             );
-        appPipeline.createGraphicsPipeline  ("resource/shaders/object_vertex.spv", "resource/shaders/wireframe_fragment.spv",
+        appPipeline.createGraphicsPipeline  ("resource/shaders/object.vert.spv", "resource/shaders/wireframe.frag.spv",
                                             appPipeline.graphicsPipelines.wireframe, modelVertexInputInfo, VK_POLYGON_MODE_LINE,
                                             VK_PRIMITIVE_TOPOLOGY_LINE_LIST
                                             );
-        appPipeline.createGraphicsPipeline  ("resource/shaders/grid_vertex.spv", "resource/shaders/grid_fragment.spv",
+        appPipeline.createGraphicsPipeline  ("resource/shaders/grid.vert.spv", "resource/shaders/grid.frag.spv",
                                             appPipeline.graphicsPipelines.grid, gridVertexInputInfo, VK_POLYGON_MODE_FILL,
                                             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
                                             );

@@ -9,7 +9,7 @@
 #include <volk.h>
 #include <vector>
 #include <glm/glm.hpp>
-constexpr int TEXTURE_ARRAY_SIZE = 1024;
+constexpr int TEXTURE_ARRAY_SIZE = 200;
 
 /** UBO for the main object pipeline. **/
 struct UniformBufferObject {
