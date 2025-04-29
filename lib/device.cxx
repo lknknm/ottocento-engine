@@ -499,8 +499,9 @@ VkSampleCountFlagBits OttDevice::getMaxUsableSampleCount() const
 /** Polls the active GPU to get the maximum usable sample count for Descriptors. **/
 uint32_t OttDevice::getMaxDescriptorSampleCount() const
 {
-    VkPhysicalDeviceLimits physicalDeviceLimits;
-    return 200;
+    VkPhysicalDeviceProperties physicalDeviceProperties;
+    vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+    return physicalDeviceProperties.limits.maxPerStageDescriptorSampledImages;
 }
 
 //----------------------------------------------------------------------------
