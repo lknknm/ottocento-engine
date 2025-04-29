@@ -34,10 +34,10 @@ VkDescriptorSetLayout OttDescriptor::createBindlessDescriptorSetLayout(VkDevice 
         .descriptorCount = 1,
         .stageFlags      = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
     };
-    constexpr VkDescriptorSetLayoutBinding samplerLayoutBinding {
+    VkDescriptorSetLayoutBinding samplerLayoutBinding {
         .binding            = 1,
         .descriptorType     = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-        .descriptorCount    = TEXTURE_ARRAY_SIZE,
+        .descriptorCount    = app_device.getMaxDescCount(),
         .stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT,
     };
     std::array bindings = { uboLayoutBinding, samplerLayoutBinding };

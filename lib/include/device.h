@@ -72,6 +72,7 @@ public:
     VkQueue               getGraphicsQueue()  const { return graphicsQueue; }
     VkQueue               getPresentQueue()   const { return presentQueue; }
     VkSampleCountFlagBits getMSAASamples()    const { return msaaSamples; }
+    uint32_t              getMaxDescCount()   const { return physical_maxDescriptorSampledImageCount; }
     
     SwapChainSupportDetails  querySwapChainSupport   (VkPhysicalDevice physical_device);
     QueueFamilyIndices       findQueueFamilies       (VkPhysicalDevice physical_device) const;
@@ -99,6 +100,7 @@ private:
 
     VkPhysicalDevice         physicalDevice = VK_NULL_HANDLE;
     VkSampleCountFlagBits    msaaSamples    = VK_SAMPLE_COUNT_1_BIT;
+    uint32_t                 physical_maxDescriptorSampledImageCount = 0;
     VkDevice                 device;
 
     VkQueue                  graphicsQueue;
@@ -118,8 +120,9 @@ private:
 //----------------------------------------------------------------------------
 // Device Specific Helper functions ------------------------------------------
     
-    std::vector<const char*> getRequiredExtensions   () const;
-    VkSampleCountFlagBits    getMaxUsableSampleCount () const;
+    std::vector<const char*> getRequiredExtensions() const;
+    VkSampleCountFlagBits    getMaxUsableSampleCount() const;
+    uint32_t                 getMaxDescriptorSampleCount() const;
 
     int  rateDeviceSuitability       (VkPhysicalDevice physical_device);
     bool isDeviceSuitable            (VkPhysicalDevice physical_device, std::vector<const char*> device_extensions);
