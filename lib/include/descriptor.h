@@ -9,7 +9,7 @@
 #include <volk.h>
 #include <vector>
 #include <glm/glm.hpp>
-constexpr int TEXTURE_ARRAY_SIZE = 200;
+
 
 /** UBO for the main object pipeline. **/
 struct UniformBufferObject {
@@ -27,6 +27,8 @@ namespace OttDescriptor
 {
     VkDescriptorSetLayout createBindlessDescriptorSetLayout (VkDevice device, OttDevice& app_device);
     void                  createDescriptorPool              (VkDevice device, VkDescriptorPool& descriptor_pool);
+    
+    inline uint32_t TEXTURE_ARRAY_SIZE;
     
     VkDescriptorSet createDescriptorSet (
         VkDevice device,
