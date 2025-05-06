@@ -353,8 +353,10 @@ void OttDevice::pickPhysicalDevice()
         if ((physicalDevice = candidates.rbegin()->second))
         {
             msaaSamples = getMaxUsableSampleCount();
+            physical_maxDescriptorSampledImageCount = getMaxDescriptorSampleCount();
             LOG_INFO("GPU is properly scored and suitable for usage.");
             LOG_INFO("Max Usable Sample Count: {} xMSAA", unsigned(msaaSamples));
+            LOG_INFO("maxDescriptorSampledImageCount: {}", unsigned(physical_maxDescriptorSampledImageCount));
         }
     }
         
@@ -491,6 +493,15 @@ VkSampleCountFlagBits OttDevice::getMaxUsableSampleCount() const
     if (counts & VK_SAMPLE_COUNT_4_BIT) { return VK_SAMPLE_COUNT_4_BIT; }
     if (counts & VK_SAMPLE_COUNT_2_BIT) { return VK_SAMPLE_COUNT_2_BIT; }
     return VK_SAMPLE_COUNT_1_BIT;
+}
+
+//----------------------------------------------------------------------------
+/** Polls the active GPU to get the maximum usable sample count for Descriptors. **/
+uint32_t OttDevice::getMaxDescriptorSampleCount() const
+{
+    VkPhysicalDeviceProperties physicalDeviceProperties;
+    vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
+    return physicalDeviceProperties.limits.maxPerStageDescriptorSampledImages;
 }
 
 //----------------------------------------------------------------------------

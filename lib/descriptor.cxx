@@ -28,18 +28,22 @@
  * VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT. **/
 VkDescriptorSetLayout OttDescriptor::createBindlessDescriptorSetLayout(VkDevice device, OttDevice& app_device)
 {
+    TEXTURE_ARRAY_SIZE = app_device.getMaxDescCount();
+    
     constexpr VkDescriptorSetLayoutBinding uboLayoutBinding {
         .binding         = 0,
         .descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
         .descriptorCount = 1,
         .stageFlags      = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
     };
-    constexpr VkDescriptorSetLayoutBinding samplerLayoutBinding {
+    
+    VkDescriptorSetLayoutBinding samplerLayoutBinding {
         .binding            = 1,
         .descriptorType     = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         .descriptorCount    = TEXTURE_ARRAY_SIZE,
         .stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT,
     };
+    
     std::array bindings = { uboLayoutBinding, samplerLayoutBinding };
     std::array<VkDescriptorBindingFlags, 2> bindingFlags = {
        VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT, // uboLayoutBinding
@@ -82,7 +86,7 @@ void OttDescriptor::createDescriptorPool(VkDevice device, VkDescriptorPool& desc
         },
         VkDescriptorPoolSize {
             .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .descriptorCount = static_cast<uint32_t>(TEXTURE_ARRAY_SIZE),
+            .descriptorCount = TEXTURE_ARRAY_SIZE,
         }
     };
     LOG_DEBUG("descriptorCount {}", poolSizes[1].descriptorCount);
@@ -145,7 +149,8 @@ void OttDescriptor::updateDescriptorSet(const VkDevice device,
         .range  = sizeof(UniformBufferObject),
     };
     
-    VkDescriptorImageInfo imageInfos[TEXTURE_ARRAY_SIZE] = {};
+    VkDescriptorImageInfo imageInfos[2048] = {};
+    
     for (uint32_t j = 0; j < texture_images.size(); j++)
     {
         imageInfos[j].sampler       = texture_sampler;
