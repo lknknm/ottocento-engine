@@ -54,6 +54,8 @@ public:
     // "Redundant" name for it not to be mistaken with the world rightVector.
     glm::vec3 getCameraRightVector() const { return glm::cross(forwardDirection, upVector); }
     glm::mat4 getViewMatrix() const { return ViewMatrix; }
+
+    bool getRenderState() const { return render; }
     
 //----------------------------------------------------------------------------
 private:
@@ -68,6 +70,7 @@ private:
     float rotationSpeed = 0.3f;
     bool  walkNavigation = false;
     bool  perspective = true;
+    bool  render = true;
     
     glm::vec2 lastMousePosition{ 0.0f, 0.0f };
     

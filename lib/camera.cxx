@@ -92,7 +92,10 @@ void OttCamera::viewportInputHandle(float deltaTime)
                 rotateFixedAmount(rotateDirection::RD_DOWN);
             
             if (Input::isKeyDown(windowHandle, GLFW_KEY_KP_0))
+            {
                 resetToInitialPos();
+                render = false;
+            }
             
             if (Input::isKeyDown(windowHandle, GLFW_KEY_KP_1))
                 Input::isKeyDownRepeat(windowHandle, GLFW_KEY_LEFT_CONTROL) ?
