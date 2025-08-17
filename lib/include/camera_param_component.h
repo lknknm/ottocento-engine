@@ -18,7 +18,12 @@
 
 struct OttCameraParametersComponent 
 {
-    double resetAnimationStart = 0.;
+    enum ProjectionType : uint8_t {
+        Perspective,
+        Orthographic
+    };
+    
+    double resetAnimationStart{0.};
     double orbitAnimationStart{0.};
     
     float VerticalFOV{38.0f};

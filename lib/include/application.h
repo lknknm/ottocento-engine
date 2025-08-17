@@ -113,7 +113,8 @@ private:
     //----------------------------------------------------------------------------
     // Main Pipeline functions
     //----------------------------------------------------------------------------
-    
+
+    void registerEntities();
     void initWindow();
     void initVulkan();
     void mainLoop();

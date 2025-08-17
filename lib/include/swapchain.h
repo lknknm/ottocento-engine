@@ -22,7 +22,7 @@
 #include <vector>
 #include "device.h"
 
-const int MAX_FRAMES_IN_FLIGHT = 2;
+constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
 /** Мид: "The first thing is that your swap chain images and your frames in flight are different things.
  * Let your SwapChain class manage the VkSwapchainKHR and its associated VkImageViews and the "rendering's done"

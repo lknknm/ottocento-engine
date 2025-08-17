@@ -18,6 +18,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
 
+
 #include <algorithm>
 #include <array>
 #include <cstring>
@@ -30,15 +31,24 @@
 
 #include "fmtfs.hxx"
 #include "application.h"
+
+#include <input.hxx>
+
 #include "helpers.h"
 #include "macros.h"
 #include "utils.hxx"
+
+#include "camera_param_component.h"
+#include "camera_pos_component.h"
+#include "entt/entt.hpp"
+
 
 //----------------------------------------------------------------------------
 /** Initiates Window and Vulkan related resources to get to the mainLoop.
  *  Cleans resources after the application is closed inside the mainLoop. **/
 void OttApplication::run()
 {
+    registerEntities();
     initWindow();
     initVulkan();
     mainLoop();
@@ -48,6 +58,17 @@ void OttApplication::run()
 //----------------------------------------------------------------------------
 // Main Pipeline functions
 //----------------------------------------------------------------------------
+
+void OttApplication::registerEntities()
+{
+    entt::registry registry;
+
+    //----------------------------------------------------------------------------
+    /* Register viewport Camera Entity */
+    auto vpCamera = registry.create();
+    registry.emplace<OttCameraParametersComponent>(vpCamera);
+    registry.emplace<OttCameraCoordinatesComponent>(vpCamera);
+}
     
 //----------------------------------------------------------------------------
 /** Initiate GLFW window with specific parameters and sets up the window icon.
