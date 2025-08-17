@@ -16,23 +16,16 @@
 
 #pragma once
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#define GLM_ENABLE_EXPERIMENTAL
-
-#include "window.h"
-#include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
-struct OttCameraParametersComponent {
-    double resetAnimationStart{0.};
+struct OttCameraParametersComponent 
+{
+    double resetAnimationStart = 0.;
     double orbitAnimationStart{0.};
     
-    float VerticalFOV = 38.0f;
-    constexpr float NearClip = 0.1f;
-    constexpr float FarClip = 1000.0f;
-    constexpr float speed = 2.0f;
-    constexpr float orthoZoomFactor = 10.f;
-    constexpr float rotationSpeed = 0.3f;
+    float VerticalFOV{38.0f};
+    float NearClip{0.1f};
+    float FarClip{1000.0f};
+    float speed{2.0f};
+    float orthoZoomFactor{10.f};
+    float rotationSpeed{0.3f};
 };
+

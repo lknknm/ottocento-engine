@@ -23,6 +23,7 @@
 #include <stdexcept>
 #include <fmt/core.h>
 #include "macros.h"
+#include "camera_param_component.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>

@@ -28,12 +28,30 @@
 struct OttCameraSystem
 {
 //----------------------------------------------------------------------------
-public:
     glm::mat4 recalculateView(float deltaTime);
         
 //----------------------------------------------------------------------------
 // Projection and Direction functions
 //----------------------------------------------------------------------------
+    enum struct ViewType
+    {
+        VT_FRONT,
+        VT_BACK,
+        VT_RIGHT,
+        VT_LEFT,
+        VT_TOP,
+        VT_BOTTOM,
+        VT_ISOMETRIC,
+        VT_INVERT_ISOMETRIC
+    };
+    
+    enum struct rotateDirection
+    {
+        RD_RIGHT,
+        RD_LEFT,
+        RD_UP,
+        RD_DOWN
+    };
     
     glm::mat4 projection(float height, float width) const;
     glm::mat4 inverseProjection(glm::mat4 perspectiveProjection, glm::mat4 view);
