@@ -94,7 +94,7 @@ void OttPipeline::createGraphicsPipeline (
     VkResult result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo,nullptr, &pipeline);
     if (result != VK_SUCCESS)
     {
-        LOG_ERROR("vkCreateGraphicsPipelines returned: %i", static_cast<int>(result));
+        LOG_ERROR("vkCreateGraphicsPipelines returned: {}", static_cast<int>(result));
         throw std::runtime_error("Failed to create graphics pipeline.");
     }
     LOG_INFO("Pipeline Created");
@@ -124,7 +124,7 @@ void OttPipeline::createPipelineLayout(VkShaderStageFlags push_stage_flags, VkDe
     const VkResult result = vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout);
     if (result != VK_SUCCESS)
     {
-        LOG_ERROR("vkCreatePipelineLayout returned: %i", static_cast<int>(result));
+        LOG_ERROR("vkCreatePipelineLayout returned: {}", static_cast<int>(result));
         throw std::runtime_error("Failed to create pipeline layout");
     }
     pDevice->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)pipelineLayout, CSTR_RED(" OttPipeline::VkPipelineLayout:pipelineLayout "));
@@ -145,7 +145,7 @@ VkShaderModule OttPipeline::createShaderModule(const std::vector<char>& code)
     const VkResult result = vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule);
     if (result != VK_SUCCESS)
     {
-        LOG_ERROR("vkCreateShaderModule returned: %i", static_cast<int>(result));
+        LOG_ERROR("vkCreateShaderModule returned: {}", static_cast<int>(result));
         throw std::runtime_error("failed to create shader module!");
     }
     LOG_INFO("Shader Module Created");
