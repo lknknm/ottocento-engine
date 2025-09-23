@@ -67,7 +67,7 @@ VkDescriptorSetLayout OttDescriptor::createBindlessDescriptorSetLayout(VkDevice 
     const VkResult result = vkCreateDescriptorSetLayout(device, &bindlessLayoutInfo, nullptr, &bindlessDescriptorSetLayout);
     if(result != VK_SUCCESS)
     {
-        LOG_ERROR("vkCreateDescriptorSetLayout returned: %i", static_cast<int>(result));
+        LOG_ERROR("vkCreateDescriptorSetLayout returned: {}", static_cast<int>(result));
         throw std::runtime_error("Failed to create descriptor set layout!");
     }
     app_device.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t) bindlessDescriptorSetLayout, CSTR_CYAN(" OttDescriptor::bindlessDescriptorSetLayout" ));

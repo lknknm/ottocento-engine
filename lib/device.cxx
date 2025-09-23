@@ -169,7 +169,7 @@ void OttDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
     VkResult result = vkCreateBuffer(device, &bufferInfo, nullptr, &buffer);
     if (result != VK_SUCCESS)
     {
-        LOG_ERROR("vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) returned %i", static_cast<int>(result));
+        LOG_ERROR("vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) returned {}", static_cast<int>(result));
         throw std::runtime_error("Failed to create buffer.");
     }
 
@@ -298,7 +298,7 @@ void OttDevice::createInstance()
     const VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
     if (result != VK_SUCCESS)
     {
-        LOG_ERROR("vkCreateInstance returned: %i", static_cast<int>(result));
+        LOG_ERROR("vkCreateInstance returned: {}", static_cast<int>(result));
         throw std::runtime_error("failed to create instance!");
     }
     LOG_INFO("Vulkan Instance Created");
