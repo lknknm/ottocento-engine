@@ -278,8 +278,13 @@ void OttDevice::createInstance()
     #ifdef __APPLE__
     extensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
     createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+    ++createInfo.enabledExtensionCount;
     #endif
-    
+
+    for (const auto& extension : extensions) {
+        LOG_INFO("Extensions List:: {}", extension);
+    }
+
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
     if (enableValidationLayers)
     {
@@ -298,7 +303,7 @@ void OttDevice::createInstance()
     const VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
     if (result != VK_SUCCESS)
     {
-        LOG_ERROR("vkCreateInstance returned: %i", static_cast<int>(result));
+        LOG_ERROR("vkCreateInstance returned: {}", static_cast<int>(result));
         throw std::runtime_error("failed to create instance!");
     }
     LOG_INFO("Vulkan Instance Created");
