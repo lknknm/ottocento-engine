@@ -45,21 +45,23 @@ VkDescriptorSetLayout OttDescriptor::createBindlessDescriptorSetLayout(VkDevice 
     };
     
     std::array bindings = { uboLayoutBinding, samplerLayoutBinding };
-    std::array<VkDescriptorBindingFlags, 2> bindingFlags = {
+    constexpr int bindingFlagsSize = 2;
+    constexpr std::array<VkDescriptorBindingFlags, bindingFlagsSize> bindingFlags = {
        VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT, // uboLayoutBinding
        VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT // samplerLayoutBinding
     };
     
     const VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo {
         .sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
-        .bindingCount  = static_cast<uint32_t>(bindings.size()),
+        .bindingCount  = static_cast<uint32_t>(bindingFlagsSize),
         .pBindingFlags = bindingFlags.data()
     };
 
     const VkDescriptorSetLayoutCreateInfo bindlessLayoutInfo {
-        .sType          = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .sType          = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO ,
         .pNext          = &bindingFlagsInfo,
-        .bindingCount   = static_cast<uint32_t>(bindings.size()),
+        .flags          = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT,
+        .bindingCount   = static_cast<uint32_t>(bindingFlagsSize),
         .pBindings      = bindings.data(),
     };
 

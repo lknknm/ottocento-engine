@@ -393,19 +393,22 @@ void OttDevice::createLogicalDevice()
 
     VkPhysicalDeviceVulkan12Features physicalDeviceVulkan12Features {
                                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
-                                .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
-                                .descriptorBindingPartiallyBound           = VK_TRUE,
-                                .descriptorBindingVariableDescriptorCount  = VK_TRUE,
-                                .runtimeDescriptorArray                    = VK_TRUE,
-                                .bufferDeviceAddress                       = VK_TRUE
+                                .shaderSampledImageArrayNonUniformIndexing     = VK_TRUE,
+                                .descriptorBindingUniformBufferUpdateAfterBind = VK_TRUE,
+                                .descriptorBindingSampledImageUpdateAfterBind  = VK_TRUE,
+                                .descriptorBindingPartiallyBound               = VK_TRUE,
+                                .descriptorBindingVariableDescriptorCount      = VK_TRUE,
+                                .runtimeDescriptorArray                        = VK_TRUE,
+                                .bufferDeviceAddress                           = VK_TRUE
     };
     
     VkPhysicalDeviceFeatures2 deviceFeatures {
                                 .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
                                 .pNext = &physicalDeviceVulkan12Features,
-                                .features = {.sampleRateShading = VK_TRUE,
-                                             .fillModeNonSolid  = VK_TRUE,
-                                             .samplerAnisotropy = VK_TRUE,
+                                .features = {
+                                                .sampleRateShading = VK_TRUE,
+                                                .fillModeNonSolid  = VK_TRUE,
+                                                .samplerAnisotropy = VK_TRUE,
                                 }
     };
 

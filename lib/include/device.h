@@ -125,9 +125,9 @@ private:
 //----------------------------------------------------------------------------
 // Device Specific Helper functions ------------------------------------------
     
-    std::vector<const char*> getRequiredExtensions() const;
-    VkSampleCountFlagBits    getMaxUsableSampleCount() const;
-    uint32_t                 getMaxDescriptorSampleCount() const;
+    [[nodiscard]] std::vector<const char*> getRequiredExtensions() const;
+    [[nodiscard]] VkSampleCountFlagBits    getMaxUsableSampleCount() const;
+    [[nodiscard]] uint32_t                 getMaxDescriptorSampleCount() const;
 
     int  rateDeviceSuitability       (VkPhysicalDevice physical_device);
     bool isDeviceSuitable            (VkPhysicalDevice physical_device, std::vector<const char*> device_extensions);
