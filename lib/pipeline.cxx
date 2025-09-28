@@ -22,6 +22,8 @@
 #include "model.h"
 #include "pipeline.h"
 
+#include <filesystem>
+
 #include "utils.hxx"
 
 OttPipeline::OttPipeline(OttDevice* device_reference, OttSwapChain* swapchain_reference)
@@ -53,6 +55,9 @@ void OttPipeline::createGraphicsPipeline (
     VkPolygonMode polygon_mode, VkPrimitiveTopology topology_mode
     )
 {
+    std::filesystem::path cwd = std::filesystem::current_path();
+    LOG_INFO("Filepath {}", cwd.string());
+
     auto vertexShaderCode   = Utils::readFile(vertex_shader_path);
     auto fragShaderCode     = Utils::readFile(fragment_shader_path);
 
@@ -60,7 +65,8 @@ void OttPipeline::createGraphicsPipeline (
     VkShaderModule fragShaderModule    = createShaderModule(fragShaderCode);
     std::array     shaderStages        = {
     VkPipelineShaderStageCreateInfo { initShaderStageCreateInfo(VK_SHADER_STAGE_VERTEX_BIT, vertShaderModule) },
-    VkPipelineShaderStageCreateInfo { initShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule) }};
+    VkPipelineShaderStageCreateInfo { initShaderStageCreateInfo(VK_SHADER_STAGE_FRAGMENT_BIT, fragShaderModule) }
+    };
     
     VkPipelineInputAssemblyStateCreateInfo inputAssembly        = initInputAssembly(topology_mode);
     VkPipelineViewportStateCreateInfo      viewportState        = initViewportState(1, 1);
@@ -168,10 +174,10 @@ constexpr VkPipelineShaderStageCreateInfo OttPipeline::initShaderStageCreateInfo
 
 //-----------------------------------------------------------------------------
 /** Helper function to initialize a VkPipelineVertexInputStateCreateInfo struct. **/
-VkPipelineVertexInputStateCreateInfo OttPipeline::initVertexInputInfo   (uint32_t vertex_binding_desc_count,
-                                                                        VkVertexInputBindingDescription* binding_description,
-                                                                        uint32_t att_desc_count,
-                                                                        VkVertexInputAttributeDescription* vertex_att_desc)
+VkPipelineVertexInputStateCreateInfo OttPipeline::initVertexInputInfo  (uint32_t vertex_binding_desc_count,
+                                                                                 VkVertexInputBindingDescription* binding_description,
+                                                                                 uint32_t att_desc_count,
+                                                                                 VkVertexInputAttributeDescription* vertex_att_desc)
 {
     return VkPipelineVertexInputStateCreateInfo {
         .sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,

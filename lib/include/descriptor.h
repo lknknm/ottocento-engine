@@ -37,12 +37,12 @@ namespace OttDescriptor
         VkDescriptorPool descriptor_pool
     );
     void updateDescriptorSet (
-        const VkDevice device,
+        VkDevice device,
         const OttDevice& app_device,
-        const VkDescriptorSet descriptor_set,
+        VkDescriptorSet descriptor_set,
         const VkBuffer& uniform_buffer,
         const std::vector<VkImage>& texture_images,
-        const VkSampler texture_sampler,
+        VkSampler texture_sampler,
         const std::vector<VkImageView>& texture_image_views
     );
 }
