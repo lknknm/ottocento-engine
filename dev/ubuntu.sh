@@ -1,4 +1,4 @@
-sudo apt install -y libxinerama-dev libxcursor-dev libglu1-mesa pkg-config
+sudo apt install -y libxinerama-dev libxcursor-dev libxorg-dev libglu1-mesa-dev pkg-config
  
 # glfw dependencies
 # xinerama
