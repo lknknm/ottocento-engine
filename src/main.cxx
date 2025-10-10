@@ -22,11 +22,14 @@
 
 #include <fmt/core.h>
 
-int main()
+int main(int, char *argv[])
 {
     OttApplication app;
 
-    try { app.run(); }
+	std::filesystem::path exe_path{argv[0]};
+	auto shader_dir = exe_path.parent_path() / "shaders";
+
+    try { app.run(shader_dir); }
     catch (const std::exception& e) {
         fmt::println(stderr, "{}", e.what());
         return EXIT_FAILURE;

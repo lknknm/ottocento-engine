@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#include <filesystem>
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
@@ -37,10 +38,10 @@
 //----------------------------------------------------------------------------
 /** Initiates Window and Vulkan related resources to get to the mainLoop.
  *  Cleans resources after the application is closed inside the mainLoop. **/
-void OttApplication::run()
+void OttApplication::run(const std::filesystem::path& shader_dir)
 {
     initWindow();
-    initVulkan();
+    initVulkan(shader_dir);
     mainLoop();
     cleanupVulkanResources();
 }
@@ -138,7 +139,7 @@ void OttApplication::initWindow()
     
 //----------------------------------------------------------------------------
 /** Initiates and creates Vulkan related resources. **/
-void OttApplication::initVulkan()
+void OttApplication::initVulkan(const std::filesystem::path& shader_dir)
 {
     // Pipeline Initilization.    
         auto bindingDescription     = OttModel::Vertex::getBindingDescription();
@@ -147,19 +148,19 @@ void OttApplication::initVulkan()
         VkPipelineVertexInputStateCreateInfo gridVertexInputInfo  = appPipeline.initVertexInputInfo(0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE);
         
         appPipeline.createPipelineLayout    (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, &bindlessDescSetLayout);
-        appPipeline.createGraphicsPipeline  ("build/shaders/object.vert.spv", "build/shaders/solid_shading.frag.spv",
+        appPipeline.createGraphicsPipeline  (shader_dir / "object.vert.spv", shader_dir / "solid_shading.frag.spv",
                                             appPipeline.graphicsPipelines.solid, modelVertexInputInfo, VK_POLYGON_MODE_FILL,
                                             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
                                             );
-        appPipeline.createGraphicsPipeline  ("build/shaders/object.vert.spv", "build/shaders/texture.frag.spv",
+        appPipeline.createGraphicsPipeline  (shader_dir / "object.vert.spv", shader_dir / "texture.frag.spv",
                                             appPipeline.graphicsPipelines.texture, modelVertexInputInfo, VK_POLYGON_MODE_FILL,
                                             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
                                             );
-        appPipeline.createGraphicsPipeline  ("build/shaders/object.vert.spv", "build/shaders/wireframe.frag.spv",
+        appPipeline.createGraphicsPipeline  (shader_dir / "object.vert.spv", shader_dir / "wireframe.frag.spv",
                                             appPipeline.graphicsPipelines.wireframe, modelVertexInputInfo, VK_POLYGON_MODE_LINE,
                                             VK_PRIMITIVE_TOPOLOGY_LINE_LIST
                                             );
-        appPipeline.createGraphicsPipeline  ("build/shaders/grid.vert.spv", "build/shaders/grid.frag.spv",
+        appPipeline.createGraphicsPipeline  (shader_dir / "grid.vert.spv", shader_dir / "grid.frag.spv",
                                             appPipeline.graphicsPipelines.grid, gridVertexInputInfo, VK_POLYGON_MODE_FILL,
                                             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
                                             );

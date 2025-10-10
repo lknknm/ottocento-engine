@@ -49,7 +49,7 @@ class OttApplication
 public:
 //----------------------------------------------------------------------------
     
-    void run();    
+    void run(const std::filesystem::path&);    
     GLFWwindow* getWindowhandle() const { return appwindow.getWindowhandle(); }  
 
 //----------------------------------------------------------------------------
@@ -115,7 +115,7 @@ private:
     //----------------------------------------------------------------------------
     
     void initWindow();
-    void initVulkan();
+    void initVulkan(const std::filesystem::path& shader_dir);
     void mainLoop();
     void drawFrame();
     void drawScene(VkCommandBuffer command_buffer);
