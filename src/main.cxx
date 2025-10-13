@@ -26,10 +26,10 @@ int main(int, char *argv[])
 {
     OttApplication app;
 
-	std::filesystem::path exe_path{argv[0]};
-	auto shader_dir = exe_path.parent_path() / "shaders";
+	const std::filesystem::path exe_path{argv[0]};
+	const std::filesystem::path resource_dir = exe_path.parent_path() / "resource";
 
-    try { app.run(shader_dir); }
+	try { app.run(resource_dir); }
     catch (const std::exception& e) {
         fmt::println(stderr, "{}", e.what());
         return EXIT_FAILURE;

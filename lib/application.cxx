@@ -38,10 +38,10 @@
 //----------------------------------------------------------------------------
 /** Initiates Window and Vulkan related resources to get to the mainLoop.
  *  Cleans resources after the application is closed inside the mainLoop. **/
-void OttApplication::run(const std::filesystem::path& shader_dir)
+void OttApplication::run(const std::filesystem::path& resource_dir)
 {
     initWindow();
-    initVulkan(shader_dir);
+    initVulkan(resource_dir);
     mainLoop();
     cleanupVulkanResources();
 }
@@ -139,59 +139,61 @@ void OttApplication::initWindow()
     
 //----------------------------------------------------------------------------
 /** Initiates and creates Vulkan related resources. **/
-void OttApplication::initVulkan(const std::filesystem::path& shader_dir)
+void OttApplication::initVulkan(const std::filesystem::path& resource_dir)
 {
     // Pipeline Initilization.    
-        auto bindingDescription     = OttModel::Vertex::getBindingDescription();
-        auto attributeDescriptions  = OttModel::Vertex::getAttributeDescriptions();
-        VkPipelineVertexInputStateCreateInfo modelVertexInputInfo = appPipeline.initVertexInputInfo(1, &bindingDescription, static_cast<uint32_t>(attributeDescriptions.size()), attributeDescriptions.data());
-        VkPipelineVertexInputStateCreateInfo gridVertexInputInfo  = appPipeline.initVertexInputInfo(0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE);
-        
-        appPipeline.createPipelineLayout    (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, &bindlessDescSetLayout);
-        appPipeline.createGraphicsPipeline  (shader_dir / "object.vert.spv", shader_dir / "solid_shading.frag.spv",
-                                            appPipeline.graphicsPipelines.solid, modelVertexInputInfo, VK_POLYGON_MODE_FILL,
-                                            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
-                                            );
-        appPipeline.createGraphicsPipeline  (shader_dir / "object.vert.spv", shader_dir / "texture.frag.spv",
-                                            appPipeline.graphicsPipelines.texture, modelVertexInputInfo, VK_POLYGON_MODE_FILL,
-                                            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
-                                            );
-        appPipeline.createGraphicsPipeline  (shader_dir / "object.vert.spv", shader_dir / "wireframe.frag.spv",
-                                            appPipeline.graphicsPipelines.wireframe, modelVertexInputInfo, VK_POLYGON_MODE_LINE,
-                                            VK_PRIMITIVE_TOPOLOGY_LINE_LIST
-                                            );
-        appPipeline.createGraphicsPipeline  (shader_dir / "grid.vert.spv", shader_dir / "grid.frag.spv",
-                                            appPipeline.graphicsPipelines.grid, gridVertexInputInfo, VK_POLYGON_MODE_FILL,
-                                            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
-                                            );
+    auto bindingDescription     = OttModel::Vertex::getBindingDescription();
+    auto attributeDescriptions  = OttModel::Vertex::getAttributeDescriptions();
+    VkPipelineVertexInputStateCreateInfo modelVertexInputInfo = appPipeline.initVertexInputInfo(1, &bindingDescription, static_cast<uint32_t>(attributeDescriptions.size()), attributeDescriptions.data());
+    VkPipelineVertexInputStateCreateInfo gridVertexInputInfo  = appPipeline.initVertexInputInfo(0, VK_NULL_HANDLE, 0, VK_NULL_HANDLE);
+
+    const auto shader_dir = resource_dir / "shaders";
+    
+    appPipeline.createPipelineLayout    (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, &bindlessDescSetLayout);
+    appPipeline.createGraphicsPipeline  (shader_dir / "object.vert.spv", shader_dir / "solid_shading.frag.spv",
+                                        appPipeline.graphicsPipelines.solid, modelVertexInputInfo, VK_POLYGON_MODE_FILL,
+                                        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+                                        );
+    appPipeline.createGraphicsPipeline  (shader_dir / "object.vert.spv", shader_dir / "texture.frag.spv",
+                                        appPipeline.graphicsPipelines.texture, modelVertexInputInfo, VK_POLYGON_MODE_FILL,
+                                        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+                                        );
+    appPipeline.createGraphicsPipeline  (shader_dir / "object.vert.spv", shader_dir / "wireframe.frag.spv",
+                                        appPipeline.graphicsPipelines.wireframe, modelVertexInputInfo, VK_POLYGON_MODE_LINE,
+                                        VK_PRIMITIVE_TOPOLOGY_LINE_LIST
+                                        );
+    appPipeline.createGraphicsPipeline  (shader_dir / "grid.vert.spv", shader_dir / "grid.frag.spv",
+                                        appPipeline.graphicsPipelines.grid, gridVertexInputInfo, VK_POLYGON_MODE_FILL,
+                                        VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
+                                        );
     // endof Pipeline initialization.
 
     // Textures initilization.
-        VkHelpers::create1x1BlankImage(textureImage, mipLevels, appDevice, textureImages, textureImageMemory[0]);
-        createTextureImageView();
-    
-        createTextureImage("resource/matcap/clay_brown.png");
-        createTextureImageView();
-    
-        createTextureImage("resource/matcap/ceramic_lightbulb.png");
-        createTextureImageView();
-    
-        createTextureSampler();
-        createUniformBuffers();
+    VkHelpers::create1x1BlankImage(textureImage, mipLevels, appDevice, textureImages, textureImageMemory[0]);
+    createTextureImageView();
+
+	createTextureImage(resource_dir / "matcap/clay_brown.png");
+	createTextureImageView();
+
+	createTextureImage(resource_dir / "matcap/ceramic_lightbulb.png");
+	createTextureImageView();
+
+    createTextureSampler();
+    createUniformBuffers();
     // endof Textures initilization.
 
     // Descriptor Initilization.
-        OttDescriptor::createDescriptorPool(device, descriptorPool);
-        bindlessDescriptorSet = OttDescriptor::createDescriptorSet(device, 1, bindlessDescSetLayout, descriptorPool);
-        OttDescriptor::updateDescriptorSet (
-            device, appDevice,
-            bindlessDescriptorSet,
-            uniformBuffers[0],
-            textureImages,
-            textureSampler,
-            textureImageViews
-        );
-    // endof Descriptor Initilization.
+    OttDescriptor::createDescriptorPool(device, descriptorPool);
+    bindlessDescriptorSet = OttDescriptor::createDescriptorSet(device, 1, bindlessDescSetLayout, descriptorPool);
+    OttDescriptor::updateDescriptorSet (
+        device, appDevice,
+        bindlessDescriptorSet,
+        uniformBuffers[0],
+        textureImages,
+        textureSampler,
+        textureImageViews
+    );
+	// endof Descriptor Initilization.
 }
     
 //----------------------------------------------------------------------------
@@ -374,8 +376,8 @@ void OttApplication::loadModel(std::filesystem::path const& modelPath)
             
     if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath.string().c_str(), baseDir.string().c_str()))
     {
-		LOG_ERROR("{}, {}", warn, err);
-		return;
+        LOG_ERROR("{}, {}", warn, err);
+        return;
     }
 
     LOG(DASHED_SEPARATOR);

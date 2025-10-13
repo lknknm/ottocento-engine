@@ -1,0 +1,5 @@
+set(resource_dir ${CMAKE_BINARY_DIR}/resource)
+add_subdirectory(matcap)
+add_subdirectory(models)
+add_subdirectory(shaders)
+add_subdirectory(textures)
