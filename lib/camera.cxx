@@ -23,6 +23,7 @@
 #include <stdexcept>
 #include <fmt/core.h>
 #include "macros.h"
+#include "camera_param_component.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -92,7 +93,10 @@ void OttCamera::viewportInputHandle(float deltaTime)
                 rotateFixedAmount(rotateDirection::RD_DOWN);
             
             if (Input::isKeyDown(windowHandle, GLFW_KEY_KP_0))
+            {
                 resetToInitialPos();
+                render = false;
+            }
             
             if (Input::isKeyDown(windowHandle, GLFW_KEY_KP_1))
                 Input::isKeyDownRepeat(windowHandle, GLFW_KEY_LEFT_CONTROL) ?
