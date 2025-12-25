@@ -137,5 +137,5 @@ private:
     void createTextureSampler();
     
     void createUniformBuffers();
-    void updateUniformBufferCamera(uint32_t currentImage, float deltaTime, int width, int height);
+    void updateUniformBufferCamera(uint32_t currentImage, float deltaTime, float width, float height);
 };

@@ -214,14 +214,14 @@ void OttApplication::drawFrame()
 {
     if (static_cast<float>(appSwapChain.width()) > 0.0f && static_cast<float>(appSwapChain.height()) > 0.0f)
     {
-        const auto startTime = std::chrono::high_resolution_clock::now();
+        const auto startTime { std::chrono::high_resolution_clock::now() };
         if (const VkCommandBuffer commandBuffer = ottRenderer.beginFrame())
         {        
             ottRenderer.beginSwapChainRenderPass(commandBuffer);
-            const float deltaTime = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - startTime).count() * 0.001f * 0.001f * 0.001f;
+            const auto deltaTime { std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - startTime).count() * 0.001f * 0.001f * 0.001f };
             
             drawScene(commandBuffer);
-            updateUniformBufferCamera(appSwapChain.getCurrentFrame(), deltaTime, appSwapChain.width(), appSwapChain.height());
+            updateUniformBufferCamera(appSwapChain.getCurrentFrame(), deltaTime, static_cast<float>(appSwapChain.width()), static_cast<float>(appSwapChain.height()));
             
             ottRenderer.endSwapChainRenderPass(commandBuffer);
             ottRenderer.endFrame();
@@ -646,19 +646,20 @@ void OttApplication::createUniformBuffers()
 }
 
 //----------------------------------------------------------------------------
-void OttApplication::updateUniformBufferCamera(uint32_t currentImage, float deltaTime, int width, int height)
+void OttApplication::updateUniformBufferCamera(const uint32_t currentImage, const float deltaTime, const float width, const float height)
 {        
     UniformBufferObject ubo {
         .model                 = glm::rotate(glm::mat4(1.0f), glm::radians(0.f), glm::vec3(0.0f, 0.0f, 1.0f)),
         .normalMatrix          = glm::transpose(glm::inverse(ubo.model)),
         .view                  = viewportCamera->recalculateView(deltaTime),
-        .proj                  = viewportCamera->projection((float)height, (float)width),
+        .proj                  = viewportCamera->projection(height, width),
         .viewProjectionInverse = viewportCamera->inverseProjection (
-                                                viewportCamera->projection((float)height, (float)width),
+                                                viewportCamera->projection(height, width),
                                                 viewportCamera->recalculateView(deltaTime)
                                                  ),
         .cameraPos             = viewportCamera->getEyePosition(),
     };
+
     if (!vertices.empty()) { ubo.edgesBuffer = vkGetBufferDeviceAddress(device, &edgesBufferAddressInfo); }
     ubo.proj[1][1] *= -1;
     memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
