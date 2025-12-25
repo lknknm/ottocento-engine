@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <filesystem>
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
@@ -22,17 +21,16 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
-#include <iostream>
+#include <filesystem>
+#include <fmt/std.h> 
 #include <stdexcept>
 #include <unordered_map>
 
-#include "stb_image.h"
-#include "tiny_obj_loader.h"
-
-#include "fmtfs.hxx"
 #include "application.h"
 #include "helpers.h"
 #include "macros.h"
+#include "stb_image.h"
+#include "tiny_obj_loader.h"
 #include "utils.hxx"
 
 //----------------------------------------------------------------------------
