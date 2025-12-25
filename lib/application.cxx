@@ -26,10 +26,11 @@
 #include <stdexcept>
 #include <unordered_map>
 
+#include "stb_image.h"
+
 #include "application.h"
 #include "helpers.h"
 #include "macros.h"
-#include "stb_image.h"
 #include "tiny_obj_loader.h"
 #include "utils.hxx"
 
@@ -59,18 +60,20 @@ void OttApplication::initWindow()
 {
     viewportCamera->appwindow       = &appwindow;
     viewportCamera->windowHandle    = appwindow.getWindowhandle();
-    appwindow.OnFramebufferResized  = [&](const glm::ivec2& size)
+    appwindow.OnFramebufferResized  = [&](const glm::uvec2& size)
     {
         appSwapChain.setFramebufferResized(true);
         appSwapChain.setWidth(size.x);
         appSwapChain.setHeight(size.y);
     };
+
     appwindow.OnWindowRefreshed = [&]()
     {
         vkDeviceWaitIdle(device);
         appSwapChain.refreshSwapChain();
         drawFrame();
     };
+
     appwindow.OnFileDropped = [&](int count, const char** paths)
     {
         vkDeviceWaitIdle(device);
@@ -111,6 +114,7 @@ void OttApplication::initWindow()
              );
         }
     };
+
     appwindow.interactorKeyCallback = [&](int key, int scancode, int action, int mods)
     {
         vkDeviceWaitIdle(device);
