@@ -52,10 +52,10 @@ public:
     ~OttSwapChain();
     
     [[nodiscard]] VkSwapchainKHR  getSwapChain()              const { return swapChain; }
-    [[nodiscard]] VkFramebuffer   getFrameBuffer(int index)   const { return swapChainFramebuffers[index]; }
+    [[nodiscard]] VkFramebuffer   getFrameBuffer(uint32_t index)   const { return swapChainFramebuffers[index]; }
     [[nodiscard]] uint32_t        getCurrentFrame()           const { return currentFrame; }
     [[nodiscard]] VkRenderPass    getRenderPass()             const { return renderPass; }
-    [[nodiscard]] VkImageView     getImageView(int index)     const { return swapChainImageViews[index]; }
+    [[nodiscard]] VkImageView     getImageView(uint32_t index)     const { return swapChainImageViews[index]; }
     [[nodiscard]] VkFormat        getSwapChainImageFormat()   const { return swapChainImageFormat; }
     [[nodiscard]] VkExtent2D      getSwapChainExtent()        const { return swapChainExtent; }
     [[nodiscard]] size_t          imageCount()                const { return swapChainImages.size(); }

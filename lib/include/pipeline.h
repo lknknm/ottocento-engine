@@ -46,7 +46,7 @@ public:
     OttPipeline(const OttPipeline&) = delete;
     void operator=(const OttPipeline&) = delete;
     
-    typedef enum ViewportDisplayMode
+    enum ViewportDisplayMode
     {
         DISPLAY_MODE_WIREFRAME = 000,
         DISPLAY_MODE_SOLID     = 001,
