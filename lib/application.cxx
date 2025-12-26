@@ -491,15 +491,15 @@ void OttApplication::createVertexBuffer()
                                 );
         void* data;
         vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, vertices.data(), (size_t) bufferSize);
+        memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
         vkUnmapMemory(device, stagingBufferMemory);
 
         appDevice.createBuffer (bufferSize,
                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                 vertexBuffer, vertexBufferMemory);
-        appDevice.debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)vertexBufferMemory, CSTR_RED("application::VkDeviceMemory:vertexBufferMemory"));
-        appDevice.debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_BUFFER, (uint64_t)vertexBuffer, CSTR_RED("application::VkBuffer:vertexBuffer"));
+        appDevice.debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE_MEMORY, reinterpret_cast<uint64_t>(vertexBufferMemory), CSTR_RED("application::VkDeviceMemory:vertexBufferMemory"));
+        appDevice.debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(vertexBuffer), CSTR_RED("application::VkBuffer:vertexBuffer"));
         appDevice.copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
 
         vkDestroyBuffer(device, stagingBuffer, nullptr);
@@ -522,7 +522,7 @@ void OttApplication::createIndexBuffer(std::vector<uint32_t>& index, VkBuffer& i
                                 stagingBufferMemory);
         void* data;
         vkMapMemory(device, stagingBufferMemory, 0, bufferSize, 0, &data);
-        memcpy(data, index.data(), (size_t) bufferSize);
+        memcpy(data, index.data(), static_cast<size_t>(bufferSize));
         vkUnmapMemory(device, stagingBufferMemory);
 
         appDevice.createBuffer (bufferSize,
@@ -530,7 +530,7 @@ void OttApplication::createIndexBuffer(std::vector<uint32_t>& index, VkBuffer& i
                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                 index_buffer,
                                 index_buffer_memory);
-        appDevice.debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)index_buffer_memory, "application::VkDeviceMemory:indexBufferMemory");
+        appDevice.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, reinterpret_cast<uint64_t>(index_buffer_memory), "application::VkDeviceMemory:indexBufferMemory");
         appDevice.copyBuffer(stagingBuffer, index_buffer, bufferSize);
     
         vkDestroyBuffer(device, stagingBuffer, nullptr);
@@ -545,7 +545,7 @@ void OttApplication::createTextureImage(const std::filesystem::path& imagePath)
     LOG(DASHED_SEPARATOR);
     LOG_INFO("Image path: {}", imagePath.string());
     stbi_uc* pixels = stbi_load(imagePath.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-    VkDeviceSize imageSize = texWidth * texHeight * 4;
+    VkDeviceSize imageSize { static_cast<VkDeviceSize>(texWidth * texHeight * 4) };
     mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
 
     VkBuffer stagingBuffer;
@@ -563,8 +563,9 @@ void OttApplication::createTextureImage(const std::filesystem::path& imagePath)
     vkUnmapMemory(device, stagingBufferMemory);
     stbi_image_free(pixels);
 
-    VkDeviceMemory textureImageMemoryBuffer;
+    VkDeviceMemory textureImageMemoryBuffer{};
     textureImageMemory.push_back(textureImageMemoryBuffer);
+
     VkHelpers::createImage (texWidth, texHeight, mipLevels, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
                             VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, textureImage, textureImageMemory.back(), appDevice
@@ -641,7 +642,11 @@ void OttApplication::createUniformBuffers()
                                uniformBuffers[i],
                                uniformBuffersMemory[i]);
         vkMapMemory(device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
-        appDevice.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t) uniformBuffersMemory[i], CSTR_RED(" application::VkDeviceMemory:uniformBuffersMemory %i ", i));
+
+        appDevice.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, 
+                                              reinterpret_cast<uint64_t>(uniformBuffersMemory[i]), 
+                                              CSTR_RED(" application::VkDeviceMemory:uniformBuffersMemory %i ", i)
+        );
     }
 }
 
