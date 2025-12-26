@@ -50,13 +50,13 @@ namespace Input
     //----------------------------------------------------------------------------
     inline glm::vec2 getMousePosition(GLFWwindow* windowHandle)
     {
-        double x, y;
+        double x{}, y{};
         glfwGetCursorPos(windowHandle, &x, &y);
-        return {(float)x, (float)y};
+        return {static_cast<float>(x), static_cast<float>(y)};
     }
 
     //----------------------------------------------------------------------------
-    inline double yoffsetCallback = 0.0f; 
+    inline double yoffsetCallback { 0.0 };  
     static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset)
     {
         yoffsetCallback += yoffset;
