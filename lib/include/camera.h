@@ -57,21 +57,22 @@ public:
     
 //----------------------------------------------------------------------------
 private:
-    double resetAnimationStart = 0;
-    double orbitAnimationStart = 0;
+    double resetAnimationStart { 0 };
+    double orbitAnimationStart { 0 };
     
-    float VerticalFOV = 38.0f;
-    float NearClip = 0.1f;
-    float FarClip = 1000.0f;
-    float speed = 2.0f;
-    float orthoZoomFactor = 10.f;
-    float rotationSpeed = 0.3f;
+    float VerticalFOV     { 38.0f };
+    float NearClip        { 0.1f };
+    float FarClip         { 1000.0f };
+    float speed           { 2.0f };
+    float rotationSpeed   { 0.3f };
+    float orthoZoomFactor { 10.f };
+
     bool  walkNavigation = false;
     bool  perspective = true;
     
     glm::vec2 lastMousePosition{ 0.0f, 0.0f };
     
-    glm::vec3 CenterPosition{0.0f, 0.0f, 0.0f};
+    glm::vec3 CenterPosition{ 0.0f, 0.0f, 0.0f };
     
     glm::vec3 EyePosition{5.0f, -5.0f, 5.0f};
     glm::vec3 startEye, startCenter, targetEyePosition, targetCenterPosition;

@@ -20,7 +20,6 @@
 
 #include "camera.h"
 #include "input.hxx"
-#include <stdexcept>
 #include <fmt/core.h>
 #include "macros.h"
 
@@ -255,7 +254,7 @@ glm::mat4 OttCamera::inverseProjection(glm::mat4 perspectiveProjection, glm::mat
 // SIDEWAYS: angle * rotationSpeed * smoothness scalar.
 // UP/DOWN:  angle * rotationSpeed * smoothness scalar / distance to the center of the camera.
 // Scalars are defined arbitrarily and not assigned in order to save up some memory reads.
-void OttCamera::rotateFixedAmount(rotateDirection direction)
+void OttCamera::rotateFixedAmount(const rotateDirection direction)
 {
     float degreesRight = 0.0f;
     float degreesUp = 0.0f;
@@ -291,7 +290,7 @@ void OttCamera::rotateFixedAmount(rotateDirection direction)
  * This function takes the current position of the camera and reorient it facing
  * a given axis, as per the formula:
  * P' = P + radius * viewAxis. **/
-glm::vec3 OttCamera::SetViewOrbit(ViewType view)
+glm::vec3 OttCamera::SetViewOrbit(const ViewType view)
 {
     glm::vec3 foc = getCenterPosition();
     glm::vec3 pos = getEyePosition();
@@ -356,7 +355,7 @@ void OttCamera::resetToInitialPos()
 //----------------------------------------------------------------------------
 // Resets the timer and consequently starts the animation for the implementation of
 // FRONT, RIGHT, TOP (etc...) views, defined in SetViewOrbit(view).
-void OttCamera::orbitStartAnimation(ViewType view)
+void OttCamera::orbitStartAnimation(const ViewType view)
 {
     if(resetAnimationStart == 0.0)
     {
@@ -377,70 +376,71 @@ void OttCamera::animateResetUpdate()
 {
     if (resetAnimationStart > 0)
     {
-        const double timeSinceStart = glfwGetTime() - resetAnimationStart;
-        const double t = glm::min((float)(timeSinceStart / (rotationSpeed * 0.2)), 1.0f);
+        constexpr float accelerationScalar { 0.2f };
+        const float timeSinceStart { static_cast<float>(glfwGetTime() - resetAnimationStart) };
+        const float time { glm::min(static_cast<float>(timeSinceStart / (rotationSpeed * accelerationScalar)), 1.0f) };
             
-        CenterPosition = glm::mix(startCenter, targetCenterPosition, t);
-        EyePosition = glm::mix(startEye, targetEyePosition, t);
+        CenterPosition = glm::mix(startCenter, targetCenterPosition, time);
+        EyePosition = glm::mix(startEye, targetEyePosition, time);
 
-        if (timeSinceStart >= (rotationSpeed * 0.2)) { resetAnimationStart = 0; }
+        if (timeSinceStart >= (rotationSpeed * accelerationScalar)) { resetAnimationStart = 0; }
     }
 }
     
 //----------------------------------------------------------------------------
-void OttCamera::moveUpDirection(float deltaTime)
+void OttCamera::moveUpDirection(const float deltaTime)
 {
     CenterPosition += upVector * speed * deltaTime;
     EyePosition += upVector * speed * deltaTime;
 }
 
 //----------------------------------------------------------------------------
-void OttCamera::moveDownDirection(float deltaTime)
+void OttCamera::moveDownDirection(const float deltaTime)
 {
     CenterPosition -= upVector * speed * deltaTime;
     EyePosition -= upVector * speed * deltaTime;
 }
 
 //----------------------------------------------------------------------------
-void OttCamera::moveForward(float deltaTime)
+void OttCamera::moveForward(const float deltaTime)
 {
     CenterPosition += forwardDirection * speed * deltaTime;
     EyePosition += forwardDirection * speed * deltaTime;
 }
 
 //----------------------------------------------------------------------------
-void OttCamera::moveBack(float deltaTime)
+void OttCamera::moveBack(const float deltaTime)
 {
     CenterPosition -= forwardDirection * speed * deltaTime;
     EyePosition -= forwardDirection * speed * deltaTime;
 }
 
 //----------------------------------------------------------------------------
-void OttCamera::moveRightDirection(float deltaTime)
+void OttCamera::moveRightDirection(const float deltaTime)
 {
     CenterPosition += rightVector * speed * deltaTime;
     EyePosition += rightVector * speed * deltaTime;
 }
 
 //----------------------------------------------------------------------------
-void OttCamera::moveLeftDirection(float deltaTime)
+void OttCamera::moveLeftDirection(const float deltaTime)
 {
     CenterPosition -= rightVector * speed * deltaTime;
     EyePosition -= rightVector * speed * deltaTime;
 }
 
 //----------------------------------------------------------------------------
-void OttCamera::zoomIn(double yoffset)
+void OttCamera::zoomIn(const double yoffset)
 {
     EyePosition += forwardDirection * 0.2f;
     if (!perspective)
-        orthoZoomFactor -= yoffset;
+        orthoZoomFactor -= static_cast<float>(yoffset);
 }
 
 //----------------------------------------------------------------------------
-void OttCamera::zoomOut(double yoffset)
+void OttCamera::zoomOut(const double yoffset)
 {
     EyePosition -= forwardDirection * 0.2f;
     if (!perspective)
-        orthoZoomFactor -= yoffset;
+        orthoZoomFactor -= static_cast<float>(yoffset);
 }
