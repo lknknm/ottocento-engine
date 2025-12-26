@@ -39,7 +39,7 @@
 /** Default constructor for the Ottocento Window.
  *  Initiate GLFW window with specific parameters + callbacks and sets up the window icon.
  *  - Windows-specific: Refresh window to darkmode. **/
-OttWindow::OttWindow(const char* title, int winWidth, int winHeight)
+OttWindow::OttWindow(const char* title, const int winWidth, const int winHeight)
 {
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -103,7 +103,7 @@ std::pair<double, double> OttWindow::getCursorPos() const
 }
 
 //----------------------------------------------------------------------------
-void OttWindow::setCursorPos(double xpos, double ypos) const
+void OttWindow::setCursorPos(const double xpos, const double ypos) const
 {
     glfwSetCursorPos(m_window, xpos, ypos);
 }
@@ -121,7 +121,7 @@ OttWindow::~OttWindow()
 /** Windows Specific: refresh the titlebar to DarkMode.
  *  This code is from a problem already solved by the Blender devs. It is extracted
  *  from the 'ddbac88c08' commit "Win32: Dark Mode Title Bar Color" by Harley Acheson **/
-void OttWindow::ThemeRefreshDarkMode(GLFWwindow* WIN32_window) const
+void OttWindow::ThemeRefreshDarkMode(const GLFWwindow* WIN32_window) const
 {
     DWORD lightMode;
     DWORD pcbData = sizeof(lightMode);
