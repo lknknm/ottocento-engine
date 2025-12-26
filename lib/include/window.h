@@ -22,7 +22,6 @@
 #include <volk.h>
 #include <GLFW/glfw3.h>
 #include <functional>
-#include <iostream>
 #include <utility>
 #include <glm/vec2.hpp>
 
