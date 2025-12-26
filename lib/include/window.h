@@ -42,7 +42,7 @@ class OttWindow
 //----------------------------------------------------------------------------
 public:
 //----------------------------------------------------------------------------
-    OttWindow(const char* title, int width, int height, bool show = true);
+    OttWindow(const char* title, int winWidth, int winHeight);
     ~OttWindow();
     
 //----------------------------------------------------------------------------
@@ -51,6 +51,7 @@ public:
     [[nodiscard]] GLFWwindow* getWindowhandle() const { return this->m_window; }
     [[nodiscard]] glm::ivec2 getFrameBufferSize() const;
     [[nodiscard]] std::pair<double, double> getCursorPos() const;
+
     void setCursorPos(double xpos, double ypos) const;
 
 //----------------------------------------------------------------------------

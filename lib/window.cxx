@@ -39,7 +39,7 @@
 /** Default constructor for the Ottocento Window.
  *  Initiate GLFW window with specific parameters + callbacks and sets up the window icon.
  *  - Windows-specific: Refresh window to darkmode. **/
-OttWindow::OttWindow(const char* title, int winWidth, int winHeight, bool show)
+OttWindow::OttWindow(const char* title, int winWidth, int winHeight)
 {
         glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
