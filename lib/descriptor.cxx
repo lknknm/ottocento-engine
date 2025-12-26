@@ -26,15 +26,16 @@
  * - uboLayoutBinding: Binds the uniform buffer to the vertex and fragment shader.
  * - samplerLayoutBinding: Binds the image sampler to the fragment shader. This binding is set as
  * VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT. **/
-VkDescriptorSetLayout OttDescriptor::createBindlessDescriptorSetLayout(VkDevice device, OttDevice& app_device)
+VkDescriptorSetLayout OttDescriptor::createBindlessDescriptorSetLayout(const VkDevice device, OttDevice& app_device)
 {
     TEXTURE_ARRAY_SIZE = app_device.getMaxDescCount();
     
     constexpr VkDescriptorSetLayoutBinding uboLayoutBinding {
-        .binding         = 0,
-        .descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .descriptorCount = 1,
-        .stageFlags      = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        .binding            = 0,
+        .descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .descriptorCount    = 1,
+        .stageFlags         = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        .pImmutableSamplers = nullptr
     };
     
     VkDescriptorSetLayoutBinding samplerLayoutBinding {
@@ -42,17 +43,19 @@ VkDescriptorSetLayout OttDescriptor::createBindlessDescriptorSetLayout(VkDevice 
         .descriptorType     = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
         .descriptorCount    = TEXTURE_ARRAY_SIZE,
         .stageFlags         = VK_SHADER_STAGE_FRAGMENT_BIT,
+        .pImmutableSamplers = nullptr
     };
     
     std::array bindings = { uboLayoutBinding, samplerLayoutBinding };
     constexpr int bindingFlagsSize = 2;
-    constexpr std::array<VkDescriptorBindingFlags, bindingFlagsSize> bindingFlags = {
+    static constexpr std::array<VkDescriptorBindingFlags, bindingFlagsSize> bindingFlags = {
        VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT, // uboLayoutBinding
        VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT // samplerLayoutBinding
     };
     
-    const VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo {
+    constexpr VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsInfo {
         .sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
+        .pNext         = nullptr,
         .bindingCount  = static_cast<uint32_t>(bindingFlagsSize),
         .pBindingFlags = bindingFlags.data()
     };
@@ -72,16 +75,16 @@ VkDescriptorSetLayout OttDescriptor::createBindlessDescriptorSetLayout(VkDevice 
         LOG_ERROR("vkCreateDescriptorSetLayout returned: {}", static_cast<int>(result));
         throw std::runtime_error("Failed to create descriptor set layout!");
     }
-    app_device.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t) bindlessDescriptorSetLayout, CSTR_CYAN(" OttDescriptor::bindlessDescriptorSetLayout" ));
+    app_device.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, reinterpret_cast<uint64_t>(bindlessDescriptorSetLayout), CSTR_CYAN(" OttDescriptor::bindlessDescriptorSetLayout" ));
     return bindlessDescriptorSetLayout;
 }
 
 //----------------------------------------------------------------------------
 /** \param device: Application side instantiated device.
  *  \param descriptor_pool: Application side instantiated descriptor pool handle. **/
-void OttDescriptor::createDescriptorPool(VkDevice device, VkDescriptorPool& descriptor_pool)
+void OttDescriptor::createDescriptorPool(const VkDevice device, VkDescriptorPool& descriptor_pool)
 {
-    std::array poolSizes   = {
+    const std::array poolSizes = {
         VkDescriptorPoolSize {
             .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
             .descriptorCount = 1,
@@ -91,9 +94,13 @@ void OttDescriptor::createDescriptorPool(VkDevice device, VkDescriptorPool& desc
             .descriptorCount = TEXTURE_ARRAY_SIZE,
         }
     };
+
     LOG_DEBUG("descriptorCount {}", poolSizes[1].descriptorCount);
+
     const VkDescriptorPoolCreateInfo scenePoolInfo {
         .sType          = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .pNext          = nullptr,
+        .flags          = 0,
         .maxSets        = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * 2),
         .poolSizeCount  = static_cast<uint32_t>(poolSizes.size()),
         .pPoolSizes     = poolSizes.data(),
@@ -113,11 +120,13 @@ void OttDescriptor::createDescriptorPool(VkDevice device, VkDescriptorPool& desc
  * \param count: How many descriptorSets are to be allocated.
  * \param descriptor_set_layout: A desc. set "blueprint" that will be provided to our allocation info.
  * \param descriptor_pool: Application side instantiated descriptor pool from which the set will be allocated from. **/
-VkDescriptorSet OttDescriptor::createDescriptorSet(VkDevice device, int count, VkDescriptorSetLayout descriptor_set_layout, VkDescriptorPool descriptor_pool)
+VkDescriptorSet OttDescriptor::createDescriptorSet(const VkDevice device, const int count, const VkDescriptorSetLayout descriptor_set_layout, const VkDescriptorPool descriptor_pool)
 {
-    std::vector<VkDescriptorSetLayout> layouts(count, descriptor_set_layout);
+    const std::vector<VkDescriptorSetLayout> layouts(static_cast<size_t>(count), descriptor_set_layout);
+
     const VkDescriptorSetAllocateInfo allocInfo {
         .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .pNext              = nullptr,
         .descriptorPool     = descriptor_pool,
         .descriptorSetCount = static_cast<uint32_t>(count),
         .pSetLayouts        = layouts.data()
@@ -145,14 +154,13 @@ void OttDescriptor::updateDescriptorSet(const VkDevice device,
                                         const std::vector<VkImageView>& texture_image_views
                                         )
 {
-    VkDescriptorBufferInfo bufferInfo {
+    const VkDescriptorBufferInfo bufferInfo {
         .buffer = uniform_buffer,
         .offset = 0,
         .range  = sizeof(UniformBufferObject),
     };
     
     VkDescriptorImageInfo imageInfos[2048] = {};
-    
     for (uint32_t j = 0; j < texture_images.size(); j++)
     {
         imageInfos[j].sampler       = texture_sampler;
@@ -160,28 +168,34 @@ void OttDescriptor::updateDescriptorSet(const VkDevice device,
         imageInfos[j].imageLayout   = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     }
     
-    std::array descriptorWrites  = {
+    const std::array descriptorWrites  = {
         VkWriteDescriptorSet {
             .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .pNext           = nullptr,
             .dstSet          = descriptor_set,
             .dstBinding      = 0,
             .dstArrayElement = 0,
             .descriptorCount = 1,
             .descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-            .pBufferInfo     = &bufferInfo
-            },
+            .pImageInfo      = nullptr,
+            .pBufferInfo     = &bufferInfo,
+            .pTexelBufferView = nullptr
+        },
                     
         VkWriteDescriptorSet {
             .sType           = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .pNext           = nullptr,
             .dstSet          = descriptor_set,
             .dstBinding      = 1,
             .dstArrayElement = 0,
             .descriptorCount = static_cast<uint32_t>(texture_images.size()),
             .descriptorType  = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .pImageInfo      = imageInfos
-            }
+            .pImageInfo      = imageInfos,
+            .pBufferInfo     = nullptr,
+            .pTexelBufferView = nullptr
+        }
     };
     
     vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-    app_device.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t) descriptor_set, CSTR_RED(" application::descriptorSet "));
+    app_device.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DESCRIPTOR_SET, reinterpret_cast<uint64_t>(descriptor_set), CSTR_RED(" application::descriptorSet "));
 }
