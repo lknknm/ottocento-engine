@@ -95,7 +95,7 @@ glm::ivec2 OttWindow::getFrameBufferSize() const
 }
 
 //----------------------------------------------------------------------------
-auto OttWindow::getCursorPos() const -> std::pair<double, double>
+std::pair<double, double> OttWindow::getCursorPos() const 
 {
     double xpos, ypos;
     glfwGetCursorPos(m_window, &xpos, &ypos);

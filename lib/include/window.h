@@ -48,10 +48,9 @@ public:
 //----------------------------------------------------------------------------
 // Getters and setters
 //----------------------------------------------------------------------------
-    GLFWwindow* getWindowhandle() const { return this->m_window; }
-    glm::ivec2 getFrameBufferSize() const;
-    
-    [[nodiscard]] auto getCursorPos() const -> std::pair<double, double>;
+    [[nodiscard]] GLFWwindow* getWindowhandle() const { return this->m_window; }
+    [[nodiscard]] glm::ivec2 getFrameBufferSize() const;
+    [[nodiscard]] std::pair<double, double> getCursorPos() const;
     void setCursorPos(double xpos, double ypos) const;
 
 //----------------------------------------------------------------------------
@@ -71,7 +70,7 @@ public:
 
 //----------------------------------------------------------------------------
 private:
-    GLFWwindow* m_window = nullptr;
+    GLFWwindow* m_window{};
     GLFWimage m_icon{};
     
     int m_width  = 0;
