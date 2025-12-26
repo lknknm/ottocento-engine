@@ -345,7 +345,7 @@ void OttApplication::cleanupVulkanResources()
 }
     
 //----------------------------------------------------------------------------
-VkImageView OttApplication::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels)
+VkImageView OttApplication::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevelCount)
 {
     VkImageViewCreateInfo viewInfo {
         .sType      = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -355,7 +355,7 @@ VkImageView OttApplication::createImageView(VkImage image, VkFormat format, VkIm
         .subresourceRange = {
             .aspectMask = aspectFlags,
             .baseMipLevel = 0,
-            .levelCount = mipLevels,
+            .levelCount = mipLevelCount,
             .baseArrayLayer = 0,
             .layerCount = 1,
         },

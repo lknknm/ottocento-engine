@@ -124,7 +124,7 @@ private:
     void cleanupModelObjects() const;
     void cleanupVulkanResources();
     
-    VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
+    VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevelCount);
     
     void loadModel(std::filesystem::path const& modelPath);
     
