@@ -20,7 +20,6 @@
 
 #include "device.h"
 #include "swapchain.h"
-#include "window.h"
 
 class OttRenderer
 {

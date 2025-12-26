@@ -435,7 +435,6 @@ VkResult OttSwapChain::submitCommandBuffer(const VkCommandBuffer* command_buffer
         .swapchainCount     = 1,
         .pSwapchains        = swapChains,
         .pImageIndices      = &image_index,
-        .pResults           = nullptr, // Optional
     };
     
     const VkResult result = vkQueuePresentKHR(appDeviceRef->getPresentQueue(), &presentInfo);

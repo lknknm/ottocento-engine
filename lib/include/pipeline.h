@@ -25,6 +25,7 @@
 #include <volk.h>
 #include <vector>
 #include <glm/vec3.hpp>
+#include <string>
 
 struct PushConstantData {
     alignas(16) glm::vec3 offset;
