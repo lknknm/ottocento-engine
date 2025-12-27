@@ -17,7 +17,6 @@ include(Coverage)
 include(BuildType)
 enable_warnings()
 enable_sanitizers()
-enable_coverage()
 set_default_buildtype()
 
 add_subdirectory(lib)
