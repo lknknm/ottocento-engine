@@ -72,7 +72,7 @@ VkDescriptorSetLayout OttDescriptor::createBindlessDescriptorSetLayout(const VkD
     const VkResult result = vkCreateDescriptorSetLayout(device, &bindlessLayoutInfo, nullptr, &bindlessDescriptorSetLayout);
     if(result != VK_SUCCESS)
     {
-        LOG_ERROR("vkCreateDescriptorSetLayout returned: {}", static_cast<int>(result));
+        log_t<error>("vkCreateDescriptorSetLayout returned: {}", static_cast<int>(result));
         throw std::runtime_error("Failed to create descriptor set layout!");
     }
     app_device.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, reinterpret_cast<uint64_t>(bindlessDescriptorSetLayout), CSTR_CYAN(" OttDescriptor::bindlessDescriptorSetLayout" ));
@@ -95,7 +95,7 @@ void OttDescriptor::createDescriptorPool(const VkDevice device, VkDescriptorPool
         }
     };
 
-    LOG_DEBUG("descriptorCount {}", poolSizes[1].descriptorCount);
+    log_t<debug>("descriptorCount {}", poolSizes[1].descriptorCount);
 
     const VkDescriptorPoolCreateInfo scenePoolInfo {
         .sType          = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
@@ -109,7 +109,7 @@ void OttDescriptor::createDescriptorPool(const VkDevice device, VkDescriptorPool
     const VkResult result = vkCreateDescriptorPool(device, &scenePoolInfo, nullptr, &descriptor_pool);
     if (result != VK_SUCCESS)
     {
-        LOG_ERROR("vkCreateDescriptorPool returned: %i", static_cast<int>(result));
+        log_t<error>("vkCreateDescriptorPool returned: %i", static_cast<int>(result));
         throw std::runtime_error("Failed to Create Descriptor Pool!");
     }
 }
@@ -136,11 +136,11 @@ VkDescriptorSet OttDescriptor::createDescriptorSet(const VkDevice device, const 
     const VkResult result = vkAllocateDescriptorSets(device, &allocInfo, &descriptor_set);
     if (result != VK_SUCCESS)
     {
-        LOG_ERROR("vkAllocateDescriptorSets returned: {}", static_cast<int>(result));
+        log_t<error>("vkAllocateDescriptorSets returned: {}", static_cast<int>(result));
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
-    LOG_DEBUG("Descriptor allocated");
-    LOG_DEBUG("Descriptor allocInfo count: {}", allocInfo.descriptorSetCount);
+    log_t<debug>("Descriptor allocated");
+    log_t<debug>("Descriptor allocInfo count: {}", allocInfo.descriptorSetCount);
     return descriptor_set;
 }
 

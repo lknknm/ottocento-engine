@@ -17,13 +17,12 @@
 #pragma once
 
 #include <cstdarg>
-
 #include <fmt/base.h>
 #include <fmt/color.h>
 #include <fmt/format.h>
 
 //----------------------------------------------------------------------------
-/** Output constants to color values: **/
+/** Output constanTs to color values: **/
 #define C_CLEAR  "\033[2J\033[1;1H"
 #define C_RESET  "\033[m"
 #define C_GREEN  "\033[32m"
@@ -41,7 +40,7 @@
 #define DASHED_SEPARATOR "-------------------------------------"
 
 //----------------------------------------------------------------------------
-/** Formats the std::string to receive arguments that can be output to the console. **/
+/** FormaTs the std::string to receive arguments that can be output to the console. **/
 inline std::string formatString(const char* format, ...)
 {
     char buffer[256];
@@ -54,26 +53,45 @@ inline std::string formatString(const char* format, ...)
 
 //----------------------------------------------------------------------------
 /** Function for formatted logging. **/
-
-inline void vlog(fmt::color color, fmt::string_view fmt, fmt::format_args args = {})
+enum LogLevel 
 {
-	fmt::print(fg(color), "{}\n", fmt::vformat(fmt, args));
-}
+    normal,
+    info,
+    debug,
+    error,
+    warning,
+    critical
+};
 
-template <typename... Ts>
-void log(fmt::color color, fmt::format_string<Ts...> fmt, Ts&&... args)
+template<LogLevel level = normal, typename... Ts>
+constexpr inline void log_t(fmt::format_string<Ts...> fmt, Ts&&... args)
 {
-	vlog(color, fmt, fmt::make_format_args(args...));
-}
+    std::string messagePrefix {""};
+    auto messageColor { fmt::color::white };
 
-//----------------------------------------------------------------------------
-/** LOG macros **/
-#define LOG(format, ...)            log(fmt::color::green,                  format, ##__VA_ARGS__)
-#define LOG_INFO(format, ...)       log(fmt::color::green,   "[INFO] "      format, ##__VA_ARGS__)
-#define LOG_DEBUG(format, ...)      log(fmt::color::orange,  "[DEBUG] "     format, ##__VA_ARGS__)
-#define LOG_WARNING(format, ...)    log(fmt::color::yellow,  "[WARNING] "   format, ##__VA_ARGS__)
-#define LOG_ERROR(format, ...)      log(fmt::color::red,     "[ERROR] "     format, ##__VA_ARGS__)
-#define LOG_CRITICAL(format, ...)   log(fmt::color::red,     "[CRITICAL] "  format, ##__VA_ARGS__)
+    if constexpr (level == info) {
+        messagePrefix = "[info]";
+        messageColor = fmt::color::green;
+    }
+    else if constexpr (level == debug) {
+        messagePrefix = "[debug]";
+        messageColor = fmt::color::orange;
+    }
+    else if constexpr (level == warning) {
+        messagePrefix = "[warning]";
+        messageColor = fmt::color::yellow;
+    }
+    else if constexpr (level == error) {
+        messagePrefix = "[error]";
+        messageColor = fmt::color::orange_red;
+    }
+    else if constexpr (level == critical) {
+        messagePrefix = "[critical]";
+        messageColor = fmt::color::red;
+    }
+
+    fmt::print(fg(messageColor), "{} {}\n", messagePrefix, fmt::format(fmt, std::forward<Ts>(args)...));
+}
 
 //----------------------------------------------------------------------------
 /** Function to concatenate colored strings. **/

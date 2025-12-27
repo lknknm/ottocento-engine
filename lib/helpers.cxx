@@ -283,7 +283,7 @@ VkShaderModule VkHelpers::createShaderModule(const std::vector<char>& code, VkDe
     VkShaderModule shaderModule;
     if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
         throw std::runtime_error("failed to create shader module!");
-    LOG_INFO("Shader Module Created");
+    log_t<info>("Shader Module Created");
     
     return shaderModule;
 }

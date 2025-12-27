@@ -112,7 +112,7 @@ void OttSwapChain::createSwapChain()
     
     if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS)
         throw std::runtime_error("failed to create swap chain!");
-    LOG_INFO("SwapChain Created");
+    log_t<info>("SwapChain Created");
     
     vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
     swapChainImages.resize(imageCount);
@@ -283,7 +283,7 @@ void OttSwapChain::createRenderPass()
 
     if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
         throw std::runtime_error("failed to create render pass!");
-    LOG_INFO("Render Pass Created");
+    log_t<info>("Render Pass Created");
 }
 
 //----------------------------------------------------------------------------
@@ -422,7 +422,7 @@ VkResult OttSwapChain::submitCommandBuffer(const VkCommandBuffer* command_buffer
     VkResult submitResult = vkQueueSubmit(appDeviceRef->getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]);
     if (submitResult != VK_SUCCESS)
     {
-        LOG_ERROR("vkQueueSubmit(appDeviceRef->getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) returned {}", static_cast<int>(submitResult));
+        log_t<error>("vkQueueSubmit(appDeviceRef->getGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) returned {}", static_cast<int>(submitResult));
         throw std::runtime_error("failed to submit draw command buffer!");
     }
     
