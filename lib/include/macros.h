@@ -19,6 +19,7 @@
 #include <fmt/base.h>
 #include <fmt/color.h>
 #include <fmt/format.h>
+#include <source_location>
 
 //----------------------------------------------------------------------------
 /** Utils for text layout **/
@@ -36,6 +37,17 @@ enum LogLevel
     critical
 };
 
+struct log_config {
+    std::string_view str;
+    std::source_location loc;
+
+    // Consteval constructor captures location at the CALL SITE.
+    template <typename S>
+    requires std::convertible_to<S, std::string_view>
+    consteval log_config(const S& s, std::source_location l = std::source_location::current())
+        : str(s), loc(l) {}
+};
+
 //----------------------------------------------------------------------------
 /** 
  * @brief Wrapper Logger function for the fmt::print that formats and displays information in a standardized
@@ -47,8 +59,8 @@ enum LogLevel
  *
  * @param level Log level available from the enum LogLevel. Defaulted to normal.
  */
-template<LogLevel level = normal, typename... Ts>
-constexpr inline void log_t(fmt::format_string<Ts...> fmt, Ts&&... args)
+template<LogLevel level = normal, bool show_location = false, typename... Ts>
+constexpr inline void log_t(log_config fmt, Ts&&... args)
 {
     using enum fmt::color;
 
@@ -76,7 +88,22 @@ constexpr inline void log_t(fmt::format_string<Ts...> fmt, Ts&&... args)
         messageColor = red;
     }
 
-    fmt::print(fg(messageColor), "{} {}\n", messagePrefix, fmt::format(fmt, std::forward<Ts>(args)...));
+    if constexpr (show_location == true) {
+        fmt::print(fg(messageColor),
+            "{} {} : {} {}\n", 
+            messagePrefix, 
+            fmt::format(fmt::runtime(fmt.str), std::forward<Ts>(args)...),
+            fmt.loc.file_name(),
+            fmt.loc.line()
+        );
+        return;
+    }
+
+    fmt::print(fg(messageColor),
+        "{} {}\n", 
+        messagePrefix, 
+        fmt::format(fmt::runtime(fmt.str), std::forward<Ts>(args)...)
+    );
 }
 
 //----------------------------------------------------------------------------
