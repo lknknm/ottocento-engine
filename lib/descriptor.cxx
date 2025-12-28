@@ -73,7 +73,7 @@ VkDescriptorSetLayout OttDescriptor::createBindlessDescriptorSetLayout(const VkD
     const VkResult result = vkCreateDescriptorSetLayout(device, &bindlessLayoutInfo, nullptr, &bindlessDescriptorSetLayout);
     if(result != VK_SUCCESS)
     {
-        log_t<error>("vkCreateDescriptorSetLayout returned: {}", static_cast<int>(result));
+        log_t<critical, true>("vkCreateDescriptorSetLayout returned: {}", static_cast<int>(result));
         throw std::runtime_error("Failed to create descriptor set layout!");
     }
     app_device.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, reinterpret_cast<uint64_t>(bindlessDescriptorSetLayout), color_str<cyan>(" OttDescriptor::bindlessDescriptorSetLayout "));
@@ -110,7 +110,7 @@ void OttDescriptor::createDescriptorPool(const VkDevice device, VkDescriptorPool
     const VkResult result = vkCreateDescriptorPool(device, &scenePoolInfo, nullptr, &descriptor_pool);
     if (result != VK_SUCCESS)
     {
-        log_t<error>("vkCreateDescriptorPool returned: %i", static_cast<int>(result));
+        log_t<critical, true>("vkCreateDescriptorPool returned: %i", static_cast<int>(result));
         throw std::runtime_error("Failed to Create Descriptor Pool!");
     }
 }
@@ -137,7 +137,7 @@ VkDescriptorSet OttDescriptor::createDescriptorSet(const VkDevice device, const 
     const VkResult result = vkAllocateDescriptorSets(device, &allocInfo, &descriptor_set);
     if (result != VK_SUCCESS)
     {
-        log_t<error>("vkAllocateDescriptorSets returned: {}", static_cast<int>(result));
+        log_t<critical, true>("vkAllocateDescriptorSets returned: {}", static_cast<int>(result));
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
     log_t<debug>("Descriptor allocated");

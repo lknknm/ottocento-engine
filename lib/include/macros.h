@@ -44,8 +44,8 @@ struct log_config {
     // Consteval constructor captures location at the CALL SITE.
     template <typename S>
     requires std::convertible_to<S, std::string_view>
-    consteval log_config(const S& s, std::source_location l = std::source_location::current())
-        : str(s), loc(l) {}
+    consteval log_config(const S& string, std::source_location location = std::source_location::current())
+        : str(string), loc(location) {}
 };
 
 //----------------------------------------------------------------------------
@@ -63,47 +63,55 @@ template<LogLevel level = normal, bool show_location = false, typename... Ts>
 constexpr inline void log_t(log_config fmt, Ts&&... args)
 {
     using enum fmt::color;
-
     std::string messagePrefix {""};
     auto messageColor { white };
 
-    if constexpr (level == info) {
+    if constexpr (level == info) 
+    {
         messagePrefix = "[info]";
         messageColor = green;
     }
-    else if constexpr (level == debug) {
+    else if constexpr (level == debug) 
+    {
         messagePrefix = "[debug]";
         messageColor = orange;
     }
-    else if constexpr (level == warning) {
+    else if constexpr (level == warning) 
+    {
         messagePrefix = "[warning]";
         messageColor = yellow;
     }
-    else if constexpr (level == error) {
+    else if constexpr (level == error) 
+    {
         messagePrefix = "[error]";
         messageColor = orange_red;
     }
-    else if constexpr (level == critical) {
+    else if constexpr (level == critical) 
+    {
         messagePrefix = "[critical]";
         messageColor = red;
     }
 
-    if constexpr (show_location == true) {
-        fmt::print(fg(messageColor),
+    if constexpr (show_location == true)
+    {
+        fmt::print(
+            fg(messageColor),
             "{} {} : {} {}\n", 
             messagePrefix, 
             fmt::format(fmt::runtime(fmt.str), std::forward<Ts>(args)...),
             fmt.loc.file_name(),
             fmt.loc.line()
         );
-        return;
+    } 
+    else
+    {
+        fmt::print(
+            fg(messageColor),
+            "{} {}\n", 
+            messagePrefix, 
+            fmt::format(fmt::runtime(fmt.str), std::forward<Ts>(args)...)
+        );
     }
-
-    fmt::print(fg(messageColor),
-        "{} {}\n", 
-        messagePrefix, 
-        fmt::format(fmt::runtime(fmt.str), std::forward<Ts>(args)...)
-    );
 }
 
 //----------------------------------------------------------------------------

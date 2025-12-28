@@ -81,7 +81,7 @@ VkCommandBuffer OttRenderer::beginFrame()
     {
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
-            log_t<error>("VK_ERROR_OUT_OF_DATE_KHR");
+            log_t<error, true>("VK_ERROR_OUT_OF_DATE_KHR");
             swapchainRef->refreshSwapChain();
             return nullptr;
         }
