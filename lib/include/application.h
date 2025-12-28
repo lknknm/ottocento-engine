@@ -91,6 +91,7 @@ private:
     VkDeviceMemory                  edgesBufferMemory   = VK_NULL_HANDLE;
     VkBufferDeviceAddressInfo       edgesBufferAddressInfo = {
         .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+        .pNext = nullptr,
         .buffer = edgesBuffer,
     };
 

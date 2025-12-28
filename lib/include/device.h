@@ -21,6 +21,7 @@
 
 #include <optional>
 #include <vector>
+#include <string>
 
 #include "window.h"
 
@@ -88,7 +89,7 @@ public:
     void copyBuffer             (VkBuffer& srcBuffer, VkBuffer& dstBuffer, VkDeviceSize size);
     void copyBufferToImage      (VkBuffer& buffer,    VkImage& image,      uint32_t width, uint32_t height);
 
-    void debugUtilsObjectNameInfoEXT (VkObjectType objType, uint64_t objHandle, const char* objName) const;
+    void debugUtilsObjectNameInfoEXT (VkObjectType objType, uint64_t objHandle, std::string objName) const;
     bool hasStencilComponent         (VkFormat format);
     
 //----------------------------------------------------------------------------

@@ -18,7 +18,7 @@
 
 #include <array>
 #include <vector>
-#include "macros.h"
+#include "logger.h"
 #include "swapchain.h"
 
 //----------------------------------------------------------------------------
@@ -28,6 +28,7 @@
  * VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT. **/
 VkDescriptorSetLayout OttDescriptor::createBindlessDescriptorSetLayout(const VkDevice device, OttDevice& app_device)
 {
+    using enum fmt::color;
     TEXTURE_ARRAY_SIZE = app_device.getMaxDescCount();
     
     constexpr VkDescriptorSetLayoutBinding uboLayoutBinding {
@@ -72,10 +73,10 @@ VkDescriptorSetLayout OttDescriptor::createBindlessDescriptorSetLayout(const VkD
     const VkResult result = vkCreateDescriptorSetLayout(device, &bindlessLayoutInfo, nullptr, &bindlessDescriptorSetLayout);
     if(result != VK_SUCCESS)
     {
-        LOG_ERROR("vkCreateDescriptorSetLayout returned: {}", static_cast<int>(result));
+        log_t<critical, true>("vkCreateDescriptorSetLayout returned: {}", static_cast<int>(result));
         throw std::runtime_error("Failed to create descriptor set layout!");
     }
-    app_device.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, reinterpret_cast<uint64_t>(bindlessDescriptorSetLayout), CSTR_CYAN(" OttDescriptor::bindlessDescriptorSetLayout" ));
+    app_device.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, reinterpret_cast<uint64_t>(bindlessDescriptorSetLayout), color_str<cyan>(" OttDescriptor::bindlessDescriptorSetLayout "));
     return bindlessDescriptorSetLayout;
 }
 
@@ -95,7 +96,7 @@ void OttDescriptor::createDescriptorPool(const VkDevice device, VkDescriptorPool
         }
     };
 
-    LOG_DEBUG("descriptorCount {}", poolSizes[1].descriptorCount);
+    log_t<debug>("descriptorCount {}", poolSizes[1].descriptorCount);
 
     const VkDescriptorPoolCreateInfo scenePoolInfo {
         .sType          = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
@@ -109,7 +110,7 @@ void OttDescriptor::createDescriptorPool(const VkDevice device, VkDescriptorPool
     const VkResult result = vkCreateDescriptorPool(device, &scenePoolInfo, nullptr, &descriptor_pool);
     if (result != VK_SUCCESS)
     {
-        LOG_ERROR("vkCreateDescriptorPool returned: %i", static_cast<int>(result));
+        log_t<critical, true>("vkCreateDescriptorPool returned: %i", static_cast<int>(result));
         throw std::runtime_error("Failed to Create Descriptor Pool!");
     }
 }
@@ -136,11 +137,11 @@ VkDescriptorSet OttDescriptor::createDescriptorSet(const VkDevice device, const 
     const VkResult result = vkAllocateDescriptorSets(device, &allocInfo, &descriptor_set);
     if (result != VK_SUCCESS)
     {
-        LOG_ERROR("vkAllocateDescriptorSets returned: {}", static_cast<int>(result));
+        log_t<critical, true>("vkAllocateDescriptorSets returned: {}", static_cast<int>(result));
         throw std::runtime_error("failed to allocate descriptor sets!");
     }
-    LOG_DEBUG("Descriptor allocated");
-    LOG_DEBUG("Descriptor allocInfo count: {}", allocInfo.descriptorSetCount);
+    log_t<debug>("Descriptor allocated");
+    log_t<debug>("Descriptor allocInfo count: {}", allocInfo.descriptorSetCount);
     return descriptor_set;
 }
 
@@ -154,6 +155,8 @@ void OttDescriptor::updateDescriptorSet(const VkDevice device,
                                         const std::vector<VkImageView>& texture_image_views
                                         )
 {
+    using enum fmt::color;
+
     const VkDescriptorBufferInfo bufferInfo {
         .buffer = uniform_buffer,
         .offset = 0,
@@ -197,5 +200,8 @@ void OttDescriptor::updateDescriptorSet(const VkDevice device,
     };
     
     vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-    app_device.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DESCRIPTOR_SET, reinterpret_cast<uint64_t>(descriptor_set), CSTR_RED(" application::descriptorSet "));
+    app_device.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DESCRIPTOR_SET, 
+                                           reinterpret_cast<uint64_t>(descriptor_set), 
+                                           color_str<green>(" application::descriptorSet ")
+                                           );
 }

@@ -21,7 +21,7 @@
 #include "camera.h"
 #include "input.hxx"
 #include <fmt/core.h>
-#include "macros.h"
+#include "logger.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -33,7 +33,7 @@
 glm::mat4 OttCamera::recalculateView(float deltaTime)
 {
     if (windowHandle == nullptr)
-        LOG_ERROR("windowHandle is a nullptr!");
+        log_t<error>("windowHandle is a nullptr!");
 
     if (!walkNavigation)
     {
@@ -67,7 +67,7 @@ void OttCamera::viewportInputHandle(float deltaTime)
             if (key == GLFW_KEY_F1)
             {
                 walkNavigation = !walkNavigation;
-                LOG_DEBUG("Walk Navigation: %i", walkNavigation);
+                log_t<debug>("Walk Navigation: %i", walkNavigation);
             }
         }
     };
