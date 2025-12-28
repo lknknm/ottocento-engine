@@ -230,15 +230,16 @@ void OttDevice::copyBufferToImage(VkBuffer& buffer, VkImage& image, uint32_t wid
 //----------------------------------------------------------------------------
 /** Dedicated function to fill the VkDebugUtilsObjectNameInfoEXT struct and pass it to the
  *  vkSetDebugUtilsObjectNameEXT function. It's basically a small wrapper for convenience. **/
-void OttDevice::debugUtilsObjectNameInfoEXT(VkObjectType objType, uint64_t objHandle, const char* objName) const
+void OttDevice::debugUtilsObjectNameInfoEXT(const VkObjectType objType, const uint64_t objHandle, const std::string objName) const
 {
     if (enableValidationLayers == true)
     {
         const VkDebugUtilsObjectNameInfoEXT debugNameInfo {
             .sType        = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+            .pNext        = nullptr,
             .objectType   = objType,
             .objectHandle = objHandle,
-            .pObjectName  = objName,
+            .pObjectName  = objName.c_str(),
         };
         if (vkSetDebugUtilsObjectNameEXT(device, &debugNameInfo) != VK_SUCCESS)
             throw std::runtime_error("Failed to load Object Name Extension");
@@ -374,6 +375,8 @@ void OttDevice::pickPhysicalDevice()
  *  with the selected Physical Device. **/
 void OttDevice::createLogicalDevice()
 {
+    using enum fmt::color;
+
     QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -435,9 +438,9 @@ void OttDevice::createLogicalDevice()
     if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
         throw std::runtime_error("failed to create logical device!");
     
-    debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_PHYSICAL_DEVICE, (uint64_t) physicalDevice, CSTR_RED(" OttDevice::physicalDevice "));
-    debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE, (uint64_t) device, CSTR_RED(" OttDevice::device "));
-    debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_INSTANCE, (uint64_t) instance, CSTR_RED(" OttDevice::VkInstance::instance "));
+    debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_PHYSICAL_DEVICE, reinterpret_cast<uint64_t>(physicalDevice), color_str<red>(" OttDevice::physicalDevice "));
+    debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE, reinterpret_cast<uint64_t>(device), color_str<red>(" OttDevice::device "));
+    debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_INSTANCE, reinterpret_cast<uint64_t>(instance), color_str<red>(" OttDevice::VkInstance::instance "));
     
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
     vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);

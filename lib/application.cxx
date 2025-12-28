@@ -482,6 +482,7 @@ void OttApplication::createVertexBuffer()
 {
     if (!vertices.empty())
     {
+        using enum fmt::color;
         VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
     
         VkBuffer stagingBuffer;
@@ -500,8 +501,8 @@ void OttApplication::createVertexBuffer()
                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                 vertexBuffer, vertexBufferMemory);
-        appDevice.debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE_MEMORY, reinterpret_cast<uint64_t>(vertexBufferMemory), CSTR_RED("application::VkDeviceMemory:vertexBufferMemory"));
-        appDevice.debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(vertexBuffer), CSTR_RED("application::VkBuffer:vertexBuffer"));
+        appDevice.debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE_MEMORY, reinterpret_cast<uint64_t>(vertexBufferMemory), color_str<red>("application::VkDeviceMemory:vertexBufferMemory"));
+        appDevice.debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(vertexBuffer), color_str<red>("application::VkBuffer:vertexBuffer"));
         appDevice.copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
 
         vkDestroyBuffer(device, stagingBuffer, nullptr);
@@ -514,6 +515,8 @@ void OttApplication::createIndexBuffer(std::vector<uint32_t>& index, VkBuffer& i
 {
     if (!vertices.empty())
     {
+        using enum fmt::color;
+
         VkDeviceSize bufferSize = sizeof(index[0]) * index.size();
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
@@ -532,7 +535,7 @@ void OttApplication::createIndexBuffer(std::vector<uint32_t>& index, VkBuffer& i
                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                 index_buffer,
                                 index_buffer_memory);
-        appDevice.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, reinterpret_cast<uint64_t>(index_buffer_memory), "application::VkDeviceMemory:indexBufferMemory");
+        appDevice.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, reinterpret_cast<uint64_t>(index_buffer_memory), color_str<red>("application::VkDeviceMemory:indexBufferMemory"));
         appDevice.copyBuffer(stagingBuffer, index_buffer, bufferSize);
     
         vkDestroyBuffer(device, stagingBuffer, nullptr);
@@ -633,6 +636,8 @@ void OttApplication::createTextureSampler()
 //----------------------------------------------------------------------------
 void OttApplication::createUniformBuffers()
 {
+    using enum fmt::color;
+
     VkDeviceSize bufferSize = sizeof(UniformBufferObject);
     uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
     uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
@@ -647,9 +652,10 @@ void OttApplication::createUniformBuffers()
                                uniformBuffersMemory[i]);
         vkMapMemory(device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
 
-        appDevice.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, 
-                                              reinterpret_cast<uint64_t>(uniformBuffersMemory[i]), 
-                                              CSTR_RED(" application::VkDeviceMemory:uniformBuffersMemory %i ", i)
+        appDevice.debugUtilsObjectNameInfoEXT(
+            VK_OBJECT_TYPE_DEVICE_MEMORY, 
+            reinterpret_cast<uint64_t>(uniformBuffersMemory[i]), 
+            color_str<red>(" application::VkDeviceMemory:uniformBuffersMemory %i ", i)
         );
     }
 }

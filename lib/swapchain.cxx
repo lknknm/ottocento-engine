@@ -289,6 +289,7 @@ void OttSwapChain::createRenderPass()
 //----------------------------------------------------------------------------
 void OttSwapChain::createDepthResources()
 {
+    using enum fmt::color;
     const VkFormat depthFormat = appDeviceRef->findDepthFormat();
         
     VkHelpers::createImage(swapChainExtent.width, swapChainExtent.height, 1, appDeviceRef->getMSAASamples(), depthFormat,
@@ -298,13 +299,14 @@ void OttSwapChain::createDepthResources()
     depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
     VkHelpers::transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1,
                                      *appDeviceRef);
-    appDeviceRef->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)depthImageMemory, CSTR_RED("SwapChain::VkDeviceMemory:depthImageMemory"));
+    appDeviceRef->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, reinterpret_cast<uint64_t>(depthImageMemory), color_str<red>("SwapChain::VkDeviceMemory:depthImageMemory"));
 }
 
 
 //----------------------------------------------------------------------------
 void OttSwapChain::createColorResources()
 {
+    using enum fmt::color;
     const VkFormat colorFormat = swapChainImageFormat;
     VkHelpers::createImage (swapChainExtent.width, swapChainExtent.height,
                             1, appDeviceRef->getMSAASamples(),
@@ -313,7 +315,7 @@ void OttSwapChain::createColorResources()
                             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                             colorImage, colorImageMemory, *appDeviceRef
                             );
-    appDeviceRef->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, (uint64_t)colorImageMemory,CSTR_RED(" SwapChain::VkDeviceMemory:colorImageMemory "));
+    appDeviceRef->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, reinterpret_cast<uint64_t>(colorImageMemory), color_str<red>(" SwapChain::VkDeviceMemory:colorImageMemory "));
     colorImageView = createImageView(colorImage, colorFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 }
 
@@ -355,6 +357,7 @@ void OttSwapChain::createFramebuffers()
  *  The host is responsible for resetting the fence. **/
 void OttSwapChain::createSyncObjects()
 {
+    using enum fmt::color;
     imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
     inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
@@ -377,8 +380,8 @@ void OttSwapChain::createSyncObjects()
         {
             throw std::runtime_error("failed to create semaphores!");
         }
-        appDeviceRef->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)imageAvailableSemaphores[i], CSTR_RED("SyncObject::VkSemaphore:imageAvailableSemaphore[%i]", i));
-        appDeviceRef->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_SEMAPHORE, (uint64_t)renderFinishedSemaphores[i], CSTR_RED("SyncObject::VkSemaphore:renderFinishedSemaphore[%i]", i));
+        appDeviceRef->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_SEMAPHORE, reinterpret_cast<uint64_t>(imageAvailableSemaphores[i]), color_str<red>("SyncObject::VkSemaphore:imageAvailableSemaphore[{}]", i));
+        appDeviceRef->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_SEMAPHORE, reinterpret_cast<uint64_t>(renderFinishedSemaphores[i]), color_str<red>("SyncObject::VkSemaphore:renderFinishedSemaphore[{}]", i));
     }
 }
 

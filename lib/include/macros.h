@@ -16,43 +16,16 @@
 
 #pragma once
 
-#include <cstdarg>
 #include <fmt/base.h>
 #include <fmt/color.h>
 #include <fmt/format.h>
 
 //----------------------------------------------------------------------------
-/** Output constanTs to color values: **/
-#define C_CLEAR  "\033[2J\033[1;1H"
-#define C_RESET  "\033[m"
-#define C_GREEN  "\033[32m"
-#define C_ORANGE "\033[33m"
-#define C_YELLOW "\033[93m"
-#define C_CYAN   "\033[36m"
-#define C_BLUE   "\033[34m"
-#define C_RED    "\033[31m"
-#define C_WHITE  "\033[37m"
-#define C_BOLD   "\033[1m"
-#define C_BWHITE "\033[47m"
-
-//----------------------------------------------------------------------------
 /** Utils for text layout **/
-#define DASHED_SEPARATOR "-------------------------------------"
+constexpr char DASHED_SEPARATOR[] { "----------------------------------------------------------------------------" };
 
 //----------------------------------------------------------------------------
-/** FormaTs the std::string to receive arguments that can be output to the console. **/
-inline std::string formatString(const char* format, ...)
-{
-    char buffer[256];
-    va_list args;
-    va_start(args, format);
-    vsnprintf(buffer, sizeof(buffer), format, args);
-    va_end(args);
-    return std::string(buffer);
-}
-
-//----------------------------------------------------------------------------
-/** Function for formatted logging. **/
+/** Log levels for informed logging throughout the engine */
 enum LogLevel 
 {
     normal,
@@ -63,44 +36,53 @@ enum LogLevel
     critical
 };
 
+//----------------------------------------------------------------------------
+/** 
+ * @brief Wrapper Logger function for the fmt::print that formats and displays information in a standardized
+ * way using the LogLevel enum for context information.
+ *
+ * @code
+ * log_t<info>("This is an info logging with param: {}", param);
+ * @endcode
+ *
+ * @param level Log level available from the enum LogLevel. Defaulted to normal.
+ */
 template<LogLevel level = normal, typename... Ts>
 constexpr inline void log_t(fmt::format_string<Ts...> fmt, Ts&&... args)
 {
+    using enum fmt::color;
+
     std::string messagePrefix {""};
-    auto messageColor { fmt::color::white };
+    auto messageColor { white };
 
     if constexpr (level == info) {
         messagePrefix = "[info]";
-        messageColor = fmt::color::green;
+        messageColor = green;
     }
     else if constexpr (level == debug) {
         messagePrefix = "[debug]";
-        messageColor = fmt::color::orange;
+        messageColor = orange;
     }
     else if constexpr (level == warning) {
         messagePrefix = "[warning]";
-        messageColor = fmt::color::yellow;
+        messageColor = yellow;
     }
     else if constexpr (level == error) {
         messagePrefix = "[error]";
-        messageColor = fmt::color::orange_red;
+        messageColor = orange_red;
     }
     else if constexpr (level == critical) {
         messagePrefix = "[critical]";
-        messageColor = fmt::color::red;
+        messageColor = red;
     }
 
     fmt::print(fg(messageColor), "{} {}\n", messagePrefix, fmt::format(fmt, std::forward<Ts>(args)...));
 }
 
 //----------------------------------------------------------------------------
-/** Function to concatenate colored strings. **/
-#define COLORED_STRING_WITH_ARGS(color, fmt, ...) (std::string(color) + formatString(fmt, ##__VA_ARGS__) + C_RESET)
-
-//----------------------------------------------------------------------------
 /** Colored strings as char* for object naming. Colors can be assigned to each object arbitrarily. **/
-#define CSTR_GREEN(fmt, ...)  (std::string(C_GREEN) + formatString(fmt, ##__VA_ARGS__) + C_RESET).c_str()
-#define CSTR_YELLOW(fmt, ...) (std::string(C_YELLOW) + formatString(fmt, ##__VA_ARGS__) + C_RESET).c_str()
-#define CSTR_RED(fmt, ...)    (std::string(C_RED) + formatString(fmt, ##__VA_ARGS__) + C_RESET).c_str()
-#define CSTR_BLUE(fmt, ...)   (std::string(C_BLUE) + formatString(fmt, ##__VA_ARGS__) + C_RESET).c_str()
-#define CSTR_CYAN(fmt, ...)   (std::string(C_CYAN) + formatString(fmt, ##__VA_ARGS__) + C_RESET).c_str()
+template<fmt::color color, typename... Ts>
+inline std::string color_str(fmt::format_string<Ts...> fmt, Ts&&... args)
+{
+     return fmt::format(fg(color), fmt, std::forward<Ts>(args)...);
+}

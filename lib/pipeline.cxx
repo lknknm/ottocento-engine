@@ -113,6 +113,8 @@ void OttPipeline::createGraphicsPipeline (
  * \param push_stage_flags: Specifies for which shader stage the push constants should be passed to.  **/
 void OttPipeline::createPipelineLayout(VkShaderStageFlags push_stage_flags, VkDescriptorSetLayout* descriptor_set_layout)
 {
+    using enum fmt::color;
+
     VkPushConstantRange pushConstantRange {
         .stageFlags = push_stage_flags,
         .offset     = 0,
@@ -133,7 +135,13 @@ void OttPipeline::createPipelineLayout(VkShaderStageFlags push_stage_flags, VkDe
         log_t<error>("vkCreatePipelineLayout returned: {}", static_cast<int>(result));
         throw std::runtime_error("Failed to create pipeline layout");
     }
-    pDevice->debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)pipelineLayout, CSTR_RED(" OttPipeline::VkPipelineLayout:pipelineLayout "));
+
+    pDevice->debugUtilsObjectNameInfoEXT(
+        VK_OBJECT_TYPE_PIPELINE_LAYOUT, 
+        reinterpret_cast<uint64_t>(pipelineLayout), 
+        color_str<red>(" OttPipeline::VkPipelineLayout:pipelineLayout ")
+    );
+
     log_t<info>("OttPipeline::pipelineLayout created.");
 }
 

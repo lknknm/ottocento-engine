@@ -28,6 +28,7 @@
  * VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT. **/
 VkDescriptorSetLayout OttDescriptor::createBindlessDescriptorSetLayout(const VkDevice device, OttDevice& app_device)
 {
+    using enum fmt::color;
     TEXTURE_ARRAY_SIZE = app_device.getMaxDescCount();
     
     constexpr VkDescriptorSetLayoutBinding uboLayoutBinding {
@@ -75,7 +76,7 @@ VkDescriptorSetLayout OttDescriptor::createBindlessDescriptorSetLayout(const VkD
         log_t<error>("vkCreateDescriptorSetLayout returned: {}", static_cast<int>(result));
         throw std::runtime_error("Failed to create descriptor set layout!");
     }
-    app_device.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, reinterpret_cast<uint64_t>(bindlessDescriptorSetLayout), CSTR_CYAN(" OttDescriptor::bindlessDescriptorSetLayout" ));
+    app_device.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, reinterpret_cast<uint64_t>(bindlessDescriptorSetLayout), color_str<cyan>(" OttDescriptor::bindlessDescriptorSetLayout "));
     return bindlessDescriptorSetLayout;
 }
 
@@ -154,6 +155,8 @@ void OttDescriptor::updateDescriptorSet(const VkDevice device,
                                         const std::vector<VkImageView>& texture_image_views
                                         )
 {
+    using enum fmt::color;
+
     const VkDescriptorBufferInfo bufferInfo {
         .buffer = uniform_buffer,
         .offset = 0,
@@ -197,5 +200,8 @@ void OttDescriptor::updateDescriptorSet(const VkDevice device,
     };
     
     vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-    app_device.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DESCRIPTOR_SET, reinterpret_cast<uint64_t>(descriptor_set), CSTR_RED(" application::descriptorSet "));
+    app_device.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DESCRIPTOR_SET, 
+                                           reinterpret_cast<uint64_t>(descriptor_set), 
+                                           color_str<green>(" application::descriptorSet ")
+                                           );
 }
