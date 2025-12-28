@@ -18,7 +18,7 @@
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
 
-#include "macros.h"
+#include "logger.h"
 #include "model.h"
 #include "pipeline.h"
 

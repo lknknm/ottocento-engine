@@ -18,7 +18,7 @@
 
 #include <array>
 #include <vector>
-#include "macros.h"
+#include "logger.h"
 #include "swapchain.h"
 
 //----------------------------------------------------------------------------

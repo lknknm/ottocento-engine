@@ -30,7 +30,7 @@
 
 #include "application.h"
 #include "helpers.h"
-#include "macros.h"
+#include "logger.h"
 #include "tiny_obj_loader.h"
 #include "utils.hxx"
 

@@ -23,7 +23,7 @@
 #include "swapchain.h"
 
 #include "helpers.h"
-#include "macros.h"
+#include "logger.h"
 
 //----------------------------------------------------------------------------
 /** Default OttSwapChain constructor.

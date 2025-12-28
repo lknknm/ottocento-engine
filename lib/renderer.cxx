@@ -23,7 +23,7 @@
 
 #include <filesystem>
 
-#include "macros.h"
+#include "logger.h"
 
 //----------------------------------------------------------------------------
 /** OttRenderer default constructor.

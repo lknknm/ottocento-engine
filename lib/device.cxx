@@ -20,7 +20,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
 #include "device.h"
-#include "macros.h"
+#include "logger.h"
 #include <cstring>
 #include <set>
 #include <map>

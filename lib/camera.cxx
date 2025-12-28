@@ -21,7 +21,7 @@
 #include "camera.h"
 #include "input.hxx"
 #include <fmt/core.h>
-#include "macros.h"
+#include "logger.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
