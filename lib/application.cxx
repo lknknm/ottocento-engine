@@ -212,6 +212,8 @@ void OttApplication::mainLoop()
 //----------------------------------------------------------------------------
 void OttApplication::drawFrame()
 {
+    if (viewportCamera->getRenderState() == false)
+        return;
     if (static_cast<float>(appSwapChain.width()) > 0.0f && static_cast<float>(appSwapChain.height()) > 0.0f)
     {
         const auto startTime { std::chrono::high_resolution_clock::now() };

@@ -25,70 +25,14 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-class OttCamera
+struct OttCameraSystem
 {
 //----------------------------------------------------------------------------
-public:
-    GLFWwindow* windowHandle = nullptr;
-    OttWindow* appwindow = nullptr;
     glm::mat4 recalculateView(float deltaTime);
         
 //----------------------------------------------------------------------------
 // Projection and Direction functions
 //----------------------------------------------------------------------------
-    
-    glm::mat4 projection(float height, float width) const;
-    glm::mat4 inverseProjection(glm::mat4 perspectiveProjection, glm::mat4 view);
-
-//----------------------------------------------------------------------------
-// Getters
-//----------------------------------------------------------------------------
-
-    glm::vec3 getEyePosition() const { return EyePosition; }
-    glm::vec3 getCenterPosition() const { return CenterPosition; }
-    glm::vec3 getEnvironmentUpVector() const { return upVector; }
-    
-    // "Redundant" name for it not to be mistaken with the world upVector.
-    glm::vec3 getCameraUpVector() const { return glm::cross(forwardDirection, -rightVector); }
-    
-    // "Redundant" name for it not to be mistaken with the world rightVector.
-    glm::vec3 getCameraRightVector() const { return glm::cross(forwardDirection, upVector); }
-    glm::mat4 getViewMatrix() const { return ViewMatrix; }
-
-    bool getRenderState() const { return render; }
-    
-//----------------------------------------------------------------------------
-private:
-    double resetAnimationStart { 0 };
-    double orbitAnimationStart { 0 };
-    
-    float VerticalFOV     { 38.0f };
-    float NearClip        { 0.1f };
-    float FarClip         { 1000.0f };
-    float speed           { 2.0f };
-    float rotationSpeed   { 0.3f };
-    float orthoZoomFactor { 10.f };
-
-    bool  walkNavigation = false;
-    bool  perspective = true;
-    bool  render = true;
-    
-    glm::vec2 lastMousePosition{ 0.0f, 0.0f };
-    
-    glm::vec3 CenterPosition{ 0.0f, 0.0f, 0.0f };
-    
-    glm::vec3 EyePosition{5.0f, -5.0f, 5.0f};
-    glm::vec3 startEye, startCenter, targetEyePosition, targetCenterPosition;
-    
-    glm::vec3 rightVector{0.0f, 0.0f, 0.0f};
-    glm::vec3 upVector{0.0f, 0.0f, 1.0f};
-    glm::vec3 forwardDirection{};
-    
-    glm::mat4 Projection{ 1.0f };
-    glm::mat4 ViewMatrix{ 1.0f };
-    glm::mat4 InverseProjection{ 1.0f };
-    glm::mat4 InverseView{ 1.0f };
-
     enum struct ViewType
     {
         VT_FRONT,
@@ -108,6 +52,9 @@ private:
         RD_UP,
         RD_DOWN
     };
+    
+    glm::mat4 projection(float height, float width) const;
+    glm::mat4 inverseProjection(glm::mat4 perspectiveProjection, glm::mat4 view);
 
     //----------------------------------------------------------------------------
     glm::vec3 SetViewOrbit(ViewType view);
@@ -128,4 +75,4 @@ private:
     void moveLeftDirection(float deltaTime);
     void zoomIn(double yoffset);
     void zoomOut(double yoffset);
-}; // class OttCamera
+}; // class OttCameraSystem
