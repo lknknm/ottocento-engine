@@ -23,7 +23,7 @@
 
 #include <filesystem>
 
-#include "macros.h"
+#include "logger.h"
 
 //----------------------------------------------------------------------------
 /** OttRenderer default constructor.
@@ -36,7 +36,7 @@ OttRenderer::OttRenderer(OttDevice* device_reference, OttSwapChain* swapchain_re
     swapchainRef = swapchain_reference;
     currentFrameIndex = swapchainRef->getCurrentFrame();
     createCommandBuffers();
-    LOG_INFO("OttRenderer::OttRenderer Object Created");
+    log_t<info>("OttRenderer::OttRenderer Object Created");
 }
 
 //----------------------------------------------------------------------------
@@ -81,7 +81,7 @@ VkCommandBuffer OttRenderer::beginFrame()
     {
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
-            LOG_ERROR("VK_ERROR_OUT_OF_DATE_KHR");
+            log_t<error, true>("VK_ERROR_OUT_OF_DATE_KHR");
             swapchainRef->refreshSwapChain();
             return nullptr;
         }

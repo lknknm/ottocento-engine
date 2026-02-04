@@ -30,7 +30,7 @@
 
 #include "application.h"
 #include "helpers.h"
-#include "macros.h"
+#include "logger.h"
 #include "tiny_obj_loader.h"
 #include "utils.hxx"
 
@@ -378,13 +378,13 @@ void OttApplication::loadModel(std::filesystem::path const& modelPath)
             
     if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelPath.string().c_str(), baseDir.string().c_str()))
     {
-        LOG_ERROR("{}, {}", warn, err);
+        log_t<error>("{}, {}", warn, err);
         return;
     }
 
-    LOG(DASHED_SEPARATOR);
-    fmt::print("Loading Wavefront {}\n", modelPath);
-    fmt::print("BaseDir {}\n", baseDir);
+    log_t<info>(DASHED_SEPARATOR);
+    log_t<info>("Loading Wavefront {}\n", modelPath);
+    log_t<info>("BaseDir {}\n", baseDir);
 
     std::unordered_map<OttModel::Vertex, uint32_t> uniqueVertices{};
 
@@ -393,7 +393,7 @@ void OttApplication::loadModel(std::filesystem::path const& modelPath)
         materials.push_back(tinyobj::material_t());
         for (size_t i = 0; i < materials.size() - 1; i++)
         {
-          LOG_INFO("material[{}].diffuse_texname = {}\n", i, materials[i].diffuse_texname);
+          log_t<info>("material[{}].diffuse_texname = {}\n", i, materials[i].diffuse_texname);
           sceneMaterials.imageTexture_path.clear();
           auto material_path = baseDir.append(materials[i].diffuse_texname);
           sceneMaterials.imageTexture_path.push_back(material_path.string().c_str());
@@ -457,22 +457,22 @@ void OttApplication::loadModel(std::filesystem::path const& modelPath)
         }
     }
     edges = OttModel::extractBoundaryEdges(indices);
-    LOG_INFO("Edges Size == {}", edges.size());
+    log_t<info>("Edges Size == {}", edges.size());
     model.indexCount  = static_cast<uint32_t>(indices.size()) - model.startIndex;
     model.edgeCount   = (static_cast<uint32_t>(edges.size()) - model.startEdge);
     model.pushColorID = {Utils::random_nr(0, 1),  Utils::random_nr(0, 1), Utils::random_nr(0, 1)};
     model.textureID   = (materials.empty()) ?  0 : static_cast<uint32_t>(textureImages.size());
     models.push_back(model);
     
-    LOG(DASHED_SEPARATOR);
-    LOG("VERTEX COUNT: {}", vertices.size());
-    LOG("model.startVertex: {}", model.startVertex);
-    LOG("model.startIndex: {}",  model.startIndex);
-    LOG("model.startEdge: {}",  model.startEdge);
-    LOG("model.edgeCount: {}",  model.edgeCount);
-    LOG("model.indexCount: {}",  model.indexCount);
-    LOG("model.textureID {}",    model.textureID);
-    LOG(DASHED_SEPARATOR);
+    log_t<info>(DASHED_SEPARATOR);
+    log_t<info>("VERTEX COUNT: {}", vertices.size());
+    log_t<info>("model.startVertex: {}", model.startVertex);
+    log_t<info>("model.startIndex: {}",  model.startIndex);
+    log_t<info>("model.startEdge: {}",  model.startEdge);
+    log_t<info>("model.edgeCount: {}",  model.edgeCount);
+    log_t<info>("model.indexCount: {}",  model.indexCount);
+    log_t<info>("model.textureID {}",    model.textureID);
+    log_t<info>(DASHED_SEPARATOR);
 }
 
 //----------------------------------------------------------------------------
@@ -482,6 +482,7 @@ void OttApplication::createVertexBuffer()
 {
     if (!vertices.empty())
     {
+        using enum fmt::color;
         VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
     
         VkBuffer stagingBuffer;
@@ -500,8 +501,8 @@ void OttApplication::createVertexBuffer()
                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                 vertexBuffer, vertexBufferMemory);
-        appDevice.debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE_MEMORY, reinterpret_cast<uint64_t>(vertexBufferMemory), CSTR_RED("application::VkDeviceMemory:vertexBufferMemory"));
-        appDevice.debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(vertexBuffer), CSTR_RED("application::VkBuffer:vertexBuffer"));
+        appDevice.debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE_MEMORY, reinterpret_cast<uint64_t>(vertexBufferMemory), color_str<red>("application::VkDeviceMemory:vertexBufferMemory"));
+        appDevice.debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(vertexBuffer), color_str<red>("application::VkBuffer:vertexBuffer"));
         appDevice.copyBuffer(stagingBuffer, vertexBuffer, bufferSize);
 
         vkDestroyBuffer(device, stagingBuffer, nullptr);
@@ -514,6 +515,8 @@ void OttApplication::createIndexBuffer(std::vector<uint32_t>& index, VkBuffer& i
 {
     if (!vertices.empty())
     {
+        using enum fmt::color;
+
         VkDeviceSize bufferSize = sizeof(index[0]) * index.size();
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
@@ -532,7 +535,7 @@ void OttApplication::createIndexBuffer(std::vector<uint32_t>& index, VkBuffer& i
                                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                                 index_buffer,
                                 index_buffer_memory);
-        appDevice.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, reinterpret_cast<uint64_t>(index_buffer_memory), "application::VkDeviceMemory:indexBufferMemory");
+        appDevice.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, reinterpret_cast<uint64_t>(index_buffer_memory), color_str<red>("application::VkDeviceMemory:indexBufferMemory"));
         appDevice.copyBuffer(stagingBuffer, index_buffer, bufferSize);
     
         vkDestroyBuffer(device, stagingBuffer, nullptr);
@@ -544,8 +547,10 @@ void OttApplication::createIndexBuffer(std::vector<uint32_t>& index, VkBuffer& i
 void OttApplication::createTextureImage(const std::filesystem::path& imagePath)
 {
     int texWidth, texHeight, texChannels;
-    LOG(DASHED_SEPARATOR);
-    LOG_INFO("Image path: {}", imagePath.string());
+
+    log_t<info>(DASHED_SEPARATOR);
+    log_t<info>("Image path: {}", imagePath.string());
+
     stbi_uc* pixels = stbi_load(imagePath.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
     VkDeviceSize imageSize { static_cast<VkDeviceSize>(texWidth * texHeight * 4) };
     mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
@@ -631,6 +636,8 @@ void OttApplication::createTextureSampler()
 //----------------------------------------------------------------------------
 void OttApplication::createUniformBuffers()
 {
+    using enum fmt::color;
+
     VkDeviceSize bufferSize = sizeof(UniformBufferObject);
     uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
     uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
@@ -645,9 +652,10 @@ void OttApplication::createUniformBuffers()
                                uniformBuffersMemory[i]);
         vkMapMemory(device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
 
-        appDevice.debugUtilsObjectNameInfoEXT(VK_OBJECT_TYPE_DEVICE_MEMORY, 
-                                              reinterpret_cast<uint64_t>(uniformBuffersMemory[i]), 
-                                              CSTR_RED(" application::VkDeviceMemory:uniformBuffersMemory %i ", i)
+        appDevice.debugUtilsObjectNameInfoEXT(
+            VK_OBJECT_TYPE_DEVICE_MEMORY, 
+            reinterpret_cast<uint64_t>(uniformBuffersMemory[i]), 
+            color_str<red>(" application::VkDeviceMemory:uniformBuffersMemory %i ", i)
         );
     }
 }

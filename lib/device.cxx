@@ -20,7 +20,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
 #include "device.h"
-#include "macros.h"
+#include "logger.h"
 #include <cstring>
 #include <set>
 #include <map>
@@ -169,7 +169,7 @@ void OttDevice::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemo
     VkResult result = vkCreateBuffer(device, &bufferInfo, nullptr, &buffer);
     if (result != VK_SUCCESS)
     {
-        LOG_ERROR("vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) returned {}", static_cast<int>(result));
+        log_t<error>("vkCreateBuffer(device, &bufferInfo, nullptr, &buffer) returned {}", static_cast<int>(result));
         throw std::runtime_error("Failed to create buffer.");
     }
 
@@ -230,15 +230,16 @@ void OttDevice::copyBufferToImage(VkBuffer& buffer, VkImage& image, uint32_t wid
 //----------------------------------------------------------------------------
 /** Dedicated function to fill the VkDebugUtilsObjectNameInfoEXT struct and pass it to the
  *  vkSetDebugUtilsObjectNameEXT function. It's basically a small wrapper for convenience. **/
-void OttDevice::debugUtilsObjectNameInfoEXT(VkObjectType objType, uint64_t objHandle, const char* objName) const
+void OttDevice::debugUtilsObjectNameInfoEXT(const VkObjectType objType, const uint64_t objHandle, const std::string objName) const
 {
     if (enableValidationLayers == true)
     {
         const VkDebugUtilsObjectNameInfoEXT debugNameInfo {
             .sType        = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,
+            .pNext        = nullptr,
             .objectType   = objType,
             .objectHandle = objHandle,
-            .pObjectName  = objName,
+            .pObjectName  = objName.c_str(),
         };
         if (vkSetDebugUtilsObjectNameEXT(device, &debugNameInfo) != VK_SUCCESS)
             throw std::runtime_error("Failed to load Object Name Extension");
@@ -282,7 +283,7 @@ void OttDevice::createInstance()
     #endif
 
     for (const auto& extension : extensions) {
-        LOG_INFO("Extensions List:: {}", extension);
+        log_t<info>("Extensions List:: {}", extension);
     }
 
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
@@ -303,10 +304,10 @@ void OttDevice::createInstance()
     const VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
     if (result != VK_SUCCESS)
     {
-        LOG_ERROR("vkCreateInstance returned: {}", static_cast<int>(result));
+        log_t<error>("vkCreateInstance returned: {}", static_cast<int>(result));
         throw std::runtime_error("failed to create instance!");
     }
-    LOG_INFO("Vulkan Instance Created");
+    log_t<info>("Vulkan Instance Created");
 }
 
 //----------------------------------------------------------------------------
@@ -359,9 +360,9 @@ void OttDevice::pickPhysicalDevice()
         {
             msaaSamples = getMaxUsableSampleCount();
             physical_maxDescriptorSampledImageCount = getMaxDescriptorSampleCount();
-            LOG_INFO("GPU is properly scored and suitable for usage.");
-            LOG_INFO("Max Usable Sample Count: {} xMSAA", unsigned(msaaSamples));
-            LOG_INFO("maxDescriptorSampledImageCount: {}", unsigned(physical_maxDescriptorSampledImageCount));
+            log_t<info>("GPU is properly scored and suitable for usage.");
+            log_t<info>("Max Usable Sample Count: {} xMSAA", unsigned(msaaSamples));
+            log_t<info>("maxDescriptorSampledImageCount: {}", unsigned(physical_maxDescriptorSampledImageCount));
         }
     }
         
@@ -374,6 +375,8 @@ void OttDevice::pickPhysicalDevice()
  *  with the selected Physical Device. **/
 void OttDevice::createLogicalDevice()
 {
+    using enum fmt::color;
+
     QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -435,14 +438,14 @@ void OttDevice::createLogicalDevice()
     if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
         throw std::runtime_error("failed to create logical device!");
     
-    debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_PHYSICAL_DEVICE, (uint64_t) physicalDevice, CSTR_RED(" OttDevice::physicalDevice "));
-    debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE, (uint64_t) device, CSTR_RED(" OttDevice::device "));
-    debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_INSTANCE, (uint64_t) instance, CSTR_RED(" OttDevice::VkInstance::instance "));
+    debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_PHYSICAL_DEVICE, reinterpret_cast<uint64_t>(physicalDevice), color_str<red>(" OttDevice::physicalDevice "));
+    debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_DEVICE, reinterpret_cast<uint64_t>(device), color_str<red>(" OttDevice::device "));
+    debugUtilsObjectNameInfoEXT (VK_OBJECT_TYPE_INSTANCE, reinterpret_cast<uint64_t>(instance), color_str<red>(" OttDevice::VkInstance::instance "));
     
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
     vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
     
-    LOG_INFO("Logical Device Successfully created");
+    log_t<info>("Logical Device Successfully created");
 }
 
 //----------------------------------------------------------------------------
@@ -463,7 +466,7 @@ void OttDevice::createCommandPool(VkCommandPoolCreateFlags flags)
 
     if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS)
         throw std::runtime_error("failed to create command pool!");
-    LOG_INFO("CommandPool Created");
+    log_t<info>("CommandPool Created");
 }
 
 //----------------------------------------------------------------------------
@@ -636,13 +639,13 @@ int OttDevice::rateDeviceSuitability(VkPhysicalDevice physical_device)
     score += static_cast<int>(deviceProperties.limits.maxImageDimension2D);
     
     //Debug Log to detect the GPU.
-    LOG(DASHED_SEPARATOR);
-    LOG_INFO("GPU found.");
-    LOG_INFO("Name: {}", deviceProperties.deviceName);
-    LOG_INFO("Score: {}", score);
-    LOG_INFO("API Version: {}", deviceProperties.apiVersion);
-    LOG_INFO("Driver Version: {}", deviceProperties.driverVersion);
-    LOG(DASHED_SEPARATOR);
+    log_t<info>(DASHED_SEPARATOR);
+    log_t<info>("GPU found.");
+    log_t<info>("Name: {}", deviceProperties.deviceName);
+    log_t<info>("Score: {}", score);
+    log_t<info>("API Version: {}", deviceProperties.apiVersion);
+    log_t<info>("Driver Version: {}", deviceProperties.driverVersion);
+    log_t<info>(DASHED_SEPARATOR);
     
     return score;
 }
